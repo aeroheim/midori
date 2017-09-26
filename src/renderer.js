@@ -20,9 +20,8 @@ class Renderer
         this.camera.position.z = 100;
 
         const light = new three.AmbientLight(0xffffff);
-        // console.log(OrbitControls);
         const orbitControl = new OrbitControl(this.camera);
-        // console.log('here');
+
         this.scene.add(light);
         this.scene.add(this.camera);
         this.scene.add(new three.AxisHelper(1000));
