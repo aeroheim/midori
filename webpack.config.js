@@ -28,7 +28,7 @@ module.exports =
                         loader: 'babel-loader',
                         options:
                         {
-                            presets: [ 'es2015' ],
+                            presets: [ 'env' ],
                             plugins: [ require('babel-plugin-transform-class-properties') ]
                         }
                     }
