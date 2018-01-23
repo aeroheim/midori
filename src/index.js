@@ -4,9 +4,9 @@ let renderer;
 
 function init()
 {
-    renderer = new Renderer('container');
+    renderer = new Renderer(document.getElementById('container'));
 
-    loadImage('images/1.png')
+    loadImage('images/1.jpg')
     .then((texture) =>
     {
         renderer.setImage(texture);

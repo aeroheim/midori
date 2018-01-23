@@ -9,14 +9,18 @@ class Renderer
     scene;
     camera;
     renderer;
+    parentDomElement;
 
     constructor(domElement)
     {
         this.renderer = new three.WebGLRenderer();
-        document.getElementById(domElement).appendChild(this.renderer.domElement);
+        this.renderer.domElement.id = 'midori';
+
+        this.parentDomElement = domElement;
+        this.parentDomElement.appendChild(this.renderer.domElement);
 
         this.scene = new three.Scene();
-        this.camera = new three.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 1000);
+        this.camera = new three.PerspectiveCamera(35, domElement.clientWidth / domElement.clientHeight, 1, 1000);
         this.camera.position.z = 100;
 
         const light = new three.AmbientLight(0xffffff);
@@ -37,8 +41,8 @@ class Renderer
 
     resize = () =>
     {
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.renderer.setSize(this.parentDomElement.clientWidth, this.parentDomElement.clientHeight);
+        this.camera.aspect = this.parentDomElement.clientWidth / this.parentDomElement.clientHeight;
 
         // must call this each time after updating camera
         this.camera.updateProjectionMatrix();
@@ -47,11 +51,11 @@ class Renderer
     setImage = (texture) =>
     {
         const imageAspect = texture.image.width / texture.image.height;
-        let box = new three.Mesh(new three.BoxGeometry(100, 100 / imageAspect), new three.MeshBasicMaterial({ map: texture }));
-        box.name = 'box';
-        box.add(new three.AxisHelper(50));
+        let plane = new three.Mesh(new three.PlaneGeometry(100, 100 / imageAspect), new three.MeshBasicMaterial({ map: texture }));
+        plane.name = 'plane';
+        plane.add(new three.AxisHelper(50));
 
-        this.scene.add(box);
+        this.scene.add(plane);
     }
 }
 
