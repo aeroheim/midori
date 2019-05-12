@@ -1,43 +1,33 @@
 const path = require('path');
 
-module.exports = 
-{
-    entry: 
-    [
-        // entry point for this app
-        './src/index.js',
-    ],
-
-    output:
-    {
-        filename: 'bundle.js',
-        path: path.resolve('build'),
-        publicPath: '/',
-    },
-
-    module:
-    {
-        rules:
-        [
-            {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                use:
-                [
-                    { 
-                        loader: 'babel-loader',
-                        options:
-                        {
-                            presets: [ 'env' ],
-                            plugins: [ require('babel-plugin-transform-class-properties') ]
-                        }
-                    }
+module.exports = {
+  entry: './src/index.js',
+  output:{
+    filename: 'bundle.js',
+    path: path.resolve('build'),
+    publicPath: '/',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+                presets: [
+                  '@babel/preset-env',
+                ],
+                plugins: [
+                  '@babel/plugin-proposal-object-rest-spread',
+                  '@babel/plugin-proposal-class-properties',
                 ]
             }
+          }
         ]
-    },
-
-    // more accurate source map for debugging
-    devtool: 'cheap-module-eval-source-map',
+      }
+    ]
+  },
+  devtool: 'cheap-module-eval-source-map', // more accurate source map for debugging
 }
-

@@ -1,7 +1,6 @@
 import * as three from 'three';
+import * as OrbitControls from 'three-orbit-controls'; // three.js OrbitControls export is broken; have to use a separate npm package of it ¯\_(ツ)_/¯
 
-// three.js OrbitControls export is broken; have to use a separate npm package of it ¯\_(ツ)_/¯
-import * as OrbitControls from 'three-orbit-controls'; 
 let OrbitControl = OrbitControls.default(three);
 
 class Renderer
@@ -34,12 +33,12 @@ class Renderer
         window.onresize = this.resize;
     }
 
-    render = () =>
+    render()
     {
         this.renderer.render(this.scene, this.camera);
     }
 
-    resize = () =>
+    resize()
     {
         this.renderer.setSize(this.parentDomElement.clientWidth, this.parentDomElement.clientHeight);
         this.camera.aspect = this.parentDomElement.clientWidth / this.parentDomElement.clientHeight;
@@ -48,7 +47,7 @@ class Renderer
         this.camera.updateProjectionMatrix();
     }
 
-    setImage = (texture) =>
+    setImage(texture)
     {
         const imageAspect = texture.image.width / texture.image.height;
         let plane = new three.Mesh(new three.PlaneGeometry(100, 100 / imageAspect), new three.MeshBasicMaterial({ map: texture }));

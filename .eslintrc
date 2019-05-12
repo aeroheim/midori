@@ -1,0 +1,25 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "rules": {
+    "max-len": "off",
+    "prefer-destructuring": ["error", {
+      "object": true,
+      "array": false
+    }],
+    "consistent-return": "off",
+    "global-require": "off",
+    "guard-for-in": "off",
+    "no-shadow": "off",
+    "no-plusplus": "off",
+    "no-prototype-builtins": "off",
+    "no-underscore-dangle": "off",
+    "no-restricted-syntax": "off",
+    "object-curly-newline": ["error", {
+        "ImportDeclaration": "never"
+    }]
+  }
+}
