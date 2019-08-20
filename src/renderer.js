@@ -1,11 +1,66 @@
 import * as three from 'three';
 import * as OrbitControls from 'three-orbit-controls'; // three.js OrbitControls export is broken; have to use a separate npm package of it ¯\_(ツ)_/¯
 
+// TODO: parallax??
+// possible to mimic parallax effect
+// while panning out and transitioning, adjust z position of object being panned away from for "parallax" effect
+// TODO: layers??
+// can z-indices become implementation details of layers?
+
+// TODO: use typescript and add some basic types
+// TODO: accept optional easing/physics function for animation
+
+function move(object, camera, relativeX, relativeY, relativeDepth) {
+  const distance = getAvailableDistance(object, camera, relativeDepth);
+  const absoluteDepth = getMaxDepthForObject(object, camera) * relativeDepth;
+
+  // offset the viewbox's position so that it starts at the top-left corner, then move it
+  // based on the relative proportion to the available x and y distance the viewbox can be moved.
+  const absoluteX = -(distance.width / 2) + (relativeX * distance.width);
+  const absoluteY = (distance.height / 2) - (relativeY * distance.height);
+  camera.position.set(absoluteX, absoluteY, absoluteDepth);
+}
+
 const OrbitControl = OrbitControls.default(three);
+
+function getMaxDepthForObject(object, camera) {
+  const maxHeightDepth = object.geometry.parameters.height / (2 * Math.tan((camera.fov * (Math.PI / 180)) / 2));
+  const maxWidthDepth = maxHeightDepth * camera.aspect;
+
+  // NOTE: this depth assumes the camera is centered on the object
+  return Math.min(maxWidthDepth, maxHeightDepth) + object.position.z;
+}
+
+function maxHeightAtDepth(absoluteDepth, camera) {
+  // fov is vertical fov in radians
+  return 2 * Math.tan((camera.fov * (Math.PI / 180)) / 2) * absoluteDepth;
+}
+
+function maxWidthAtDepth(absoluteDepth, camera) {
+  return maxHeightAtDepth(absoluteDepth, camera) * camera.aspect;
+}
+
+function getViewBox(object, camera, relativeDepth) {
+  const maxDepth = getMaxDepthForObject(object, camera);
+  const absoluteDepth = relativeDepth * maxDepth;
+  return {
+    width: maxWidthAtDepth(absoluteDepth, camera),
+    height: maxHeightAtDepth(absoluteDepth, camera),
+  };
+}
+
+function getAvailableDistance(object, camera, relativeDepth) {
+  const viewBox = getViewBox(object, camera, relativeDepth);
+  return {
+    width: object.geometry.parameters.width - viewBox.width,
+    height: object.geometry.parameters.height - viewBox.height,
+  };
+}
 
 class Renderer {
   scene;
   camera;
+  controls;
   renderer;
   parentDomElement;
 
@@ -17,16 +72,16 @@ class Renderer {
     this.parentDomElement.appendChild(this.renderer.domElement);
 
     this.scene = new three.Scene();
-    this.camera = new three.PerspectiveCamera(35, domElement.clientWidth / domElement.clientHeight, 1, 1000);
-    this.camera.position.z = 100;
+    this.camera = new three.PerspectiveCamera(35, domElement.clientWidth / domElement.clientHeight);
+    this.camera.position.set(0, 0, 100);
 
-    const light = new three.AmbientLight(0xffffff);
     // eslint-disable-next-line no-unused-vars
-    const orbitControl = new OrbitControl(this.camera);
+    this.controls = new OrbitControl(this.camera);
 
-    this.scene.add(light);
-    this.scene.add(this.camera);
-    this.scene.add(new three.AxisHelper(1000));
+    // TODO: scene-specific camera - probably not necessary?
+    // this.scene.add(new three.AmbientLight(0xffffff));
+    // this.scene.add(this.camera);
+    // this.scene.add(new three.AxisHelper(1000));
 
     this.resize();
     window.onresize = this.resize;
@@ -45,12 +100,18 @@ class Renderer {
   }
 
   setImage(texture) {
-    const imageAspect = texture.image.width / texture.image.height;
-    const plane = new three.Mesh(new three.PlaneGeometry(100, 100 / imageAspect), new three.MeshBasicMaterial({ map: texture }));
-    plane.name = 'plane';
-    plane.add(new three.AxisHelper(50));
+    const aspectRatio = texture.image.width / texture.image.height;
 
+    const plane = new three.Mesh(
+      new three.PlaneGeometry(1, 1 / aspectRatio),
+      new three.MeshBasicMaterial({ map: texture }),
+    );
+
+    plane.add(new three.AxesHelper(1)); // TODO: eventually remove this
     this.scene.add(plane);
+
+    move(plane, this.camera, 0, 0, 1);
+    this.camera.updateProjectionMatrix();
   }
 }
 
