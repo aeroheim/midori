@@ -10,42 +10,32 @@ import * as OrbitControls from 'three-orbit-controls'; // three.js OrbitControls
 // TODO: use typescript and add some basic types
 // TODO: accept optional easing/physics function for animation
 
-function move(object, camera, relativeX, relativeY, relativeDepth) {
-  const distance = getAvailableDistance(object, camera, relativeDepth);
-  const absoluteDepth = getMaxDepthForObject(object, camera) * relativeDepth;
-
-  // offset the viewbox's position so that it starts at the top-left corner, then move it
-  // based on the relative proportion to the available x and y distance the viewbox can be moved.
-  const absoluteX = -(distance.width / 2) + (relativeX * distance.width);
-  const absoluteY = (distance.height / 2) - (relativeY * distance.height);
-  camera.position.set(absoluteX, absoluteY, absoluteDepth);
-}
-
 const OrbitControl = OrbitControls.default(three);
 
 function getMaxDepthForObject(object, camera) {
-  const maxHeightDepth = object.geometry.parameters.height / (2 * Math.tan((camera.fov * (Math.PI / 180)) / 2));
-  const maxWidthDepth = maxHeightDepth * camera.aspect;
+  const verticalFovConstant = 2 * Math.tan(three.Math.degToRad(camera.fov) / 2);
+  const maxDepthForHeight = object.geometry.parameters.height / verticalFovConstant;
+  const maxDepthForWidth = object.geometry.parameters.width / (verticalFovConstant * camera.aspect);
 
   // NOTE: this depth assumes the camera is centered on the object
-  return Math.min(maxWidthDepth, maxHeightDepth) + object.position.z;
+  return Math.min(maxDepthForWidth, maxDepthForHeight) + object.position.z;
 }
 
-function maxHeightAtDepth(absoluteDepth, camera) {
+function getMaxHeightAtDepth(absoluteDepth, camera) {
   // fov is vertical fov in radians
   return 2 * Math.tan((camera.fov * (Math.PI / 180)) / 2) * absoluteDepth;
 }
 
-function maxWidthAtDepth(absoluteDepth, camera) {
-  return maxHeightAtDepth(absoluteDepth, camera) * camera.aspect;
+function getMaxWidthAtDepth(absoluteDepth, camera) {
+  return getMaxHeightAtDepth(absoluteDepth, camera) * camera.aspect;
 }
 
 function getViewBox(object, camera, relativeDepth) {
   const maxDepth = getMaxDepthForObject(object, camera);
   const absoluteDepth = relativeDepth * maxDepth;
   return {
-    width: maxWidthAtDepth(absoluteDepth, camera),
-    height: maxHeightAtDepth(absoluteDepth, camera),
+    width: getMaxWidthAtDepth(absoluteDepth, camera),
+    height: getMaxHeightAtDepth(absoluteDepth, camera),
   };
 }
 
@@ -55,6 +45,17 @@ function getAvailableDistance(object, camera, relativeDepth) {
     width: object.geometry.parameters.width - viewBox.width,
     height: object.geometry.parameters.height - viewBox.height,
   };
+}
+
+function move(object, camera, relativeX, relativeY, relativeDepth) {
+  const distance = getAvailableDistance(object, camera, relativeDepth);
+  const absoluteDepth = getMaxDepthForObject(object, camera) * relativeDepth;
+
+  // offset the viewbox's position so that it starts at the top-left corner, then move it
+  // based on the relative proportion to the available x and y distance the viewbox can be moved.
+  const absoluteX = -(distance.width / 2) + (relativeX * distance.width);
+  const absoluteY = (distance.height / 2) - (relativeY * distance.height);
+  camera.position.set(absoluteX, absoluteY, absoluteDepth);
 }
 
 class Renderer {
