@@ -26,6 +26,8 @@
     "webpack-dev-server": "^3.3.1"
   },
   "dependencies": {
+    "@babel/plugin-transform-runtime": "^7.6.2",
+    "@babel/runtime": "^7.6.3",
     "three": "^0.104.0",
     "three-orbit-controls": "^82.1.0"
   }
