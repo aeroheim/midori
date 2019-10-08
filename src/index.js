@@ -1,4 +1,5 @@
-import { Renderer, loadImage } from './renderer';
+import Renderer from './renderer';
+import Background from './background';
 
 let renderer;
 
@@ -9,16 +10,13 @@ function render() {
 
 function init() {
   renderer = new Renderer(document.getElementById('container'));
-
-  loadImage('images/1.jpg')
-    .then((texture) => {
-      renderer.setImage(texture);
+  Background.loadBackground('images/1.jpg')
+    .then((bg) => {
+      renderer.setBackground(bg);
+      console.log(bg);
       render();
     })
-    .catch((reason, error) => {
-      // eslint-disable-next-line no-console
-      console.log(`error: ${error} - ${reason}`);
-    });
+    .catch((reason, error) => console.log(`error: ${error} - ${reason}`));
 }
 
 // init renderer
