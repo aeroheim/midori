@@ -4,16 +4,16 @@ class Background {
   _scene;
   _plane;
 
-  constructor(texture = null) {
+  constructor(texture = null, material = null) {
     this._scene = new three.Scene();
-    if (texture) {
-      const aspectRatio = texture.image.width / texture.image.height;
-      this._plane = new three.Mesh(
-        new three.PlaneGeometry(1, 1 / aspectRatio),
-        new three.MeshBasicMaterial({ map: texture }),
-      );
-      this._scene.add(this._plane);
-    }
+    const aspectRatio = texture && texture.image
+      ? texture.image.width / texture.image.height
+      : 1;
+    this._plane = new three.Mesh(
+      new three.PlaneGeometry(1, 1 / aspectRatio),
+      material || new three.MeshBasicMaterial({ map: texture }),
+    );
+    this._scene.add(this._plane);
   }
 
   getThreeObject() {
@@ -22,6 +22,16 @@ class Background {
 
   getThreeScene() {
     return this._scene;
+  }
+
+  setSize(width, height) {
+    const aspectRatio = width / height;
+    this._plane.geometry.width = 1;
+    this._plane.geometry.height = 1 / aspectRatio;
+  }
+
+  setMaterial(material) {
+    this._plane.material = material;
   }
 
   /**

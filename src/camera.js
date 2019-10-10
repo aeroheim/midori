@@ -74,7 +74,7 @@ class Camera {
     return this._camera;
   }
 
-  resize(width, height) {
+  setSize(width, height) {
     this._camera.aspect = width / height;
     this._camera.updateProjectionMatrix();
   }
