@@ -72,6 +72,11 @@ class Renderer {
         .to({ opacity: 0 }, 1000)
         .easing(TWEEN.Easing.Cubic.Out)
         .onStart(() => {
+          console.log('new transition');
+
+          // TODO: set canvas material to shader material so we can apply crossfade shader
+          // this._canvasBackground.setMaterial();
+
           // old background/camera becomes transition background/camera
           this._transitionBackground = background;
           this._transitionCamera = this._primaryCamera;
@@ -80,10 +85,12 @@ class Renderer {
           this._primaryBackground = background;
           this._primaryCamera = new Camera(this._width, this._height); // TODO: consider cloning camera to preserve current movement?
 
-          console.log('new transition');
         })
         .onComplete(() => {
           console.log('finish transition');
+
+          // TODO: set canvas material back to regular material
+          // this._canvasBackground.setMaterial();
           this._transition = null;
         })
         .start();
@@ -114,9 +121,8 @@ class Renderer {
     this._renderer.setRenderTarget(null); // reset render target
   }
 
-  // TODO
-  // eventually there should be an fx scene as well
-  // maybe other scenes as well when necessary?
+  // TODO: eventually there should be an fx scene as well?
+  // we should use an EffectComposer, apply post-processing mainly to the canvas (and render targets if necessary)
   render() {
     // TODO figure out buffers
     if (this._transition) {
@@ -127,7 +133,6 @@ class Renderer {
 
     // TODO: canvas background should use a custom ShaderMaterial that diffuses between _primaryBuffer and _transitionBuffer
     // the two textures can be injected into the shader as uniforms.
-    // this._canvasBackground.setMaterial();
     this._canvasCamera.move(this._canvasBackground.getThreeObject(), 0, 0, 1);
 
     this._renderer.render(this._canvasBackground.getThreeScene(), this._canvasCamera.getThreeCamera());
