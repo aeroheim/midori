@@ -70,7 +70,7 @@ class Camera {
     this._camera = new three.PerspectiveCamera(fov, width / height);
   }
 
-  getThreeCamera() {
+  getCamera() {
     return this._camera;
   }
 

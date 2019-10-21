@@ -16,11 +16,11 @@ class Background {
     this._scene.add(this._plane);
   }
 
-  getThreeObject() {
+  getPlane() {
     return this._plane;
   }
 
-  getThreeScene() {
+  getScene() {
     return this._scene;
   }
 
