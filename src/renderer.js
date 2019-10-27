@@ -4,7 +4,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import TWEEN from '@tweenjs/tween.js';
 import { CrossFadeShader } from './shaders/cross-fade';
-import Camera from './camera';
+import BackgroundCamera from './camera';
 import Background from './background';
 
 class Renderer {
@@ -41,16 +41,16 @@ class Renderer {
 
     // main scene and camera
     this._background = new Background();
-    this._camera = new Camera(this._width, this._height);
+    this._camera = new BackgroundCamera(this._background, this._width, this._height);
 
     // spare scene, camera, and buffer for use in transitions
     this._transitionBuffer = new three.WebGLRenderTarget(this._width, this._height);
     this._transitionBackground = new Background();
-    this._transitionCamera = new Camera(this._width, this._height);
+    this._transitionCamera = new BackgroundCamera(this._transitionBackground, this._width, this._height);
 
     // post-processing pipeline
     this._composer = new EffectComposer(this._renderer);
-    this._renderPass = new RenderPass(this._background.getScene(), this._camera.getCamera());
+    this._renderPass = new RenderPass(this._background.scene, this._camera.camera);
     this._fadePass = new ShaderPass(CrossFadeShader);
     this._composer.addPass(this._renderPass);
     this._composer.addPass(this._fadePass);
@@ -66,12 +66,12 @@ class Renderer {
 
     // set main background, re-initialize camera
     this._background = background;
-    this._camera = new Camera(this._width, this._height);
-    this._camera.move(this._background.getPlane(), 0, 0, 1); // TODO: preserve or lead from old camera movement
+    this._camera = new BackgroundCamera(this._background, this._width, this._height);
+    this._camera.move(0, 0, 1); // TODO: preserve or lead from old camera movement
 
     // kick off transition in post-processing
-    this._renderPass.scene = this._background.getScene();
-    this._renderPass.camera = this._camera.getCamera();
+    this._renderPass.scene = this._background.scene;
+    this._renderPass.camera = this._camera.camera;
     this._fadePass.uniforms.transition.value = true;
     this._fadePass.uniforms.fadeTexture.value = this._transitionBuffer.texture;
   }
@@ -110,15 +110,9 @@ class Renderer {
     return false;
   }
 
-  /*
-  animate(effect, options) {
-
-  }
-  */
-
   renderToTarget(target, background, camera) {
     this._renderer.setRenderTarget(target);
-    this._renderer.render(background.getScene(), camera.getCamera());
+    this._renderer.render(background.scene, camera.camera);
     this._renderer.setRenderTarget(null);
   }
 
@@ -128,7 +122,7 @@ class Renderer {
     }
 
     this._composer.render();
-    // this._renderer.render(this._primaryBackground.getScene(), this._primaryCamera.getCamera());
+    // this._renderer.render(this._primaryBackground.scene, this._primaryCamera.camera);
   }
 }
 

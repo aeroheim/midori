@@ -16,11 +16,11 @@ class Background {
     this._scene.add(this._plane);
   }
 
-  getPlane() {
+  get plane() {
     return this._plane;
   }
 
-  getScene() {
+  get scene() {
     return this._scene;
   }
 
@@ -30,6 +30,7 @@ class Background {
     this._plane.geometry.height = 1 / aspectRatio;
   }
 
+  // TODO consider removing if unneeded
   setMaterial(material) {
     this._plane.material = material;
   }
