@@ -26,8 +26,8 @@ class Background {
 
   setSize(width, height) {
     const aspectRatio = width / height;
-    this._plane.geometry.width = 1;
-    this._plane.geometry.height = 1 / aspectRatio;
+    this._plane.geometry.parameters.width = 1;
+    this._plane.geometry.parameters.height = 1 / aspectRatio;
   }
 
   // TODO consider removing if unneeded
