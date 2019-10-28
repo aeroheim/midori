@@ -1,6 +1,7 @@
 
 import * as three from 'three';
-import { Vector3 } from 'three';
+import { Vector3, Vector2 } from 'three';
+import TWEEN from '@tweenjs/tween.js';
 
 /**
  * Returns the visible width at the given depth in world units.
@@ -39,11 +40,11 @@ function getMaxFullScreenDepthForObject(object, camera) {
  * Returns the visible width and height at the given depth in world units.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
- * @param {Number} relativeDepth - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
  */
-function getViewBox(object, camera, relativeDepth) {
+function getViewBox(object, camera, relativeZ) {
   const maxDepth = getMaxFullScreenDepthForObject(object, camera);
-  const absoluteDepth = relativeDepth * maxDepth;
+  const absoluteDepth = relativeZ * maxDepth;
   return {
     width: getVisibleWidthAtDepth(absoluteDepth, camera),
     height: getVisibleHeighAtDepth(absoluteDepth, camera),
@@ -54,10 +55,10 @@ function getViewBox(object, camera, relativeDepth) {
  * Returns the available x and y distance a camera can be panned at the given depth in world units.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
- * @param {Number} relativeDepth - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
  */
-function getAvailablePanDistance(object, camera, relativeDepth) {
-  const viewBox = getViewBox(object, camera, relativeDepth);
+function getAvailablePanDistance(object, camera, relativeZ) {
+  const viewBox = getViewBox(object, camera, relativeZ);
   return {
     width: object.geometry.parameters.width - viewBox.width,
     height: object.geometry.parameters.height - viewBox.height,
@@ -70,13 +71,16 @@ function getAvailablePanDistance(object, camera, relativeDepth) {
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeX - a value between 0 and 1 that represents the z position.
  * @param {Number} relativeY - a value between 0 and 1 that represents the y position.
- * @param {Number} relativeDepth - a value between 0 and 1 that represents the z position.
+ * @param {Number} relativeZ - a value between 0 and 1 that represents the z position.
  */
-function toAbsolutePosition(object, camera, relativeX, relativeY, relativeDepth) {
-  const panDistance = getAvailablePanDistance(object, camera, relativeDepth);
+function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ) {
+  const panDistance = getAvailablePanDistance(object, camera, relativeZ);
+
+  // offset the viewbox's position so that it starts at the top-left corner, then move it
+  // based on the relative proportion to the available x and y distance the viewbox can be moved.
   const absoluteX = -(panDistance.width / 2) + (relativeX * panDistance.width);
   const absoluteY = (panDistance.height / 2) - (relativeY * panDistance.height);
-  const absoluteDepth = getMaxFullScreenDepthForObject(object, camera) * relativeDepth;
+  const absoluteDepth = getMaxFullScreenDepthForObject(object, camera) * relativeZ;
   return new Vector3(absoluteX, absoluteY, absoluteDepth);
 }
 
@@ -88,21 +92,29 @@ function toAbsolutePosition(object, camera, relativeX, relativeY, relativeDepth)
  * @param {Number} absoluteY - an absolute y position in world units.
  * @param {Number} absoluteZ - an absolute z position in world units.
  */
-function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteDepth) {
-  const relativeDepth = absoluteDepth / getMaxFullScreenDepthForObject(object, camera);
-  const panDistance = getAvailablePanDistance(object, camera, relativeDepth);
+function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteZ) {
+  const relativeZ = absoluteZ / getMaxFullScreenDepthForObject(object, camera);
+  const panDistance = getAvailablePanDistance(object, camera, relativeZ);
   const relativeX = (absoluteX / panDistance.width) + ((panDistance.width / 2) / panDistance.width);
   const relativeY = panDistance.height === 0 ? 0 : Math.abs((absoluteY / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
-  return new Vector3(relativeX, relativeY, relativeDepth);
+  return new Vector3(relativeX, relativeY, relativeZ);
 }
 
 class BackgroundCamera {
   _object;
   _camera;
+  _position; // the current relative position of the camera
+  _moveTransition;
+
+  _swayOffset = new Vector2(0, 0); // the current relative vector offset to sway away from the camera
+  _swayDistance;
+  _swayCycleInSeconds;
+  _swayTransition;
 
   constructor(background, width, height, fov = 35) {
     this._object = background.plane;
     this._camera = new three.PerspectiveCamera(fov, width / height);
+    this._position = new Vector3(0, 0, 1);
   }
 
   get camera() {
@@ -123,23 +135,85 @@ class BackgroundCamera {
   }
 
   /**
-   * Updates the camera position. Should be called on every render frame.
+   * Sways the camera around its current position repeatedly.
+   * @param {Number} relativeDistance - the relative distance allowed for swaying.
+   * @param {Number} cycleInSeconds - the length of a sway in seconds.
    */
-  updateCamera() {
-    // TODO implement shake
-    return this;
+  sway(relativeDistance, cycleInSeconds) {
+    this._swayDistance = relativeDistance || this._swayDistance;
+    this._swayCycleInSeconds = cycleInSeconds || this._swayCycleInSeconds;
+
+    // TODO support rotations
+    // TODO implement z-sway
+    const swayMinX = Math.max(0, this._position.x - this._swayDistance);
+    const swayMaxX = Math.min(1, this._position.x + this._swayDistance);
+    const swayX = Math.random() * (swayMaxX - swayMinX) + swayMinX;
+
+    const swayMinY = Math.max(0, this._position.y - this._swayDistance);
+    const swayMaxY = Math.min(1, this._position.y + this._swayDistance);
+    const swayY = Math.random() * (swayMaxY - swayMinY) + swayMinY;
+
+    this._swayTransition = new TWEEN.Tween({ offsetX: this._swayOffset.x, offsetY: this._swayOffset.y })
+      .to({ offsetX: swayX - this._position.x, offsetY: swayY - this._position.y }, this._swayCycleInSeconds * 1000)
+      .easing(TWEEN.Easing.Sinusoidal.InOut)
+      .onStart(() => {
+        // console.log('sway start');
+      })
+      .onUpdate(({ offsetX, offsetY }) => {
+        this._swayOffset = new Vector2(offsetX, offsetY);
+      })
+      .onComplete(() => {
+        // console.log('sway end');
+        this._swayTransition = null;
+        // TODO check boolean to allow disabling sway
+        this.sway();
+      })
+      .start();
   }
 
   /**
    * Moves the camera to a relative position on the background.
-   * @param {Number} relativeX - value between 0 and 1 that represents the x position based on the relativeDepth.
-   * @param {Number} relativeY - value between 0 and 1 that represents the y position based on the relativeDepth.
-   * @param {Number} relativeDepth - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+   * @param {Number} relativeX - value between 0 and 1 that represents the x position based on the relativeZ.
+   * @param {Number} relativeY - value between 0 and 1 that represents the y position based on the relativeZ.
+   * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
    */
-  move(relativeX, relativeY, relativeDepth) {
-    // offset the viewbox's position so that it starts at the top-left corner, then move it
-    // based on the relative proportion to the available x and y distance the viewbox can be moved.
-    const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(this._object, this._camera, relativeX, relativeY, relativeDepth);
+  // TODO accept a transition as params
+  move(relativeX, relativeY, relativeZ) {
+    // const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(this._object, this._camera, relativeX, relativeY, relativeZ);
+
+    // TODO revisit the set - this will most likely be changed over time due to tweening (and other effects like sway)
+    this._moveTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
+      .to({ x: relativeX, y: relativeY, z: relativeZ }, 1000)
+      .easing(TWEEN.Easing.Quartic.Out)
+      .onStart(() => {
+        // console.log('move start');
+      })
+      .onUpdate(({ x, y, z }) => {
+        this._position = new Vector3(x, y, z);
+      })
+      .onComplete(() => {
+        // console.log('move end');
+        this._moveTransition = null;
+      })
+      .start();
+
+    // this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
+    // this._camera.updateProjectionMatrix();
+  }
+
+  /**
+   * Updates the camera position. Should be called on every render frame.
+   */
+  update() {
+    const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
+      this._object,
+      this._camera,
+      // Ensure that the position is always valid despite sway
+      // TODO moving the camera in-between sway cycles does not guarantee the validity of the position, so coercion is requried
+      Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
+      Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
+      this._position.z,
+    );
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
     this._camera.updateProjectionMatrix();
   }

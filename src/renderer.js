@@ -37,7 +37,9 @@ class Renderer {
     this._renderer.setSize(this._width, this._height);
     this._domElement.appendChild(this._renderer.domElement);
     this.onResize = this.onResize.bind(this);
+    this.onKeyUp = this.onKeyUp.bind(this); // TODO: temp for debugging purposes
     window.onresize = this.onResize;
+    window.onkeyup = this.onKeyUp;
 
     // main scene and camera
     this._background = new Background();
@@ -66,8 +68,10 @@ class Renderer {
 
     // set main background, re-initialize camera
     this._background = background;
+    // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
-    this._camera.move(0, 0, 1); // TODO: preserve or lead from old camera movement
+    this._camera.sway(0.1, 2);
+    this._camera.move(0, 0, 1);
 
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
@@ -91,6 +95,11 @@ class Renderer {
     this._camera.setSize(this._width, this._height);
     this._transitionCamera.setSize(this._width, this._height);
     this._transitionBuffer.setSize(this._width, this._height);
+  }
+
+  // TODO: temp mainly for debugging purposes
+  onKeyUp() {
+    this._camera.move(Math.random(), Math.random(), Math.random() * (0.5) + 0.5);
   }
 
   // TODO: generalize transitions
@@ -121,6 +130,7 @@ class Renderer {
       this.renderToTarget(this._transitionBuffer, this._transitionBackground, this._transitionCamera);
     }
 
+    this._camera.update();
     this._composer.render();
     // this._renderer.render(this._primaryBackground.scene, this._primaryCamera.camera);
   }
