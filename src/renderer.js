@@ -1,4 +1,4 @@
-import * as three from 'three';
+import { WebGLRenderer, WebGLRenderTarget, Vector3 } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
@@ -32,7 +32,7 @@ class Renderer {
     this._height = domElement.clientHeight;
 
     // initialize renderer
-    this._renderer = new three.WebGLRenderer();
+    this._renderer = new WebGLRenderer();
     this._renderer.domElement.id = 'midori';
     this._renderer.setSize(this._width, this._height);
     this._domElement.appendChild(this._renderer.domElement);
@@ -46,7 +46,7 @@ class Renderer {
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
 
     // spare scene, camera, and buffer for use in transitions
-    this._transitionBuffer = new three.WebGLRenderTarget(this._width, this._height);
+    this._transitionBuffer = new WebGLRenderTarget(this._width, this._height);
     this._transitionBackground = new Background();
     this._transitionCamera = new BackgroundCamera(this._transitionBackground, this._width, this._height);
 
@@ -70,8 +70,8 @@ class Renderer {
     this._background = background;
     // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
-    this._camera.sway(0.1, 2);
-    this._camera.move(0, 0, 1);
+    this._camera.sway(new Vector3(0.1, 0.1, 0.01), 2);
+    this._camera.move(Math.random(), Math.random(), Math.random() * (0.5) + 0.5);
 
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;

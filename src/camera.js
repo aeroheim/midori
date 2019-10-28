@@ -1,6 +1,5 @@
 
-import * as three from 'three';
-import { Vector3, Vector2 } from 'three';
+import { PerspectiveCamera, Vector3, Math as threeMath } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
 /**
@@ -28,7 +27,7 @@ function getVisibleHeighAtDepth(absoluteDepth, camera) {
  * @param {three.Camera} camera - a three.js camera.
  */
 function getMaxFullScreenDepthForObject(object, camera) {
-  const verticalFovConstant = 2 * Math.tan(three.Math.degToRad(camera.fov) / 2);
+  const verticalFovConstant = 2 * Math.tan(threeMath.degToRad(camera.fov) / 2);
   const maxDepthForHeight = object.geometry.parameters.height / verticalFovConstant;
   const maxDepthForWidth = object.geometry.parameters.width / (verticalFovConstant * camera.aspect);
 
@@ -106,14 +105,14 @@ class BackgroundCamera {
   _position; // the current relative position of the camera
   _moveTransition;
 
-  _swayOffset = new Vector2(0, 0); // the current relative vector offset to sway away from the camera
-  _swayDistance;
+  _swayOffset = new Vector3(0, 0, 0); // the current relative vector offset to sway away from the camera
+  _swayDistance = new Vector3(0, 0, 0);
   _swayCycleInSeconds;
   _swayTransition;
 
   constructor(background, width, height, fov = 35) {
     this._object = background.plane;
-    this._camera = new three.PerspectiveCamera(fov, width / height);
+    this._camera = new PerspectiveCamera(fov, width / height);
     this._position = new Vector3(0, 0, 1);
   }
 
@@ -136,7 +135,7 @@ class BackgroundCamera {
 
   /**
    * Sways the camera around its current position repeatedly.
-   * @param {Number} relativeDistance - the relative distance allowed for swaying.
+   * @param {three.Vector3} relativeDistance - the relative distances allowed on each axis for swaying.
    * @param {Number} cycleInSeconds - the length of a sway in seconds.
    */
   sway(relativeDistance, cycleInSeconds) {
@@ -144,29 +143,36 @@ class BackgroundCamera {
     this._swayCycleInSeconds = cycleInSeconds || this._swayCycleInSeconds;
 
     // TODO support rotations
-    // TODO implement z-sway
-    const swayMinX = Math.max(0, this._position.x - this._swayDistance);
-    const swayMaxX = Math.min(1, this._position.x + this._swayDistance);
+    const swayMinX = Math.max(0, this._position.x - this._swayDistance.x);
+    const swayMaxX = Math.min(1, this._position.x + this._swayDistance.x);
     const swayX = Math.random() * (swayMaxX - swayMinX) + swayMinX;
-
-    const swayMinY = Math.max(0, this._position.y - this._swayDistance);
-    const swayMaxY = Math.min(1, this._position.y + this._swayDistance);
+    const swayMinY = Math.max(0, this._position.y - this._swayDistance.y);
+    const swayMaxY = Math.min(1, this._position.y + this._swayDistance.y);
     const swayY = Math.random() * (swayMaxY - swayMinY) + swayMinY;
+    const swayMinZ = Math.max(0, this._position.z - this._swayDistance.z);
+    const swayMaxZ = Math.min(1, this._position.z + this._swayDistance.z);
+    const swayZ = Math.random() * (swayMaxZ - swayMinZ) + swayMinZ;
 
-    this._swayTransition = new TWEEN.Tween({ offsetX: this._swayOffset.x, offsetY: this._swayOffset.y })
-      .to({ offsetX: swayX - this._position.x, offsetY: swayY - this._position.y }, this._swayCycleInSeconds * 1000)
+    this._swayTransition = new TWEEN.Tween({
+      offsetX: this._swayOffset.x,
+      offsetY: this._swayOffset.y,
+      offsetZ: this._swayOffset.z,
+    })
+      .to({
+        offsetX: swayX - this._position.x,
+        offsetY: swayY - this._position.y,
+        offsetZ: swayZ - this._position.z,
+      }, this._swayCycleInSeconds * 1000)
       .easing(TWEEN.Easing.Sinusoidal.InOut)
       .onStart(() => {
         // console.log('sway start');
       })
-      .onUpdate(({ offsetX, offsetY }) => {
-        this._swayOffset = new Vector2(offsetX, offsetY);
+      .onUpdate(({ offsetX, offsetY, offsetZ }) => {
+        this._swayOffset = new Vector3(offsetX, offsetY, offsetZ);
       })
       .onComplete(() => {
         // console.log('sway end');
         this._swayTransition = null;
-        // TODO check boolean to allow disabling sway
-        this.sway();
       })
       .start();
   }
@@ -179,9 +185,6 @@ class BackgroundCamera {
    */
   // TODO accept a transition as params
   move(relativeX, relativeY, relativeZ) {
-    // const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(this._object, this._camera, relativeX, relativeY, relativeZ);
-
-    // TODO revisit the set - this will most likely be changed over time due to tweening (and other effects like sway)
     this._moveTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
       .to({ x: relativeX, y: relativeY, z: relativeZ }, 1000)
       .easing(TWEEN.Easing.Quartic.Out)
@@ -196,15 +199,17 @@ class BackgroundCamera {
         this._moveTransition = null;
       })
       .start();
-
-    // this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
-    // this._camera.updateProjectionMatrix();
   }
 
   /**
    * Updates the camera position. Should be called on every render frame.
    */
   update() {
+    if (!this._swayTransition) {
+      // TODO check boolean to allow disabling sway
+      this.sway();
+    }
+
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
       this._object,
       this._camera,
@@ -212,7 +217,7 @@ class BackgroundCamera {
       // TODO moving the camera in-between sway cycles does not guarantee the validity of the position, so coercion is requried
       Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
       Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
-      this._position.z,
+      Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
     );
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
     this._camera.updateProjectionMatrix();
