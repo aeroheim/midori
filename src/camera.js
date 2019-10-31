@@ -25,9 +25,9 @@ function getVisibleHeightAtDepth(absoluteZ, camera) {
  * Returns the maximum depth for an object such that it is still fullscreen.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
- * @param {number} rotateZ - the z-axis rotation angle of the camera in degrees.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getMaxFullScreenDepthForObject(object, camera, rotateZ = 15) {
+function getMaxFullScreenDepthForObject(object, camera, rotateZ = 0) {
   // When the camera is rotated, we treat the object as if it were rotated instead and
   // use the width/height of the maximal inner bounded box that fits within the object.
   // This ensures that the maximum depth calculated will always allow for the object to be
@@ -50,10 +50,9 @@ function getMaxFullScreenDepthForObject(object, camera, rotateZ = 15) {
  * degrees), computes the width and height of the largest possible
  * axis-aligned rectangle (maximal area) within the rotated rectangle.
  * @param {three.Object3D} object - a three.js object.
- * @param {number} angleInDegrees - the angle to rotate in degrees.
+ * @param {number} angleInRadians - the angle to rotate in radians.
  */
-function getInnerBoundedBoxForRotation(object, angleInDegrees) {
-  const angleInRadians = threeMath.degToRad(angleInDegrees);
+function getInnerBoundedBoxForRotation(object, angleInRadians) {
   const { width, height } = object.geometry.parameters;
   const widthIsLonger = width > height;
   const longSide = widthIsLonger ? width : height;
@@ -84,9 +83,10 @@ function getInnerBoundedBoxForRotation(object, angleInDegrees) {
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getViewBox(object, camera, relativeZ) {
-  const maxDepth = getMaxFullScreenDepthForObject(object, camera);
+function getViewBox(object, camera, relativeZ, rotateZ) {
+  const maxDepth = getMaxFullScreenDepthForObject(object, camera, rotateZ);
   const absoluteDepth = relativeZ * maxDepth;
   return {
     width: getVisibleWidthAtDepth(absoluteDepth, camera),
@@ -99,14 +99,15 @@ function getViewBox(object, camera, relativeZ) {
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
- * @param {number} rotateZ - the z-axis rotation angle of the camera in degrees.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
+function getAvailablePanDistance(object, camera, relativeZ, rotateZ = 0) {
   // TODO: need to use transformed object width/height that factors in rotation
-  const viewBox = getViewBox(object, camera, relativeZ);
+  const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
+  const viewBox = getViewBox(object, camera, relativeZ, rotateZ);
   return {
-    width: object.geometry.parameters.width - viewBox.width,
-    height: object.geometry.parameters.height - viewBox.height,
+    width: width - viewBox.width,
+    height: height - viewBox.height,
   };
 }
 
@@ -117,15 +118,16 @@ function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
  * @param {Number} relativeX - a value between 0 and 1 that represents the z position.
  * @param {Number} relativeY - a value between 0 and 1 that represents the y position.
  * @param {Number} relativeZ - a value between 0 and 1 that represents the z position.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ) {
-  const panDistance = getAvailablePanDistance(object, camera, relativeZ);
+function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ, rotateZ = 0) {
+  const panDistance = getAvailablePanDistance(object, camera, relativeZ, rotateZ);
 
   // offset the viewbox's position so that it starts at the top-left corner, then move it
   // based on the relative proportion to the available x and y distance the viewbox can be moved.
   const absoluteX = -(panDistance.width / 2) + (relativeX * panDistance.width);
   const absoluteY = (panDistance.height / 2) - (relativeY * panDistance.height);
-  const absoluteDepth = getMaxFullScreenDepthForObject(object, camera) * relativeZ;
+  const absoluteDepth = getMaxFullScreenDepthForObject(object, camera, rotateZ) * relativeZ;
   return new Vector3(absoluteX, absoluteY, absoluteDepth);
 }
 
@@ -136,10 +138,11 @@ function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ) {
  * @param {Number} absoluteX - an absolute x position in world units.
  * @param {Number} absoluteY - an absolute y position in world units.
  * @param {Number} absoluteZ - an absolute z position in world units.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteZ) {
-  const relativeZ = absoluteZ / getMaxFullScreenDepthForObject(object, camera);
-  const panDistance = getAvailablePanDistance(object, camera, relativeZ);
+function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteZ, rotateZ = 0) {
+  const relativeZ = absoluteZ / getMaxFullScreenDepthForObject(object, camera, rotateZ);
+  const panDistance = getAvailablePanDistance(object, camera, relativeZ, rotateZ);
   const relativeX = (absoluteX / panDistance.width) + ((panDistance.width / 2) / panDistance.width);
   const relativeY = panDistance.height === 0 ? 0 : Math.abs((absoluteY / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
   return new Vector3(relativeX, relativeY, relativeZ);
@@ -160,7 +163,7 @@ class BackgroundCamera {
     this._object = background.plane;
     this._camera = new PerspectiveCamera(fov, width / height);
     this._position = new Vector3(0, 0, 1);
-    this._camera.rotateZ(threeMath.degToRad(15));
+    this._camera.rotateZ(threeMath.degToRad(0));
   }
 
   get camera() {
@@ -168,10 +171,10 @@ class BackgroundCamera {
   }
 
   get position() {
-    const { x: absoluteX, y: absoluteY, z: absoluteZ } = this._camera.position;
+    const { x: absoluteX, y: absoluteY, z: absoluteZ, rotateZ } = this._camera.position;
     return {
       absolute: this._camera.position,
-      relative: toRelativePosition(this._object, this._camera, absoluteX, absoluteY, absoluteZ),
+      relative: toRelativePosition(this._object, this._camera, absoluteX, absoluteY, absoluteZ, rotateZ),
     };
   }
 
@@ -234,8 +237,10 @@ class BackgroundCamera {
    * @param {Number} relativeX - value between 0 and 1 that represents the x position based on the relativeZ.
    * @param {Number} relativeY - value between 0 and 1 that represents the y position based on the relativeZ.
    * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+   * @param {number} rotateZ - z-axis angle in degrees to rotate the camera.
    */
   // TODO accept a transition as params
+  // TODO support rotate angles
   move(relativeX, relativeY, relativeZ) {
     this._moveTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
       .to({ x: relativeX, y: relativeY, z: relativeZ }, 1000)
@@ -265,11 +270,12 @@ class BackgroundCamera {
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
       this._object,
       this._camera,
-      // Ensure that the position is always valid despite sway
-      // TODO moving the camera in-between sway cycles does not guarantee the validity of the position, so coercion is requried
+      // Ensure that the position is always valid despite sway.
+      // Moving the camera in-between ongoing sway cycles does not always guarantee the validity of the position, so coercion is required.
       Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
       Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
       Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
+      this._camera.rotation.z,
     );
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
     this._camera.updateProjectionMatrix();
