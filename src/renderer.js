@@ -70,7 +70,7 @@ class Renderer {
     this._background = background;
     // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
-    this._camera.sway(new Vector3(0.1, 0.1, 0.01), 2);
+    this._camera.sway(new Vector3(0.1, 0.1, 0.025), 2);
     this._camera.move(Math.random(), Math.random(), Math.random() * (0.5) + 0.5);
 
     // kick off transition in post-processing
