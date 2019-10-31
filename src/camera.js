@@ -25,14 +25,15 @@ function getVisibleHeightAtDepth(absoluteZ, camera) {
  * Returns the maximum depth for an object such that it is still fullscreen.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in degrees.
  */
-function getMaxFullScreenDepthForObject(object, camera, cameraRotateZ = 15) {
+function getMaxFullScreenDepthForObject(object, camera, rotateZ = 15) {
   // When the camera is rotated, we treat the object as if it were rotated instead and
   // use the width/height of the maximal inner bounded box that fits within the object.
   // This ensures that the maximum depth calculated will always allow for the object to be
   // fullscreen even if rotated.
   // NOTE: if there is no rotation (i.e 0 degs) then the object's width and height will be used as normal.
-  const { width, height } = getInnerBoundedBoxForRotation(object, cameraRotateZ);
+  const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
 
   const verticalFovConstant = 2 * Math.tan(threeMath.degToRad(camera.fov) / 2);
   const maxDepthForHeight = width / verticalFovConstant;
@@ -98,8 +99,9 @@ function getViewBox(object, camera, relativeZ) {
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in degrees.
  */
-function getAvailablePanDistance(object, camera, relativeZ) {
+function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
   // TODO: need to use transformed object width/height that factors in rotation
   const viewBox = getViewBox(object, camera, relativeZ);
   return {
