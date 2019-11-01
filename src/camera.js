@@ -27,7 +27,7 @@ function getVisibleHeightAtDepth(absoluteZ, camera) {
  * @param {three.Camera} camera - a three.js camera.
  * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getMaxFullScreenDepthForObject(object, camera, rotateZ = 0) {
+function getMaxFullScreenDepthForObject(object, camera, rotateZ) {
   // When the camera is rotated, we treat the object as if it were rotated instead and
   // use the width/height of the maximal inner bounded box that fits within the object.
   // This ensures that the maximum depth calculated will always allow for the object to be
@@ -36,9 +36,8 @@ function getMaxFullScreenDepthForObject(object, camera, rotateZ = 0) {
   const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
 
   const verticalFovConstant = 2 * Math.tan(threeMath.degToRad(camera.fov) / 2);
-  const maxDepthForHeight = width / verticalFovConstant;
-  const maxDepthForWidth = height / (verticalFovConstant * camera.aspect);
-
+  const maxDepthForWidth = width / (verticalFovConstant * camera.aspect);
+  const maxDepthForHeight = height / verticalFovConstant;
 
   // NOTE: this depth assumes the camera is centered on the object.
   return Math.min(maxDepthForWidth, maxDepthForHeight) + object.position.z;
@@ -47,22 +46,24 @@ function getMaxFullScreenDepthForObject(object, camera, rotateZ = 0) {
  * Adapted from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders/16778797#16778797.
  *
  * Given a rectangle of size w x h that has been rotated by 'angle' (in
- * degrees), computes the width and height of the largest possible
+ * radians), computes the width and height of the largest possible
  * axis-aligned rectangle (maximal area) within the rotated rectangle.
  * @param {three.Object3D} object - a three.js object.
  * @param {number} angleInRadians - the angle to rotate in radians.
  */
-function getInnerBoundedBoxForRotation(object, angleInRadians) {
+function getInnerBoundedBoxForRotation(object, angleInRadians = 0) {
   const { width, height } = object.geometry.parameters;
-  const widthIsLonger = width > height;
+  const widthIsLonger = width >= height;
   const longSide = widthIsLonger ? width : height;
   const shortSide = widthIsLonger ? height : width;
   const sinAngle = Math.abs(Math.sin(angleInRadians));
   const cosAngle = Math.abs(Math.cos(angleInRadians));
 
-  // half constrained case: two crop corners touch the longer side,
-  // the other two corners are on the mid-line parallel to the longer line
-  if ((shortSide <= 2 * sinAngle * cosAngle * longSide) || (Math.abs(Math.sin(angleInRadians) - Math.cos(angleInRadians)) < 1e-10)) {
+  // since the solutions for angle, -angle and 180-angle are all the same,
+  // if suffices to look at the first quadrant and the absolute values of sin,cos:
+  if ((shortSide <= 2 * sinAngle * cosAngle * longSide) || (Math.abs(sinAngle - cosAngle) < 1e-10)) {
+    // half constrained case: two crop corners touch the longer side,
+    // the other two corners are on the mid-line parallel to the longer line
     const x = 0.5 * shortSide;
     return {
       width: widthIsLonger ? x / sinAngle : x / cosAngle,
@@ -101,8 +102,7 @@ function getViewBox(object, camera, relativeZ, rotateZ) {
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
  * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getAvailablePanDistance(object, camera, relativeZ, rotateZ = 0) {
-  // TODO: need to use transformed object width/height that factors in rotation
+function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
   const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
   const viewBox = getViewBox(object, camera, relativeZ, rotateZ);
   return {
@@ -120,15 +120,19 @@ function getAvailablePanDistance(object, camera, relativeZ, rotateZ = 0) {
  * @param {Number} relativeZ - a value between 0 and 1 that represents the z position.
  * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ, rotateZ = 0) {
+function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ, rotateZ) {
   const panDistance = getAvailablePanDistance(object, camera, relativeZ, rotateZ);
-
   // offset the viewbox's position so that it starts at the top-left corner, then move it
   // based on the relative proportion to the available x and y distance the viewbox can be moved.
   const absoluteX = -(panDistance.width / 2) + (relativeX * panDistance.width);
   const absoluteY = (panDistance.height / 2) - (relativeY * panDistance.height);
   const absoluteDepth = getMaxFullScreenDepthForObject(object, camera, rotateZ) * relativeZ;
-  return new Vector3(absoluteX, absoluteY, absoluteDepth);
+  return new Vector3(
+    // Make sure to rotate the x/y positions to get the actual correct positions relative to the camera rotation.
+    absoluteX * Math.cos(rotateZ) - absoluteY * Math.sin(rotateZ),
+    absoluteX * Math.sin(rotateZ) + absoluteY * Math.cos(rotateZ),
+    absoluteDepth,
+  );
 }
 
 /**
@@ -140,11 +144,12 @@ function toAbsolutePosition(object, camera, relativeX, relativeY, relativeZ, rot
  * @param {Number} absoluteZ - an absolute z position in world units.
  * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteZ, rotateZ = 0) {
+function toRelativePosition(object, camera, absoluteX, absoluteY, absoluteZ, rotateZ) {
   const relativeZ = absoluteZ / getMaxFullScreenDepthForObject(object, camera, rotateZ);
   const panDistance = getAvailablePanDistance(object, camera, relativeZ, rotateZ);
   const relativeX = (absoluteX / panDistance.width) + ((panDistance.width / 2) / panDistance.width);
   const relativeY = panDistance.height === 0 ? 0 : Math.abs((absoluteY / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
+  // TODO: make this support conversions from rotated absolute positions
   return new Vector3(relativeX, relativeY, relativeZ);
 }
 
@@ -163,7 +168,7 @@ class BackgroundCamera {
     this._object = background.plane;
     this._camera = new PerspectiveCamera(fov, width / height);
     this._position = new Vector3(0, 0, 1);
-    this._camera.rotateZ(threeMath.degToRad(0));
+    this._camera.rotateZ(threeMath.degToRad(5));
   }
 
   get camera() {

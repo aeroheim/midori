@@ -60,7 +60,7 @@ class Renderer {
 
   // TODO
   startTransition(background) {
-    console.log('start transition');
+    // console.log('start transition');
 
     // old background and camera are used in the transition
     this._transitionBackground = this._background;
@@ -82,7 +82,7 @@ class Renderer {
 
   // TODO
   endTransition() {
-    console.log('end transition');
+    // console.log('end transition');
     this._fadePass.uniforms.transition.value = false;
     this._fadePass.uniforms.fadeTexture.value = false;
     this._transition = null;
