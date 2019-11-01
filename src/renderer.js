@@ -71,7 +71,7 @@ class Renderer {
     // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
     this._camera.sway(new Vector3(0.1, 0.1, 0.025), 2);
-    this._camera.move(Math.random(), Math.random(), Math.random() * (0.5) + 0.5);
+    this._camera.move(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5, -5 + Math.random() * 10);
 
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
@@ -99,7 +99,7 @@ class Renderer {
 
   // TODO: temp mainly for debugging purposes
   onKeyUp() {
-    this._camera.move(Math.random(), Math.random(), Math.random() * (0.5) + 0.5);
+    this._camera.move(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5, -5 + Math.random() * 10);
   }
 
   // TODO: generalize transitions

@@ -157,6 +157,7 @@ class BackgroundCamera {
   _object;
   _camera;
   _position; // the current relative position of the camera
+  _tilt = 0; // the z-rotation of the camera
   _moveTransition;
 
   _swayOffset = new Vector3(0, 0, 0); // the current relative vector offset to sway away from the camera
@@ -168,7 +169,6 @@ class BackgroundCamera {
     this._object = background.plane;
     this._camera = new PerspectiveCamera(fov, width / height);
     this._position = new Vector3(0, 0, 1);
-    this._camera.rotateZ(threeMath.degToRad(5));
   }
 
   get camera() {
@@ -246,15 +246,16 @@ class BackgroundCamera {
    */
   // TODO accept a transition as params
   // TODO support rotate angles
-  move(relativeX, relativeY, relativeZ) {
-    this._moveTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
-      .to({ x: relativeX, y: relativeY, z: relativeZ }, 1000)
+  move(relativeX, relativeY, relativeZ, rotateZ = 0) {
+    this._moveTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z, tilt: this._tilt })
+      .to({ x: relativeX, y: relativeY, z: relativeZ, tilt: threeMath.degToRad(rotateZ) }, 1000)
       .easing(TWEEN.Easing.Quartic.Out)
       .onStart(() => {
         // console.log('move start');
       })
-      .onUpdate(({ x, y, z }) => {
+      .onUpdate(({ x, y, z, tilt }) => {
         this._position = new Vector3(x, y, z);
+        this._tilt = tilt;
       })
       .onComplete(() => {
         // console.log('move end');
@@ -280,9 +281,10 @@ class BackgroundCamera {
       Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
       Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
       Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
-      this._camera.rotation.z,
+      this._tilt,
     );
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
+    this._camera.rotation.z = this._tilt;
     this._camera.updateProjectionMatrix();
   }
 }
