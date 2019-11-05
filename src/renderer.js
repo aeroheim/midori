@@ -1,10 +1,10 @@
-import { WebGLRenderer, WebGLRenderTarget, Vector3 } from 'three';
+import { WebGLRenderer, WebGLRenderTarget, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import TWEEN from '@tweenjs/tween.js';
 import { CrossFadeShader } from './shaders/cross-fade';
-import BackgroundCamera from './camera';
+import { CameraVector, BackgroundCamera } from './camera';
 import Background from './background';
 
 class Renderer {
@@ -70,8 +70,9 @@ class Renderer {
     this._background = background;
     // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
-    this._camera.sway(new Vector3(0.1, 0.1, 0.025), 2);
-    this._camera.move(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5, -5 + Math.random() * 10);
+    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), 1, TWEEN.Easing.Quartic.Out);
+    this._camera.sway(new CameraVector(0.1, 0.1, 0.025, threeMath.degToRad(2)), 2);
+    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), 1, TWEEN.Easing.Quartic.Out);
 
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
@@ -99,7 +100,8 @@ class Renderer {
 
   // TODO: temp mainly for debugging purposes
   onKeyUp() {
-    this._camera.move(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5, -5 + Math.random() * 10);
+    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), 1, TWEEN.Easing.Quartic.Out);
+    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), 1, TWEEN.Easing.Quartic.Out);
   }
 
   // TODO: generalize transitions
