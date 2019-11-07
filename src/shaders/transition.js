@@ -1,15 +1,12 @@
 /**
  * @author aeroheim / http://aeroheim.moe/
- *
- * Full-screen textured quad shader
  */
 
-const CrossFadeShader = {
+const TransitionShader = {
   uniforms: {
     tDiffuse: { value: null },
-    fadeTexture: { value: null },
+    tDiffuseTarget: { value: null },
     opacity: { value: 1.0 },
-    transition: { value: false },
   },
 
   vertexShader: [
@@ -23,29 +20,25 @@ const CrossFadeShader = {
 
   ].join('\n'),
 
+  // TODO: add fade to black transitions, sliding transitions (e.g left -> right)
   fragmentShader: [
 
     'uniform float opacity;',
     'uniform sampler2D tDiffuse;',
-    'uniform sampler2D fadeTexture;',
-    'uniform bool transition;',
+    'uniform sampler2D tDiffuseTarget;',
     'varying vec2 vUv;',
 
     'void main() {',
     ' vec4 texel = texture2D( tDiffuse, vUv );',
-    ' if (transition) {',
-    '   vec4 fadeTexel = texture2D( fadeTexture, vUv );',
-    '   gl_FragColor = mix( texel, fadeTexel, opacity );',
-    ' } else {',
-    '   gl_FragColor = texel;',
-    ' }',
+    ' vec4 targetTexel = texture2D( tDiffuseTarget, vUv );',
+    ' gl_FragColor = mix( texel, targetTexel, opacity );',
     '}',
 
   ].join('\n'),
 };
 
 export {
-  CrossFadeShader,
+  TransitionShader,
 };
 
-export default CrossFadeShader;
+export default TransitionShader;
