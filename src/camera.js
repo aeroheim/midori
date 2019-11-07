@@ -180,7 +180,7 @@ class BackgroundCamera {
 
   _swayOffset = new CameraVector(0, 0, 0, 0); // the current relative vector offset to sway away from the camera
   _swayDistance = new CameraVector(0, 0, 0, 0); // the current relative distances to sway the camera - cached to loop sways
-  _swayCycleInSeconds = 0 // the current cycle per sway - cached to loop sways
+  _swayTransitionConfig = { loop: true, duration: 1, easing: TWEEN.Easing.Linear.None }; // the current sway transition config - cached to loop sways
   _swayTransition = new TWEEN.Tween();
 
   constructor(background, width, height, fov = 35) {
@@ -212,13 +212,17 @@ class BackgroundCamera {
    * @param {CameraVector} relativeDistance - the relative distances allowed on each axis for swaying.
    * The x/y distances should be set based off a z-value of 1 and will be scaled down appropriately based on the camera's current z position.
    * The rotation component of the vector MUST be in units of radians.
-   * @param {Number} cycleInSeconds - the length of a sway in seconds.
+   * @param {Object} transition - optional configuration for a transition.
+   * @param {Number} transition.loop - set this to continuously sway.
+   * @param {Number} transition.duration=0 - the duration of the sway in seconds.
+   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
-  sway(relativeDistance, cycleInSeconds) {
+  sway(relativeDistance, transition = {}) {
     this._swayTransition.stop();
 
     this._swayDistance = relativeDistance || this._swayDistance;
-    this._swayCycleInSeconds = cycleInSeconds || this._swayCycleInSeconds;
+    this._swayTransitionConfig = { ...this._swayTransitionConfig, ...transition };
+    const { loop, duration, easing } = this._swayTransitionConfig;
 
     // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
     // so dampen x/y sway based on the camera's current z position.
@@ -247,8 +251,8 @@ class BackgroundCamera {
         offsetY: swayY - this._position.y,
         offsetZ: swayZ - this._position.z,
         offsetZR: swayZR - this._position.zr,
-      }, this._swayCycleInSeconds * 1000)
-      .easing(TWEEN.Easing.Quadratic.InOut)
+      }, duration * 1000)
+      .easing(easing)
       .onStart(() => {
         // console.log('sway start');
       })
@@ -257,7 +261,9 @@ class BackgroundCamera {
       })
       .onComplete(() => {
         // console.log('sway end');
-        this.sway();
+        if (loop) {
+          this.sway();
+        }
       })
       .start();
   }
@@ -265,14 +271,15 @@ class BackgroundCamera {
   /**
    * Rotates the camera on its z-axis.
    * @param {Number} angle - the angle to rotate in radians.
-   * @param {Number} duration=0 - the duration of the rotation in seconds.
-   * @param {TWEEN.Easing} easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * @param {Object} transition - optional configuration for a transition.
+   * @param {Number} transition.duration=0 - the duration of the rotation in seconds.
+   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
-  rotate(angle, duration = 0, easing = TWEEN.Easing.Linear.None) {
+  rotate(angle, transition = {}) {
     this._rotationTransition.stop();
     this._rotationTransition = new TWEEN.Tween({ zr: this._position.zr })
-      .to({ zr: angle }, duration * 1000)
-      .easing(easing)
+      .to({ zr: angle }, (transition.duration || 0) * 1000)
+      .easing(transition.easing || TWEEN.Easing.Linear.None)
       .onUpdate(({ zr }) => {
         this._position = new CameraVector(this._position.x, this._position.y, this._position.z, zr);
       })
@@ -285,14 +292,15 @@ class BackgroundCamera {
    * The x component is a value between 0 and 1 that represents the x position based on the z component.
    * The y component is a value between 0 and 1 that represents the y position based on the z component.
    * The z component is a value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
-   * @param {Number} duration=0 - the duration of the move in seconds.
-   * @param {TWEEN.Easing} easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * @param {Object} transition - optional configuration for a transition.
+   * @param {Number} transition.duration=0 - the duration of the move in seconds.
+   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
-  move(relativePosition, duration = 0, easing = TWEEN.Easing.Linear.None) {
+  move(relativePosition, transition = {}) {
     this._positionTransition.stop();
     this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
-      .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, duration * 1000)
-      .easing(easing)
+      .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, (transition.duration || 0) * 1000)
+      .easing(transition.easing || TWEEN.Easing.Linear.None)
       .onUpdate(({ x, y, z }) => {
         this._position = new CameraVector(x, y, z, this._position.zr);
       })

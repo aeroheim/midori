@@ -60,19 +60,25 @@ class Renderer {
 
   // TODO
   startTransition(background) {
-    // console.log('start transition');
-
     // old background and camera are used in the transition
     this._transitionBackground = this._background;
     this._transitionCamera = this._camera;
 
     // set main background, re-initialize camera
     this._background = background;
-    // TODO: preserve or lead from old camera movement
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
-    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), 1, TWEEN.Easing.Quartic.Out);
-    this._camera.sway(new CameraVector(0.1, 0.1, 0.025, threeMath.degToRad(2)), 2);
-    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), 1, TWEEN.Easing.Quartic.Out);
+    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
+    this._camera.sway(new CameraVector(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
+      duration: 2,
+      easing: TWEEN.Easing.Quadratic.InOut,
+    });
+    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
 
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
@@ -83,7 +89,6 @@ class Renderer {
 
   // TODO
   endTransition() {
-    // console.log('end transition');
     this._fadePass.uniforms.transition.value = false;
     this._fadePass.uniforms.fadeTexture.value = false;
     this._transition = null;
@@ -100,8 +105,14 @@ class Renderer {
 
   // TODO: temp mainly for debugging purposes
   onKeyUp() {
-    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), 1, TWEEN.Easing.Quartic.Out);
-    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), 1, TWEEN.Easing.Quartic.Out);
+    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
+    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
   }
 
   // TODO: generalize transitions
