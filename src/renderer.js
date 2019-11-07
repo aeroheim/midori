@@ -3,7 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import TWEEN from '@tweenjs/tween.js';
-import { CrossFadeShader } from './shaders/cross-fade';
+import { TransitionShader } from './shaders/transition';
 import { CameraVector, BackgroundCamera } from './camera';
 import Background from './background';
 
@@ -15,7 +15,7 @@ class Renderer {
   _renderer;
   _composer;
   _renderPass;
-  _fadePass;
+  _transitionPass;
 
   _background;
   _camera;
@@ -53,9 +53,10 @@ class Renderer {
     // post-processing pipeline
     this._composer = new EffectComposer(this._renderer);
     this._renderPass = new RenderPass(this._background.scene, this._camera.camera);
-    this._fadePass = new ShaderPass(CrossFadeShader);
+    this._transitionPass = new ShaderPass(TransitionShader);
+    this._transitionPass.enabled = false;
     this._composer.addPass(this._renderPass);
-    this._composer.addPass(this._fadePass);
+    this._composer.addPass(this._transitionPass);
   }
 
   // TODO
@@ -83,14 +84,14 @@ class Renderer {
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
     this._renderPass.camera = this._camera.camera;
-    this._fadePass.uniforms.transition.value = true;
-    this._fadePass.uniforms.fadeTexture.value = this._transitionBuffer.texture;
+    this._transitionPass.enabled = true;
+    this._transitionPass.uniforms.tDiffuseTarget.value = this._transitionBuffer.texture;
   }
 
   // TODO
   endTransition() {
-    this._fadePass.uniforms.transition.value = false;
-    this._fadePass.uniforms.fadeTexture.value = false;
+    this._transitionPass.enabled = false;
+    this._transitionPass.uniforms.tDiffuseTarget.value = false;
     this._transition = null;
   }
 
@@ -122,7 +123,7 @@ class Renderer {
         .to({ opacity: 0 }, 1000)
         .easing(TWEEN.Easing.Cubic.Out)
         .onStart(() => this.startTransition(background))
-        .onUpdate((obj) => { this._fadePass.uniforms.opacity.value = obj.opacity; })
+        .onUpdate((obj) => { this._transitionPass.uniforms.opacity.value = obj.opacity; })
         .onComplete(() => this.endTransition())
         .start();
 
