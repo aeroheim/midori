@@ -3,7 +3,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import TWEEN from '@tweenjs/tween.js';
-import { TransitionShader } from './shaders/transition';
+import { BlendShader } from './postprocessing/shaders/blend';
 import { CameraVector, BackgroundCamera } from './camera';
 import Background from './background';
 
@@ -53,7 +53,7 @@ class Renderer {
     // post-processing pipeline
     this._composer = new EffectComposer(this._renderer);
     this._renderPass = new RenderPass(this._background.scene, this._camera.camera);
-    this._transitionPass = new ShaderPass(TransitionShader);
+    this._transitionPass = new ShaderPass(BlendShader);
     this._transitionPass.enabled = false;
     this._composer.addPass(this._renderPass);
     this._composer.addPass(this._transitionPass);

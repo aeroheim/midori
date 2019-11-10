@@ -2,7 +2,7 @@
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const TransitionShader = {
+const BlendShader = {
   uniforms: {
     tDiffuse: { value: null },
     tDiffuseTarget: { value: null },
@@ -38,7 +38,7 @@ const TransitionShader = {
 };
 
 export {
-  TransitionShader,
+  BlendShader,
 };
 
-export default TransitionShader;
+export default BlendShader;
