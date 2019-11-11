@@ -4,8 +4,8 @@
 
 const BlendShader = {
   uniforms: {
-    tDiffuse: { value: null },
-    tDiffuseTarget: { value: null },
+    tDiffuse1: { value: null },
+    tDiffuse2: { value: null },
     opacity: { value: 1.0 },
   },
 
@@ -24,14 +24,14 @@ const BlendShader = {
   fragmentShader: [
 
     'uniform float opacity;',
-    'uniform sampler2D tDiffuse;',
-    'uniform sampler2D tDiffuseTarget;',
+    'uniform sampler2D tDiffuse1;',
+    'uniform sampler2D tDiffuse2;',
     'varying vec2 vUv;',
 
     'void main() {',
-    ' vec4 texel = texture2D( tDiffuse, vUv );',
-    ' vec4 targetTexel = texture2D( tDiffuseTarget, vUv );',
-    ' gl_FragColor = mix( texel, targetTexel, opacity );',
+    ' vec4 texel1 = texture2D( tDiffuse1, vUv );',
+    ' vec4 texel2 = texture2D( tDiffuse2, vUv );',
+    ' gl_FragColor = mix( texel1, texel2, opacity );',
     '}',
 
   ].join('\n'),
