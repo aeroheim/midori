@@ -69,7 +69,6 @@ class Renderer {
     });
   }
 
-  // TODO: generalize transitions
   setBackground(background) {
     // set main background, re-initialize camera
     this._background = background;
@@ -88,11 +87,14 @@ class Renderer {
     });
 
     // kick off transition in post-processing
-    this._renderPass.scene = this._background.scene;
-    this._renderPass.camera = this._camera.camera;
     this._transitionPass.transition(TransitionType.BLEND, this._background, this._camera, {
       duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
+      onStart: () => {
+        this._renderPass.scene = this._background.scene;
+        this._renderPass.camera = this._camera.camera;
+      },
+      // make sure to dispose of old camera/background in onComplete
     });
   }
 

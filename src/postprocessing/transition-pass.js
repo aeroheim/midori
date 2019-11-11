@@ -1,4 +1,4 @@
-import { ShaderMaterial, UniformsUtils, WebGLRenderTarget, MeshBasicMaterial } from 'three';
+import { ShaderMaterial, UniformsUtils, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend';
@@ -12,12 +12,13 @@ const TransitionType = Object.freeze({
   GLITCH: 'glitch', // you already know :^)
 });
 
+// TODO: properly dispose of three.js objects
 class TransitionPass extends Pass {
   _width;
   _height;
 
-  _background; // the cached background to transition from
-  _camera;// the cached camera to transition from
+  _background; // the cached background to transition away from
+  _camera;// the cached camera to transition away from
   _buffer; // a buffer to render the cached background & camera during transitions
 
   _transition = new TWEEN.Tween();
@@ -45,23 +46,36 @@ class TransitionPass extends Pass {
     return this._transition.isPlaying();
   }
 
-  // TODO: this probably needs to manipulate the camera to achieve some effects
-  // null background/camera should be acceptable, will transition to black
-  transition(type, background, camera, config = {}, onComplete = () => {}) {
-    const transitionOnComplete = () => {
-      onComplete();
-      this._background = background || new Background();
-      this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
-      this._transitionQuad = null;
+  transition(type, background, camera, config = {}) {
+    const transitionConfig = {
+      ...config,
+      onStart: () => {
+        // transition has started - enable this pass.
+        this.enabled = true;
 
-      // transition has finished - disable this pass.
-      this.enabled = false;
+        if (config.onStart) {
+          config.onStart();
+        }
+      },
+      onComplete: () => {
+        // transition has finished - disable this pass.
+        this.enabled = false;
+
+        this._background = background || new Background();
+        this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
+        this._transitionQuad = null;
+
+        if (config.onComplete) {
+          config.onComplete();
+        }
+      },
     };
 
     // TODO: handle transitions being interrupted with new ones
+    // TODO: this probably needs to manipulate the camera to achieve some effects
     switch (type) {
       case TransitionType.BLEND:
-        this._blendTransition(config, transitionOnComplete);
+        this._blendTransition(transitionConfig);
         break;
       case TransitionType.SLIDE:
       case TransitionType.DISTORTION:
@@ -72,11 +86,11 @@ class TransitionPass extends Pass {
     }
   }
 
-  _blendTransition(config = {}, onComplete = () => {}) {
+  _blendTransition(config = {}) {
     this._transition.stop();
 
     this._transition = new TWEEN.Tween({
-      opacity: 0,
+      opacity: 1,
       // TODO: add other transition props
     })
       .to({
@@ -84,9 +98,6 @@ class TransitionPass extends Pass {
       }, (config.duration || 0) * 1000)
       .easing(config.easing || TWEEN.Easing.Linear.None)
       .onStart(() => {
-        // transition has started - enable this pass.
-        this.enabled = true;
-
         this._transitionQuad = new Pass.FullScreenQuad(
           new ShaderMaterial({
             uniforms: UniformsUtils.clone(BlendShader.uniforms),
@@ -94,26 +105,23 @@ class TransitionPass extends Pass {
             fragmentShader: BlendShader.fragmentShader,
           }),
         );
+
+        config.onStart();
       })
       .onUpdate(({ opacity }) => {
         const { material: shader } = this._transitionQuad;
         shader.uniforms.opacity.value = opacity;
       })
-      .onComplete(() => {
-        // TODO: update uniforms here
-        onComplete();
-      })
+      .onComplete(() => config.onComplete())
       .start();
   }
 
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this._transition.isPlaying()) {
-      this._camera.update();
-    }
-
-    // TODO: fix weird flashing issue at beginning of transition
-    if (this._transitionQuad) {
       const { material: shader } = this._transitionQuad;
+
+      // make sure we continue to update the old camera while transitioning to a new one
+      this._camera.update();
 
       // render the scene we're transitioning from
       renderer.setRenderTarget(this._buffer);
