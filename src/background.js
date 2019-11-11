@@ -30,11 +30,6 @@ class Background {
     this._plane.geometry.parameters.height = 1 / aspectRatio;
   }
 
-  // TODO consider removing if unneeded
-  setMaterial(material) {
-    this._plane.material = material;
-  }
-
   /**
  * Loads an image as a background.
  * @async
@@ -61,5 +56,9 @@ class Background {
     });
   }
 }
+
+export {
+  Background,
+};
 
 export default Background;
