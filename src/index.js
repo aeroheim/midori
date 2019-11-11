@@ -1,6 +1,6 @@
 import TWEEN from '@tweenjs/tween.js';
-import Renderer from './renderer';
-import Background from './background';
+import { Renderer } from './renderer';
+import { Background } from './background';
 
 let renderer;
 
@@ -20,9 +20,8 @@ function init() {
   renderer = new Renderer(document.getElementById('container'));
   Background.loadBackground(`images/${image}.jpg`)
     .then((bg) => {
-      if (renderer.setBackground(bg)) {
-        toggleImage();
-      }
+      renderer.setBackground(bg);
+      toggleImage();
       render();
     })
     .catch(e => console.log(e));
@@ -33,9 +32,8 @@ window.onload = init;
 window.onmouseup = () => {
   Background.loadBackground(`images/${image}.jpg`)
     .then((bg) => {
-      if (renderer.setBackground(bg)) {
-        toggleImage();
-      }
+      renderer.setBackground(bg);
+      toggleImage();
     })
     .catch(e => console.log(e));
 };

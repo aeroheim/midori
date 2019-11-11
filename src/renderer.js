@@ -1,30 +1,24 @@
-import { WebGLRenderer, WebGLRenderTarget, Math as threeMath } from 'three';
+import { WebGLRenderer, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 import TWEEN from '@tweenjs/tween.js';
-import { BlendShader } from './postprocessing/shaders/blend';
 import { CameraVector, BackgroundCamera } from './camera';
-import Background from './background';
+import { Background } from './background';
+import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 
+// TODO: properly dispose of three.js objects
 class Renderer {
   _domElement;
   _width;
   _height;
 
+  _background;
+  _camera;
+
   _renderer;
   _composer;
   _renderPass;
   _transitionPass;
-
-  _background;
-  _camera;
-
-  _transitionBackground;
-  _transitionCamera;
-  _transitionBuffer;
-
-  _transition;
 
   constructor(domElement) {
     this._domElement = domElement;
@@ -45,26 +39,38 @@ class Renderer {
     this._background = new Background();
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
 
-    // spare scene, camera, and buffer for use in transitions
-    this._transitionBuffer = new WebGLRenderTarget(this._width, this._height);
-    this._transitionBackground = new Background();
-    this._transitionCamera = new BackgroundCamera(this._transitionBackground, this._width, this._height);
-
     // post-processing pipeline
     this._composer = new EffectComposer(this._renderer);
     this._renderPass = new RenderPass(this._background.scene, this._camera.camera);
-    this._transitionPass = new ShaderPass(BlendShader);
-    this._transitionPass.enabled = false;
+    this._transitionPass = new TransitionPass(this._background, this._camera, this._width, this._height);
     this._composer.addPass(this._renderPass);
     this._composer.addPass(this._transitionPass);
   }
 
-  // TODO
-  startTransition(background) {
-    // old background and camera are used in the transition
-    this._transitionBackground = this._background;
-    this._transitionCamera = this._camera;
+  // TODO: define a setSize instead?
+  onResize() {
+    this._width = this._domElement.clientWidth;
+    this._height = this._domElement.clientHeight;
+    this._renderer.setSize(this._width, this._height);
+    this._camera.setSize(this._width, this._height);
+    this._renderPass.setSize(this._width, this._height);
+    this._transitionPass.setSize(this._width, this._height);
+  }
 
+  // TODO: temp mainly for debugging purposes
+  onKeyUp() {
+    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
+    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+      duration: 1,
+      easing: TWEEN.Easing.Quartic.Out,
+    });
+  }
+
+  // TODO: generalize transitions
+  setBackground(background) {
     // set main background, re-initialize camera
     this._background = background;
     this._camera = new BackgroundCamera(this._background, this._width, this._height);
@@ -84,70 +90,20 @@ class Renderer {
     // kick off transition in post-processing
     this._renderPass.scene = this._background.scene;
     this._renderPass.camera = this._camera.camera;
-    this._transitionPass.enabled = true;
-    this._transitionPass.uniforms.tDiffuseTarget.value = this._transitionBuffer.texture;
-  }
-
-  // TODO
-  endTransition() {
-    this._transitionPass.enabled = false;
-    this._transitionPass.uniforms.tDiffuseTarget.value = false;
-    this._transition = null;
-  }
-
-  onResize() {
-    this._width = this._domElement.clientWidth;
-    this._height = this._domElement.clientHeight;
-    this._renderer.setSize(this._width, this._height);
-    this._camera.setSize(this._width, this._height);
-    this._transitionCamera.setSize(this._width, this._height);
-    this._transitionBuffer.setSize(this._width, this._height);
-  }
-
-  // TODO: temp mainly for debugging purposes
-  onKeyUp() {
-    this._camera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    this._transitionPass.transition(TransitionType.BLEND, this._background, this._camera, {
       duration: 1,
-      easing: TWEEN.Easing.Quartic.Out,
+      easing: TWEEN.Easing.Cubic.Out,
     });
-    this._camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
-      duration: 1,
-      easing: TWEEN.Easing.Quartic.Out,
-    });
-  }
-
-  // TODO: generalize transitions
-  setBackground(background) {
-    if (!this._transition) {
-      this._transition = new TWEEN.Tween({ opacity: 1 })
-        .to({ opacity: 0 }, 1000)
-        .easing(TWEEN.Easing.Cubic.Out)
-        .onStart(() => this.startTransition(background))
-        .onUpdate((obj) => { this._transitionPass.uniforms.opacity.value = obj.opacity; })
-        .onComplete(() => this.endTransition())
-        .start();
-
-      return true;
-    }
-
-    return false;
-  }
-
-  renderToTarget(target, background, camera) {
-    this._renderer.setRenderTarget(target);
-    this._renderer.render(background.scene, camera.camera);
-    this._renderer.setRenderTarget(null);
   }
 
   render() {
-    if (this._transition) {
-      this.renderToTarget(this._transitionBuffer, this._transitionBackground, this._transitionCamera);
-    }
-
     this._camera.update();
     this._composer.render();
-    // this._renderer.render(this._primaryBackground.scene, this._primaryCamera.camera);
   }
 }
+
+export {
+  Renderer,
+};
 
 export default Renderer;
