@@ -47,31 +47,41 @@ class TransitionPass extends Pass {
   }
 
   transition(type, background, camera, config = {}) {
+    const onTransitionStart = () => {
+      // transition has started - enable this pass.
+      this.enabled = true;
+    };
+    const onTransitionEnd = () => {
+      // transition has ended - disable this pass.
+      this.enabled = false;
+
+      this._background = background || new Background();
+      this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
+      this._transitionQuad = null;
+    };
+
     const transitionConfig = {
       ...config,
       onStart: () => {
-        // transition has started - enable this pass.
-        this.enabled = true;
-
+        onTransitionStart();
         if (config.onStart) {
           config.onStart();
         }
       },
       onComplete: () => {
-        // transition has finished - disable this pass.
-        this.enabled = false;
-
-        this._background = background || new Background();
-        this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
-        this._transitionQuad = null;
-
+        onTransitionEnd();
         if (config.onComplete) {
           config.onComplete();
         }
       },
+      onStop: () => {
+        onTransitionEnd();
+        if (config.onStop) {
+          config.onStop();
+        }
+      },
     };
 
-    // TODO: handle transitions being interrupted with new ones
     // TODO: this probably needs to manipulate the camera to achieve some effects
     switch (type) {
       case TransitionType.BLEND:
@@ -113,6 +123,7 @@ class TransitionPass extends Pass {
         shader.uniforms.opacity.value = opacity;
       })
       .onComplete(() => config.onComplete())
+      .onStop(() => config.onStop())
       .start();
   }
 
