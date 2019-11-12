@@ -59,7 +59,6 @@ class TransitionPass extends Pass {
       this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
       this._transitionQuad = null;
     };
-
     const transitionConfig = {
       ...config,
       onStart: () => {
@@ -100,11 +99,11 @@ class TransitionPass extends Pass {
     this._transition.stop();
 
     this._transition = new TWEEN.Tween({
-      opacity: 1,
+      opacity: 0,
       // TODO: add other transition props
     })
       .to({
-        opacity: config.opacity || 0,
+        opacity: config.opacity || 1,
       }, (config.duration || 0) * 1000)
       .easing(config.easing || TWEEN.Easing.Linear.None)
       .onStart(() => {
@@ -138,8 +137,8 @@ class TransitionPass extends Pass {
       renderer.setRenderTarget(this._buffer);
       renderer.render(this._background.scene, this._camera.camera);
 
-      shader.uniforms.tDiffuse1.value = readBuffer.texture;
-      shader.uniforms.tDiffuse2.value = this._buffer.texture;
+      shader.uniforms.tDiffuse1.value = this._buffer.texture;
+      shader.uniforms.tDiffuse2.value = readBuffer.texture;
 
       renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
       this._transitionQuad.render(renderer);
