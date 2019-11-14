@@ -2,11 +2,13 @@ import { ShaderMaterial, UniformsUtils, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend';
+import { WipeShader } from './shaders/wipe';
 import { Background } from '../background';
 import { BackgroundCamera } from '../camera';
 
 const TransitionType = Object.freeze({
-  BLEND: 'blend', // basic blend/fade with configurable direction & angle
+  BLEND: 'blend', // basic blend/fade
+  WIPE: 'wipe', // directional wipe with configurable direction & angle
   SLIDE: 'slide', // fast sliding transition that fades w/ motion blur
   DISTORTION: 'distortion', // distortion zoom that fades w/ motion blur and optional spin
   GLITCH: 'glitch', // you already know :^)
@@ -86,6 +88,9 @@ class TransitionPass extends Pass {
       case TransitionType.BLEND:
         this._blendTransition(transitionConfig);
         break;
+      case TransitionType.WIPE:
+        this._wipeTransition(transitionConfig);
+        break;
       case TransitionType.SLIDE:
       case TransitionType.DISTORTION:
       case TransitionType.GLITCH:
@@ -95,15 +100,15 @@ class TransitionPass extends Pass {
     }
   }
 
+  // TODO: refactor duplication among transitions
   _blendTransition(config = {}) {
     this._transition.stop();
 
     this._transition = new TWEEN.Tween({
-      opacity: 0,
-      // TODO: add other transition props
+      blend: 0,
     })
       .to({
-        opacity: config.opacity || 1,
+        blend: config.blend || 1,
       }, (config.duration || 0) * 1000)
       .easing(config.easing || TWEEN.Easing.Linear.None)
       .onStart(() => {
@@ -117,9 +122,39 @@ class TransitionPass extends Pass {
 
         config.onStart();
       })
-      .onUpdate(({ opacity }) => {
+      .onUpdate(({ blend }) => {
         const { material: shader } = this._transitionQuad;
-        shader.uniforms.opacity.value = opacity;
+        shader.uniforms.blend.value = blend;
+      })
+      .onComplete(() => config.onComplete())
+      .onStop(() => config.onStop())
+      .start();
+  }
+
+  _wipeTransition(config = {}) {
+    this._transition.stop();
+
+    this._transition = new TWEEN.Tween({
+      wipe: 0,
+    })
+      .to({
+        wipe: config.wipe || 1,
+      }, (config.duration || 0) * 1000)
+      .easing(config.easing || TWEEN.Easing.Linear.None)
+      .onStart(() => {
+        const shader = new ShaderMaterial({
+          uniforms: UniformsUtils.clone(WipeShader.uniforms),
+          vertexShader: WipeShader.vertexShader,
+          fragmentShader: WipeShader.fragmentShader,
+        });
+        shader.uniforms.wipeBlend.value = 0.5;
+        this._transitionQuad = new Pass.FullScreenQuad(shader);
+
+        config.onStart();
+      })
+      .onUpdate(({ wipe }) => {
+        const { material: shader } = this._transitionQuad;
+        shader.uniforms.wipe.value = wipe;
       })
       .onComplete(() => config.onComplete())
       .onStop(() => config.onStop())

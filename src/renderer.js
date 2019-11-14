@@ -87,7 +87,7 @@ class Renderer {
     });
 
     // kick off transition in post-processing
-    this._transitionPass.transition(TransitionType.BLEND, this._background, this._camera, {
+    this._transitionPass.transition(TransitionType.WIPE, this._background, this._camera, {
       duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
       onStart: () => {
