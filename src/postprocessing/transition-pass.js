@@ -147,7 +147,7 @@ class TransitionPass extends Pass {
           vertexShader: WipeShader.vertexShader,
           fragmentShader: WipeShader.fragmentShader,
         });
-        shader.uniforms.wipeBlend.value = 0.5;
+        shader.uniforms.gradient.value = 0.5;
         this._transitionQuad = new Pass.FullScreenQuad(shader);
 
         config.onStart();
