@@ -39,6 +39,8 @@ class TransitionPass extends Pass {
   }
 
   setSize(width, height) {
+    this._width = width;
+    this._height = height;
     this._background.setSize(width, height);
     this._camera.setSize(width, height);
     this._buffer.setSize(width, height);
