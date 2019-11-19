@@ -150,6 +150,7 @@ class TransitionPass extends Pass {
           fragmentShader: WipeShader.fragmentShader,
         });
         shader.uniforms.gradient.value = 0.5;
+        shader.uniforms.aspect.value = this._width / this._height;
         this._transitionQuad = new Pass.FullScreenQuad(shader);
 
         config.onStart();
@@ -157,6 +158,8 @@ class TransitionPass extends Pass {
       .onUpdate(({ wipe }) => {
         const { material: shader } = this._transitionQuad;
         shader.uniforms.wipe.value = wipe;
+        // update the aspect ratio incase it changes in the middle of the transition
+        shader.uniforms.aspect.value = this._width / this._height;
       })
       .onComplete(() => config.onComplete())
       .onStop(() => config.onStop())

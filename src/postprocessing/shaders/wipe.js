@@ -16,7 +16,8 @@ const WipeShader = {
     wipe: { value: 0.0 }, // a value from 0 to 1 indicating the ratio of the texture wipe
     gradient: { value: 0.0 }, // an value from 0 to 1 indicating the size of the blend gradient
     direction: { value: WipeDirection.RIGHT },
-    // angle
+    angle: { value: 0.261799 },
+    aspect: { value: 1.0 },
   },
 
   vertexShader: [
@@ -37,6 +38,8 @@ const WipeShader = {
     'uniform float wipe;',
     'uniform float gradient;',
     'uniform int direction;',
+    'uniform float angle;',
+    'uniform float aspect;',
     'varying vec2 vUv;',
 
     'void main() {',
@@ -47,6 +50,9 @@ const WipeShader = {
     ' float gradientOffset = wipeOffset + gradient;',
 
     ' float position;',
+
+    // the tangent of the angle gives us the slope of the rotated line to use
+    ' float slope = tan(angle);',
 
     ' if (direction == 0) {',
     // WipeDirection.LEFT
@@ -62,6 +68,13 @@ const WipeShader = {
     '   position = 1.0 - vUv.y;',
     ' }',
 
+    ' if (vUv.x <= (vUv.y / slope) / aspect) {',
+    '   gl_FragColor = texel2;',
+    ' } else {',
+    '   gl_FragColor = texel1;',
+    ' }',
+
+    /*
     ' if (position <= wipeOffset) {',
     '   gl_FragColor = texel2;',
     ' } else if (position <= gradientOffset) {',
@@ -69,6 +82,7 @@ const WipeShader = {
     ' } else {',
     '   gl_FragColor = texel1;',
     ' }',
+    */
     '}',
 
   ].join('\n'),
