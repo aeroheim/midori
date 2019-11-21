@@ -1,4 +1,4 @@
-import { ShaderMaterial, UniformsUtils, WebGLRenderTarget } from 'three';
+import { ShaderMaterial, UniformsUtils, WebGLRenderTarget, Math as threeMath } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend';
@@ -150,6 +150,7 @@ class TransitionPass extends Pass {
           fragmentShader: WipeShader.fragmentShader,
         });
         shader.uniforms.gradient.value = 0.5;
+        shader.uniforms.angle.value = threeMath.degToRad(15);
         shader.uniforms.aspect.value = this._width / this._height;
         this._transitionQuad = new Pass.FullScreenQuad(shader);
 

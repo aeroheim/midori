@@ -13,10 +13,15 @@ const WipeShader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
-    wipe: { value: 0.0 }, // a value from 0 to 1 indicating the ratio of the texture wipe
-    gradient: { value: 0.0 }, // an value from 0 to 1 indicating the size of the blend gradient
+    // a value from 0 to 1 indicating the ratio of the texture wipe
+    wipe: { value: 0.0 },
+    // an value from 0 to 1 indicating the size of the blend gradient
+    gradient: { value: 0.0 },
+    // the direction to wipe to
     direction: { value: WipeDirection.RIGHT },
-    angle: { value: 0.261799 },
+    // the angle of the wipe
+    angle: { value: 0.0 },
+    // the aspect ratio of the texture. required using an angle
     aspect: { value: 1.0 },
   },
 
@@ -46,14 +51,7 @@ const WipeShader = {
     ' vec4 texel1 = texture2D(tDiffuse1, vUv);',
     ' vec4 texel2 = texture2D(tDiffuse2, vUv);',
 
-    ' float wipeOffset = -gradient + (1.0 + gradient) * wipe;',
-    ' float gradientOffset = wipeOffset + gradient;',
-
     ' float position;',
-
-    // the tangent of the angle gives us the slope of the rotated line to use
-    ' float slope = tan(angle);',
-
     ' if (direction == 0) {',
     // WipeDirection.LEFT
     '   position = 1.0 - vUv.x;',
@@ -68,21 +66,30 @@ const WipeShader = {
     '   position = 1.0 - vUv.y;',
     ' }',
 
-    ' if (vUv.x <= (vUv.y / slope) / aspect) {',
-    '   gl_FragColor = texel2;',
+    ' float rotationOffset;',
+    ' float rotatedPosition;',
+    ' if (direction < 2) {',
+    // rotation for horizontal wipes
+    '   float slope = 1.0 / tan(angle);',
+    '   rotationOffset = (1.0 / slope) / aspect;',
+    '   rotatedPosition = (vUv.y / slope) / aspect;',
     ' } else {',
-    '   gl_FragColor = texel1;',
+    // rotation for vertical wipes
+    '   float slope = tan(angle);',
+    '   rotationOffset = slope / aspect;',
+    '   rotatedPosition = (vUv.x * slope) / aspect;',
     ' }',
 
-    /*
+    // a tween that starts from one side of the texture and ends at the other side.
+    // this tween accounts for offsets due to the size of the blend gradient and angle of the wipe effect.
+    ' float wipeOffset = (-max(0.0, rotationOffset) - gradient) + ((1.0 + abs(rotationOffset) + gradient) * wipe) + rotatedPosition;',
     ' if (position <= wipeOffset) {',
     '   gl_FragColor = texel2;',
-    ' } else if (position <= gradientOffset) {',
+    ' } else if (position <= wipeOffset + gradient) {',
     '   gl_FragColor = mix(texel2, texel1, (position - wipeOffset) / gradient);',
     ' } else {',
     '   gl_FragColor = texel1;',
     ' }',
-    */
     '}',
 
   ].join('\n'),
