@@ -326,7 +326,6 @@ class BackgroundCamera {
 
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
     this._camera.rotation.z = this._position.zr + this._swayOffset.zr;
-    this._camera.updateProjectionMatrix();
   }
 }
 

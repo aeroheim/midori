@@ -5,10 +5,7 @@ import { Background } from './background';
 let renderer;
 
 let image = 0;
-
-function toggleImage() {
-  image = (image + 1) % 2;
-}
+const imageCount = 3;
 
 function render(time) {
   renderer.render();
@@ -18,10 +15,9 @@ function render(time) {
 
 function init() {
   renderer = new Renderer(document.getElementById('container'));
-  Background.loadBackground(`images/${image}.jpg`)
+  Background.loadBackground(`images/${image}.png`)
     .then((bg) => {
       renderer.setBackground(bg);
-      toggleImage();
       render();
     })
     .catch(e => console.log(e));
@@ -29,11 +25,23 @@ function init() {
 
 // init renderer
 window.onload = init;
-window.onmouseup = () => {
-  Background.loadBackground(`images/${image}.jpg`)
-    .then((bg) => {
-      renderer.setBackground(bg);
-      toggleImage();
-    })
-    .catch(e => console.log(e));
+window.onkeyup = (e) => {
+  if (e.key === 'ArrowLeft') {
+    const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
+    Background.loadBackground(`images/${newIndex}.png`)
+      .then((bg) => {
+        renderer.setBackground(bg);
+        image = newIndex;
+      })
+      .catch(e => console.log(e));
+  } else if (e.key === 'ArrowRight') {
+    Background.loadBackground(`images/${(image + 1) % imageCount}.png`)
+      .then((bg) => {
+        renderer.setBackground(bg);
+        image = (image + 1) % imageCount;
+      })
+      .catch(e => console.log(e));
+  } else if (e.key === ' ') {
+    renderer.test();
+  }
 };
