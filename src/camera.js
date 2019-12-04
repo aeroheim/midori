@@ -1,5 +1,5 @@
 
-import { PerspectiveCamera, Math as threeMath } from 'three';
+import { PerspectiveCamera, Vector4, Math as threeMath } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 
 /**
@@ -115,11 +115,11 @@ function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
  * Converts a relative vector to an absolute vector for a given object and camera.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
- * @param {CameraVector} relativePosition - a vector that represents the relative camera position to convert from.
+ * @param {three.Vector4} relativePosition - a vector that represents the relative camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
  */
 function toAbsolutePosition(object, camera, relativePosition) {
-  const { x, y, z, zr } = relativePosition;
+  const { x, y, z, w: zr } = relativePosition;
 
   const panDistance = getAvailablePanDistance(object, camera, z, zr);
   // offset the viewbox's position so that it starts at the top-left corner, then move it
@@ -128,7 +128,7 @@ function toAbsolutePosition(object, camera, relativePosition) {
   const absoluteY = (panDistance.height / 2) - (y * panDistance.height);
   const absoluteDepth = getMaxFullScreenDepthForObject(object, camera, zr) * z;
 
-  return new CameraVector(
+  return new Vector4(
     // Make sure to rotate the x/y positions to get the actual correct positions relative to the camera rotation.
     absoluteX * Math.cos(zr) - absoluteY * Math.sin(zr),
     absoluteX * Math.sin(zr) + absoluteY * Math.cos(zr),
@@ -141,11 +141,11 @@ function toAbsolutePosition(object, camera, relativePosition) {
  * Converts an absolute vector to a relative vector for a given object and camera.
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
- * @param {CameraVector} absolutePosition - a vector that represents the absolute camera position to convert from.
+ * @param {three.Vector4} absolutePosition - a vector that represents the absolute camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
  */
 function toRelativePosition(object, camera, absolutePosition) {
-  const { x, y, z, zr } = absolutePosition;
+  const { x, y, z, w: zr } = absolutePosition;
 
   const relativeZ = z / getMaxFullScreenDepthForObject(object, camera, zr);
   const panDistance = getAvailablePanDistance(object, camera, relativeZ, zr);
@@ -153,33 +153,24 @@ function toRelativePosition(object, camera, absolutePosition) {
   const relativeY = panDistance.height === 0 ? 0 : Math.abs((y / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
 
   // TODO: make this support conversions from rotated absolute positions
-  return new CameraVector(relativeX, relativeY, relativeZ, zr);
+  return new Vector4(relativeX, relativeY, relativeZ, zr);
 }
 
-class CameraVector {
-  x; // the x-axis component of the vector
-  y; // the y-axis component of the vector
-  z; // the z-axis component of the vector
-  zr; // the z-axis rotation component of the vector
-
-  constructor(x, y, z, zr) {
-    this.x = x || 0;
-    this.y = y || 0;
-    this.z = z || 0;
-    this.zr = zr || 0;
-  }
-}
-
+// NOTE: all Vector4 instances in this class are of the following format:
+// x - the x-axis component of the vector
+// y - the y-axis component of the vector
+// z - the z-axis component of the vector
+// w - the z-axis rotation component of the vector (also aliased as zr)
 class BackgroundCamera {
   _object;
   _camera;
 
-  _position = new CameraVector(0, 0, 1, 0); // the current absolute position of the camera
+  _position = new Vector4(0, 0, 1, 0); // the current absolute position of the camera
   _positionTransition = new TWEEN.Tween();
   _rotationTransition = new TWEEN.Tween();
 
-  _swayOffset = new CameraVector(0, 0, 0, 0); // the current relative vector offset to sway away from the camera
-  _swayDistance = new CameraVector(0, 0, 0, 0); // the current relative distances to sway the camera - cached to loop sways
+  _swayOffset = new Vector4(0, 0, 0, 0); // the current relative vector offset to sway away from the camera
+  _swayDistance = new Vector4(0, 0, 0, 0); // the current relative distances to sway the camera - cached to loop sways
   _swayTransitionConfig = { loop: true, duration: 1, easing: TWEEN.Easing.Linear.None }; // the current sway transition config - cached to loop sways
   _swayTransition = new TWEEN.Tween();
 
@@ -197,7 +188,7 @@ class BackgroundCamera {
     const rotationZ = this._camera.rotation.z;
     // NOTE: the relative camera position is the unmodified position and does NOT include offsets from swaying.
     return {
-      absolute: new CameraVector(absoluteX, absoluteY, absoluteZ, rotationZ),
+      absolute: new Vector4(absoluteX, absoluteY, absoluteZ, rotationZ),
       relative: toRelativePosition(this._object, this._camera, this._position),
     };
   }
@@ -209,7 +200,7 @@ class BackgroundCamera {
 
   /**
    * Sways the camera around its current position repeatedly.
-   * @param {CameraVector} relativeDistance - the relative distances allowed on each axis for swaying.
+   * @param {three.Vector4} relativeDistance - the relative distances allowed on each axis for swaying.
    * The x/y distances should be set based off a z-value of 1 and will be scaled down appropriately based on the camera's current z position.
    * The rotation component of the vector MUST be in units of radians.
    * @param {Object} transition - optional configuration for a transition.
@@ -228,7 +219,7 @@ class BackgroundCamera {
     // so dampen x/y sway based on the camera's current z position.
     const dampeningFactor = this._position.z / 2;
 
-    const { x, y, z, zr } = this._swayDistance;
+    const { x, y, z, w: zr } = this._swayDistance;
     const swayMinX = Math.max(0, this._position.x - (x * dampeningFactor));
     const swayMaxX = Math.min(1, this._position.x + (x * dampeningFactor));
     const swayX = Math.random() * (swayMaxX - swayMinX) + swayMinX;
@@ -238,26 +229,26 @@ class BackgroundCamera {
     const swayMinZ = Math.max(0, this._position.z - z);
     const swayMaxZ = Math.min(1, this._position.z + z);
     const swayZ = Math.random() * (swayMaxZ - swayMinZ) + swayMinZ;
-    const swayZR = Math.random() * zr + (this._position.zr - (zr / 2));
+    const swayZR = Math.random() * zr + (this._position.w - (zr / 2));
 
     this._swayTransition = new TWEEN.Tween({
       offsetX: this._swayOffset.x,
       offsetY: this._swayOffset.y,
       offsetZ: this._swayOffset.z,
-      offsetZR: this._swayOffset.zr,
+      offsetZR: this._swayOffset.w,
     })
       .to({
         offsetX: swayX - this._position.x,
         offsetY: swayY - this._position.y,
         offsetZ: swayZ - this._position.z,
-        offsetZR: swayZR - this._position.zr,
+        offsetZR: swayZR - this._position.w,
       }, duration * 1000)
       .easing(easing)
       .onStart(() => {
         // console.log('sway start');
       })
       .onUpdate(({ offsetX, offsetY, offsetZ, offsetZR }) => {
-        this._swayOffset = new CameraVector(offsetX, offsetY, offsetZ, offsetZR);
+        this._swayOffset.set(offsetX, offsetY, offsetZ, offsetZR);
       })
       .onComplete(() => {
         // console.log('sway end');
@@ -277,11 +268,11 @@ class BackgroundCamera {
    */
   rotate(angle, transition = {}) {
     this._rotationTransition.stop();
-    this._rotationTransition = new TWEEN.Tween({ zr: this._position.zr })
+    this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
       .to({ zr: angle }, (transition.duration || 0) * 1000)
       .easing(transition.easing || TWEEN.Easing.Linear.None)
       .onUpdate(({ zr }) => {
-        this._position = new CameraVector(this._position.x, this._position.y, this._position.z, zr);
+        this._position.set(this._position.x, this._position.y, this._position.z, zr);
       })
       .start();
   }
@@ -302,7 +293,7 @@ class BackgroundCamera {
       .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, (transition.duration || 0) * 1000)
       .easing(transition.easing || TWEEN.Easing.Linear.None)
       .onUpdate(({ x, y, z }) => {
-        this._position = new CameraVector(x, y, z, this._position.zr);
+        this._position.set(x, y, z, this._position.w);
       })
       .start();
   }
@@ -314,23 +305,22 @@ class BackgroundCamera {
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
       this._object,
       this._camera,
-      new CameraVector(
+      new Vector4(
         // Ensure that the position is always valid despite sway.
         // Moving the camera in-between ongoing sway cycles does not always guarantee the validity of the position, so coercion is required.
         Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
         Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
         Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
-        this._position.zr + this._swayOffset.zr,
+        this._position.w + this._swayOffset.w,
       ),
     );
 
     this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
-    this._camera.rotation.z = this._position.zr + this._swayOffset.zr;
+    this._camera.rotation.z = this._position.w + this._swayOffset.w;
   }
 }
 
 export {
-  CameraVector,
   BackgroundCamera,
 };
 

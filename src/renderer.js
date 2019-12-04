@@ -1,8 +1,8 @@
-import { WebGLRenderer, Math as threeMath } from 'three';
+import { WebGLRenderer, Vector4, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import TWEEN from '@tweenjs/tween.js';
-import { CameraVector, BackgroundCamera } from './camera';
+import { BackgroundCamera } from './camera';
 import { Background } from './background';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 import MotionBlurPass from './postprocessing/motion-blur-pass';
@@ -62,7 +62,7 @@ class Renderer {
 
   // TODO: temp mainly for debugging purposes
   test() {
-    this._backgroundCamera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    this._backgroundCamera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
       duration: 2,
       easing: TWEEN.Easing.Quartic.Out,
     });
@@ -76,11 +76,11 @@ class Renderer {
     // set main background, re-initialize camera
     this._background = background;
     this._backgroundCamera = new BackgroundCamera(this._background, this._width, this._height);
-    this._backgroundCamera.move(new CameraVector(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    this._backgroundCamera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
       duration: 1,
       easing: TWEEN.Easing.Quartic.Out,
     });
-    this._backgroundCamera.sway(new CameraVector(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
+    this._backgroundCamera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
       duration: 2,
       easing: TWEEN.Easing.Quadratic.InOut,
     });
@@ -91,6 +91,8 @@ class Renderer {
 
     // kick off transition in post-processing
     this._transitionPass.transition(TransitionType.WIPE, this._background, this._backgroundCamera, {
+      gradient: 0.5,
+      angle: threeMath.degToRad(15),
       duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
       onStart: () => this._renderPass.setBackground(this._background.scene, this._backgroundCamera.camera),
