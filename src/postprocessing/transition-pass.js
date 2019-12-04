@@ -14,7 +14,6 @@ const TransitionType = Object.freeze({
   GLITCH: 'glitch', // you already know :^)
 });
 
-// TODO: properly dispose of three.js objects
 class TransitionPass extends Pass {
   _width;
   _height;
@@ -24,7 +23,8 @@ class TransitionPass extends Pass {
   _buffer; // a buffer to render the cached background & camera during transitions
 
   _transition = new TWEEN.Tween();
-  _transitionQuad;
+  _transitionQuad = new Pass.FullScreenQuad();
+  _transitionShader;
 
   constructor(background, backgroundCamera, width, height) {
     super();
@@ -34,7 +34,7 @@ class TransitionPass extends Pass {
     this._backgroundCamera = backgroundCamera || new BackgroundCamera(this._background, width, height);
     this._buffer = new WebGLRenderTarget(width, height);
 
-    // NOTE: this pass only needs to render when a transition occurs, so disable it by default.
+    // this pass only needs to render when a transition occurs, so it should be disabled by default.
     this.enabled = false;
   }
 
@@ -64,7 +64,7 @@ class TransitionPass extends Pass {
    * @param {Function} config.onUpdate=()=>({}) - an optional callback when the transition updates.
    * @param {Function} config.onComplete=()=>({}) - an optional callback when the transition finishes.
    * @param {Function} config.onStop=()=>({}) - an optional callback when the transition stops or pauses.
-   * @param {any} config.* - any additional configuration specific to the transition type.
+   * @param {any} config... - any additional configuration specific to the transition type.
    */
   transition(type, background, backgroundCamera, config = {}) {
     const {
@@ -108,7 +108,10 @@ class TransitionPass extends Pass {
       // cache the new background/camera to be used for the next transition.
       this._background = background || new Background();
       this._backgroundCamera = backgroundCamera || new BackgroundCamera(this._background, this._width, this._height);
-      this._transitionQuad = null;
+
+      // cleanup
+      this._transitionShader.dispose();
+      this._transitionQuad.material = null;
     };
 
     const {
@@ -151,11 +154,12 @@ class TransitionPass extends Pass {
           from: { blend: blendFrom },
           to: { blend: blendTo },
           onStart: () => {
-            this._transitionQuad = TransitionPass._createShaderQuad(BlendShader);
+            this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
+            this._transitionQuad.material = this._transitionShader;
             onStart();
           },
           onUpdate: ({ blend }) => {
-            this._transitionQuad.material.uniforms.blend.value = blend;
+            this._transitionShader.uniforms.blend.value = blend;
             onUpdate();
           },
         };
@@ -168,18 +172,18 @@ class TransitionPass extends Pass {
           from: { wipe: wipeFrom },
           to: { wipe: wipeTo },
           onStart: () => {
-            this._transitionQuad = TransitionPass._createShaderQuad(WipeShader, {
+            this._transitionShader = TransitionPass._createShaderMaterial(WipeShader, {
               gradient,
               angle,
               aspect: this._width / this._height,
             });
+            this._transitionQuad.material = this._transitionShader;
             onStart();
           },
           onUpdate: ({ wipe }) => {
-            const { material: shader } = this._transitionQuad;
             // update the aspect ratio incase it changes in the middle of the transition
-            shader.uniforms.aspect.value = this._width / this._height;
-            shader.uniforms.wipe.value = wipe;
+            this._transitionShader.uniforms.aspect.value = this._width / this._height;
+            this._transitionShader.uniforms.wipe.value = wipe;
             onUpdate();
           },
         };
@@ -193,33 +197,29 @@ class TransitionPass extends Pass {
   }
 
   /**
-   * Creates a new full screen quad with the given shader applied as its material.
+   * Returns a new ShaderMaterial given a shader definition and uniforms.
    * @param {Object} shader - an object defining a shader.
    * @param {Object} shader.uniforms - a map that defines the uniforms of the given shader
    * @param {string} shader.vertexShader - a string that defines the vertex shader program
    * @param {string} shader.fragmentShader - a string that defines the fragment shader program
    * @param {Object} uniforms - a map that defines the values of the uniforms to be used
    */
-  static _createShaderQuad(shader, uniforms = {}) {
-    const shaderQuad = new Pass.FullScreenQuad(
-      new ShaderMaterial({
-        uniforms: UniformsUtils.clone(shader.uniforms),
-        vertexShader: shader.vertexShader,
-        fragmentShader: shader.fragmentShader,
-      }),
-    );
+  static _createShaderMaterial(shader, uniforms = {}) {
+    const material = new ShaderMaterial({
+      uniforms: UniformsUtils.clone(shader.uniforms),
+      vertexShader: shader.vertexShader,
+      fragmentShader: shader.fragmentShader,
+    });
 
     for (const uniform in uniforms) {
-      shaderQuad.material.uniforms[uniform].value = uniforms[uniform];
+      material.uniforms[uniform].value = uniforms[uniform];
     }
 
-    return shaderQuad;
+    return material;
   }
 
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this._transition.isPlaying()) {
-      const { material: shader } = this._transitionQuad;
-
       // make sure we continue to update the old camera while transitioning to a new one
       this._backgroundCamera.update();
 
@@ -227,8 +227,8 @@ class TransitionPass extends Pass {
       renderer.setRenderTarget(this._buffer);
       renderer.render(this._background.scene, this._backgroundCamera.camera);
 
-      shader.uniforms.tDiffuse1.value = this._buffer.texture;
-      shader.uniforms.tDiffuse2.value = readBuffer.texture;
+      this._transitionShader.uniforms.tDiffuse1.value = this._buffer.texture;
+      this._transitionShader.uniforms.tDiffuse2.value = readBuffer.texture;
 
       renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
       this._transitionQuad.render(renderer);
