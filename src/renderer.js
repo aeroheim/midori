@@ -2,7 +2,7 @@ import { WebGLRenderer, Vector4, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import TWEEN from '@tweenjs/tween.js';
-import { BackgroundCamera } from './camera';
+import { BackgroundCamera } from './background-camera';
 import { Background } from './background';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 import MotionBlurPass from './postprocessing/motion-blur-pass';

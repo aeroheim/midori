@@ -4,7 +4,7 @@ import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend';
 import { WipeShader } from './shaders/wipe';
 import { Background } from '../background';
-import { BackgroundCamera } from '../camera';
+import { BackgroundCamera } from '../background-camera';
 
 const TransitionType = Object.freeze({
   BLEND: 'blend', // basic blend/fade
