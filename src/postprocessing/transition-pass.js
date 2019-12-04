@@ -1,4 +1,4 @@
-import { ShaderMaterial, UniformsUtils, WebGLRenderTarget, Math as threeMath } from 'three';
+import { ShaderMaterial, UniformsUtils, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend';
@@ -20,18 +20,18 @@ class TransitionPass extends Pass {
   _height;
 
   _background; // the cached background to transition away from
-  _camera;// the cached camera to transition away from
+  _backgroundCamera;// the cached background camera to transition away from
   _buffer; // a buffer to render the cached background & camera during transitions
 
   _transition = new TWEEN.Tween();
   _transitionQuad;
 
-  constructor(background, camera, width, height) {
+  constructor(background, backgroundCamera, width, height) {
     super();
     this._width = width;
     this._height = height;
     this._background = background || new Background();
-    this._camera = camera || new BackgroundCamera(this._background, width, height);
+    this._backgroundCamera = backgroundCamera || new BackgroundCamera(this._background, width, height);
     this._buffer = new WebGLRenderTarget(width, height);
 
     // NOTE: this pass only needs to render when a transition occurs, so disable it by default.
@@ -42,7 +42,7 @@ class TransitionPass extends Pass {
     this._width = width;
     this._height = height;
     this._background.setSize(width, height);
-    this._camera.setSize(width, height);
+    this._backgroundCamera.setSize(width, height);
     this._buffer.setSize(width, height);
   }
 
@@ -50,121 +50,170 @@ class TransitionPass extends Pass {
     return this._transition.isPlaying();
   }
 
-  transition(type, background, camera, config = {}) {
+  /**
+   * Renders a transition effect over the screen.
+   * @param {TransitionType} type - the type of the transition.
+   * @param {Background} background - the background to transition to.
+   * @param {BackgroundCamera} backgroundCamera - the background camera to transition to.
+   * @param {Object} config - configuration for the transition.
+   * @param {Object} config.from={} - the starting transition values to start the transition from.
+   * @param {Object} config.to={} - the ending transition values to finish the transition at.
+   * @param {Number} config.duration=0 - the duration of the transition in seconds.
+   * @param {TWEEN.Easing} config.easing=TWEEN.Easing.Linear.None - the easing function to use for the transition.
+   * @param {Function} config.onStart=()=>({}) - an optional callback when the transition starts.
+   * @param {Function} config.onUpdate=()=>({}) - an optional callback when the transition updates.
+   * @param {Function} config.onComplete=()=>({}) - an optional callback when the transition finishes.
+   * @param {Function} config.onStop=()=>({}) - an optional callback when the transition stops or pauses.
+   * @param {any} config.* - any additional configuration specific to the transition type.
+   */
+  transition(type, background, backgroundCamera, config = {}) {
+    const {
+      from,
+      to,
+      duration,
+      easing,
+      onStart,
+      onUpdate,
+      onComplete,
+      onStop,
+    } = this._getTransitionConfig(type, background, backgroundCamera, config);
+
+    this._transition.stop();
+    this._transition = new TWEEN.Tween(from)
+      .to(to, duration)
+      .easing(easing)
+      .onStart(onStart)
+      .onUpdate(onUpdate)
+      .onComplete(onComplete)
+      .onStop(onStop)
+      .start();
+  }
+
+  /**
+   * Returns a valid configuration for the specified transition type.
+   * @param {TransitionType} type - the type of the transition.
+   * @param {Background} background - the background to transition to.
+   * @param {BackgroundCamera} backgroundCamera - the background camera to transition to.
+   * @param {Object} config - see TransitionPass.transition.
+   */
+  _getTransitionConfig(type, background, backgroundCamera, config = {}) {
     const onTransitionStart = () => {
-      // transition has started - enable this pass.
+      // enable this pass when a transition starts.
       this.enabled = true;
     };
     const onTransitionEnd = () => {
-      // transition has ended - disable this pass.
+      // disable this pass after a transition finishes.
       this.enabled = false;
 
+      // cache the new background/camera to be used for the next transition.
       this._background = background || new Background();
-      this._camera = camera || new BackgroundCamera(this._background, this._width, this._height);
+      this._backgroundCamera = backgroundCamera || new BackgroundCamera(this._background, this._width, this._height);
       this._transitionQuad = null;
     };
-    const transitionConfig = {
-      ...config,
+
+    const {
+      from = {},
+      to = {},
+      easing = TWEEN.Easing.Linear.None,
+      duration = 0,
+      onStart = () => ({}),
+      onUpdate = () => ({}),
+      onComplete = () => ({}),
+      onStop = () => ({}),
+      ...additionalConfig
+    } = config;
+
+    const baseTransitionConfig = {
+      from,
+      to,
+      easing,
+      duration: duration * 1000,
       onStart: () => {
         onTransitionStart();
-        if (config.onStart) {
-          config.onStart();
-        }
+        onStart();
       },
+      onUpdate,
       onComplete: () => {
         onTransitionEnd();
-        if (config.onComplete) {
-          config.onComplete();
-        }
+        onComplete();
       },
       onStop: () => {
         onTransitionEnd();
-        if (config.onStop) {
-          config.onStop();
-        }
+        onStop();
       },
     };
 
-    // TODO: this probably needs to manipulate the camera to achieve some effects
     switch (type) {
-      case TransitionType.BLEND:
-        this._blendTransition(transitionConfig);
-        break;
-      case TransitionType.WIPE:
-        this._wipeTransition(transitionConfig);
-        break;
+      case TransitionType.BLEND: {
+        const { from: { blend: blendFrom = 0 }, to: { blend: blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        return {
+          ...baseTransitionConfig,
+          from: { blend: blendFrom },
+          to: { blend: blendTo },
+          onStart: () => {
+            this._transitionQuad = TransitionPass._createShaderQuad(BlendShader);
+            onStart();
+          },
+          onUpdate: ({ blend }) => {
+            this._transitionQuad.material.uniforms.blend.value = blend;
+            onUpdate();
+          },
+        };
+      }
+      case TransitionType.WIPE: {
+        const { from: { wipe: wipeFrom = 0 }, to: { wipe: wipeTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { gradient = 0, angle = 0 } = additionalConfig;
+        return {
+          ...baseTransitionConfig,
+          from: { wipe: wipeFrom },
+          to: { wipe: wipeTo },
+          onStart: () => {
+            this._transitionQuad = TransitionPass._createShaderQuad(WipeShader, {
+              gradient,
+              angle,
+              aspect: this._width / this._height,
+            });
+            onStart();
+          },
+          onUpdate: ({ wipe }) => {
+            const { material: shader } = this._transitionQuad;
+            // update the aspect ratio incase it changes in the middle of the transition
+            shader.uniforms.aspect.value = this._width / this._height;
+            shader.uniforms.wipe.value = wipe;
+            onUpdate();
+          },
+        };
+      }
       case TransitionType.SLIDE:
       case TransitionType.DISTORTION:
       case TransitionType.GLITCH:
       default:
-        // TODO: implement transitions
-        break;
+        return baseTransitionConfig;
     }
   }
 
-  // TODO: refactor duplication among transitions
-  _blendTransition(config = {}) {
-    this._transition.stop();
+  /**
+   * Creates a new full screen quad with the given shader applied as its material.
+   * @param {Object} shader - an object defining a shader.
+   * @param {Object} shader.uniforms - a map that defines the uniforms of the given shader
+   * @param {string} shader.vertexShader - a string that defines the vertex shader program
+   * @param {string} shader.fragmentShader - a string that defines the fragment shader program
+   * @param {Object} uniforms - a map that defines the values of the uniforms to be used
+   */
+  static _createShaderQuad(shader, uniforms = {}) {
+    const shaderQuad = new Pass.FullScreenQuad(
+      new ShaderMaterial({
+        uniforms: UniformsUtils.clone(shader.uniforms),
+        vertexShader: shader.vertexShader,
+        fragmentShader: shader.fragmentShader,
+      }),
+    );
 
-    this._transition = new TWEEN.Tween({
-      blend: 0,
-    })
-      .to({
-        blend: config.blend || 1,
-      }, (config.duration || 0) * 1000)
-      .easing(config.easing || TWEEN.Easing.Linear.None)
-      .onStart(() => {
-        this._transitionQuad = new Pass.FullScreenQuad(
-          new ShaderMaterial({
-            uniforms: UniformsUtils.clone(BlendShader.uniforms),
-            vertexShader: BlendShader.vertexShader,
-            fragmentShader: BlendShader.fragmentShader,
-          }),
-        );
+    for (const uniform in uniforms) {
+      shaderQuad.material.uniforms[uniform].value = uniforms[uniform];
+    }
 
-        config.onStart();
-      })
-      .onUpdate(({ blend }) => {
-        const { material: shader } = this._transitionQuad;
-        shader.uniforms.blend.value = blend;
-      })
-      .onComplete(() => config.onComplete())
-      .onStop(() => config.onStop())
-      .start();
-  }
-
-  _wipeTransition(config = {}) {
-    this._transition.stop();
-
-    this._transition = new TWEEN.Tween({
-      wipe: 0,
-    })
-      .to({
-        wipe: config.wipe || 1,
-      }, (config.duration || 0) * 1000)
-      .easing(config.easing || TWEEN.Easing.Linear.None)
-      .onStart(() => {
-        const shader = new ShaderMaterial({
-          uniforms: UniformsUtils.clone(WipeShader.uniforms),
-          vertexShader: WipeShader.vertexShader,
-          fragmentShader: WipeShader.fragmentShader,
-        });
-        shader.uniforms.gradient.value = 0.5;
-        shader.uniforms.angle.value = threeMath.degToRad(15);
-        shader.uniforms.aspect.value = this._width / this._height;
-        this._transitionQuad = new Pass.FullScreenQuad(shader);
-
-        config.onStart();
-      })
-      .onUpdate(({ wipe }) => {
-        const { material: shader } = this._transitionQuad;
-        shader.uniforms.wipe.value = wipe;
-        // update the aspect ratio incase it changes in the middle of the transition
-        shader.uniforms.aspect.value = this._width / this._height;
-      })
-      .onComplete(() => config.onComplete())
-      .onStop(() => config.onStop())
-      .start();
+    return shaderQuad;
   }
 
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
@@ -172,11 +221,11 @@ class TransitionPass extends Pass {
       const { material: shader } = this._transitionQuad;
 
       // make sure we continue to update the old camera while transitioning to a new one
-      this._camera.update();
+      this._backgroundCamera.update();
 
       // render the scene we're transitioning from
       renderer.setRenderTarget(this._buffer);
-      renderer.render(this._background.scene, this._camera.camera);
+      renderer.render(this._background.scene, this._backgroundCamera.camera);
 
       shader.uniforms.tDiffuse1.value = this._buffer.texture;
       shader.uniforms.tDiffuse2.value = readBuffer.texture;
