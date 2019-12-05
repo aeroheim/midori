@@ -72,6 +72,7 @@ class EffectPass extends Pass {
   setPersistentEffect(type, config = {}) {
     if (type in this._effectStates) {
       this._effectStates[type] = EffectState.PERSISTENT;
+      this.enabled = true;
     }
 
     switch (type) {
@@ -99,6 +100,9 @@ class EffectPass extends Pass {
   stopPersistentEffect(type) {
     if (type in this._effectStates) {
       this._effectStates[type] = EffectState.INACTIVE;
+    }
+    if (Object.values(this._effectStates).every(x => x === EffectState.INACTIVE)) {
+      this.enabled = false;
     }
   }
 
