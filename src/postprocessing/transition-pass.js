@@ -3,6 +3,7 @@ import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend-shader';
 import { WipeShader } from './shaders/wipe-shader';
+import { SlideShader} from './shaders/slide-shader';
 import { Background } from '../background';
 import { BackgroundCamera } from '../background-camera';
 
@@ -188,7 +189,25 @@ class TransitionPass extends Pass {
           },
         };
       }
-      case TransitionType.SLIDE:
+      case TransitionType.SLIDE: {
+        const { from: { amount: slideFrom = 0, blendFrom = 0 }, to: { amount: slideTo = 1, blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { intensity = 1 } = additionalConfig;
+        return {
+          ...baseTransitionConfig,
+          from: { amount: slideFrom, blend: blendFrom },
+          to: { amount: slideTo, blend: blendTo },
+          onStart: () => {
+            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, { intensity });
+            this._transitionQuad.material = this._transitionShader;
+            onStart();
+          },
+          onUpdate: ({ amount, blend }) => {
+            this._transitionShader.uniforms.amount.value = amount;
+            this._transitionShader.uniforms.blend.value = blend;
+            onUpdate();
+          },
+        };
+      }
       case TransitionType.DISTORTION:
       case TransitionType.GLITCH:
       default:

@@ -90,7 +90,7 @@ class Renderer {
     });
 
     // kick off transition in post-processing
-    this._transitionPass.transition(TransitionType.WIPE, this._background, this._backgroundCamera, {
+    this._transitionPass.transition(TransitionType.SLIDE, this._background, this._backgroundCamera, {
       gradient: 0.5,
       angle: threeMath.degToRad(15),
       duration: 1,
