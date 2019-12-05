@@ -1,8 +1,8 @@
 import { ShaderMaterial, UniformsUtils, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
-import { BlendShader } from './shaders/blend';
-import { WipeShader } from './shaders/wipe';
+import { BlendShader } from './shaders/blend-shader';
+import { WipeShader } from './shaders/wipe-shader';
 import { Background } from '../background';
 import { BackgroundCamera } from '../background-camera';
 
@@ -148,29 +148,29 @@ class TransitionPass extends Pass {
 
     switch (type) {
       case TransitionType.BLEND: {
-        const { from: { blend: blendFrom = 0 }, to: { blend: blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { from: { amount: blendFrom = 0 }, to: { amount: blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
         return {
           ...baseTransitionConfig,
-          from: { blend: blendFrom },
-          to: { blend: blendTo },
+          from: { amount: blendFrom },
+          to: { amount: blendTo },
           onStart: () => {
             this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
             this._transitionQuad.material = this._transitionShader;
             onStart();
           },
-          onUpdate: ({ blend }) => {
-            this._transitionShader.uniforms.blend.value = blend;
+          onUpdate: ({ amount }) => {
+            this._transitionShader.uniforms.amount.value = amount;
             onUpdate();
           },
         };
       }
       case TransitionType.WIPE: {
-        const { from: { wipe: wipeFrom = 0 }, to: { wipe: wipeTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { from: { amount: wipeFrom = 0 }, to: { amount: wipeTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
         const { gradient = 0, angle = 0 } = additionalConfig;
         return {
           ...baseTransitionConfig,
-          from: { wipe: wipeFrom },
-          to: { wipe: wipeTo },
+          from: { amount: wipeFrom },
+          to: { amount: wipeTo },
           onStart: () => {
             this._transitionShader = TransitionPass._createShaderMaterial(WipeShader, {
               gradient,
@@ -180,10 +180,10 @@ class TransitionPass extends Pass {
             this._transitionQuad.material = this._transitionShader;
             onStart();
           },
-          onUpdate: ({ wipe }) => {
+          onUpdate: ({ amount }) => {
             // update the aspect ratio incase it changes in the middle of the transition
             this._transitionShader.uniforms.aspect.value = this._width / this._height;
-            this._transitionShader.uniforms.wipe.value = wipe;
+            this._transitionShader.uniforms.amount.value = amount;
             onUpdate();
           },
         };

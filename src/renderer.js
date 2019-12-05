@@ -1,12 +1,11 @@
 import { WebGLRenderer, Vector4, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import TWEEN from '@tweenjs/tween.js';
 import { BackgroundCamera } from './background-camera';
 import { Background } from './background';
-import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
-import MotionBlurPass from './postprocessing/motion-blur-pass';
 import BackgroundPass from './postprocessing/background-pass';
+import { EffectPass, EffectType } from './postprocessing/effect-pass';
+import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 
 // TODO: properly dispose of three.js objects
 class Renderer {
@@ -19,7 +18,8 @@ class Renderer {
 
   _renderer;
   _composer;
-  _renderPass;
+  _backgroundPass;
+  _effectPass;
   _transitionPass;
 
   constructor(domElement) {
@@ -41,11 +41,11 @@ class Renderer {
 
     // post-processing pipeline
     this._composer = new EffectComposer(this._renderer);
-    // this._renderPass = new RenderPass(this._background.scene, this._backgroundCamera.camera);
-    // this._renderPass = new MotionBlurPass(this._background.scene, this._backgroundCamera.camera);
-    this._renderPass = new BackgroundPass(this._background.scene, this._backgroundCamera.camera);
+    this._backgroundPass = new BackgroundPass(this._background.scene, this._backgroundCamera.camera);
+    this._effectPass = new EffectPass();
     this._transitionPass = new TransitionPass(this._background, this._backgroundCamera, this._width, this._height);
-    this._composer.addPass(this._renderPass);
+    this._composer.addPass(this._backgroundPass);
+    this._composer.addPass(this._effectPass);
     this._composer.addPass(this._transitionPass);
   }
 
@@ -56,7 +56,7 @@ class Renderer {
     this._composer.setSize(this._width, this._height);
     this._renderer.setSize(this._width, this._height);
     this._backgroundCamera.setSize(this._width, this._height);
-    this._renderPass.setSize(this._width, this._height);
+    this._backgroundPass.setSize(this._width, this._height);
     this._transitionPass.setSize(this._width, this._height);
   }
 
@@ -95,8 +95,15 @@ class Renderer {
       angle: threeMath.degToRad(15),
       duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
-      onStart: () => this._renderPass.setBackground(this._background.scene, this._backgroundCamera.camera),
-      // make sure to dispose of old camera/background in onComplete
+      onStart: () => {
+        this._backgroundPass.setBackground(this._background.scene, this._backgroundCamera.camera);
+        this._effectPass.setPersistentEffect(EffectType.MOTION_BLUR, {
+          intensity: 3.5,
+          camera: this._backgroundCamera.camera,
+          depthTexture: this._backgroundPass.depthTexture,
+        });
+      },
+      // TODO: make sure to dispose of old camera/background in onComplete
     });
   }
 

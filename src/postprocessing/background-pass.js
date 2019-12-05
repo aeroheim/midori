@@ -14,7 +14,7 @@ class BackgroundPass extends Pass {
     this._buffer.depthTexture = new DepthTexture(width, height);
   }
 
-  get depthBuffer() {
+  get depthTexture() {
     return this._buffer.depthTexture;
   }
 
