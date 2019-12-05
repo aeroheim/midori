@@ -10,7 +10,8 @@ const MotionBlurShader = {
     tDepth: { value: null },
     clipToWorldMatrix: { value: null },
     prevWorldToClipMatrix: { value: null },
-    velocityScalar: { value: 3.5 },
+    // a positive value that affects the intensity of the blur
+    intensity: { value: 3.5 },
   },
 
   vertexShader: [
@@ -30,7 +31,7 @@ const MotionBlurShader = {
     'uniform sampler2D tDepth;',
     'uniform mat4 clipToWorldMatrix;',
     'uniform mat4 prevWorldToClipMatrix;',
-    'uniform float velocityScalar;',
+    'uniform float intensity;',
     'varying vec2 vUv;',
 
     'void main() {',
@@ -41,7 +42,7 @@ const MotionBlurShader = {
 
     ' vec4 prevClipPosition = prevWorldToClipMatrix * worldPosition;',
     ' prevClipPosition /= prevClipPosition.w;',
-    ' vec2 velocity = (clipPosition - prevClipPosition).xy * velocityScalar;',
+    ' vec2 velocity = (clipPosition - prevClipPosition).xy * intensity;',
 
     ' vec4 texel = texture2D(tDiffuse, vUv);',
     ' vec2 texelCoord = vUv;',

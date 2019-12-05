@@ -14,7 +14,7 @@ const WipeShader = {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
     // a value from 0 to 1 indicating the ratio of the texture wipe
-    wipe: { value: 0.0 },
+    amount: { value: 0.0 },
     // an value from 0 to 1 indicating the size of the blend gradient
     gradient: { value: 0.0 },
     // the direction to wipe to
@@ -40,7 +40,7 @@ const WipeShader = {
 
     'uniform sampler2D tDiffuse1;',
     'uniform sampler2D tDiffuse2;',
-    'uniform float wipe;',
+    'uniform float amount;',
     'uniform float gradient;',
     'uniform int direction;',
     'uniform float angle;',
@@ -82,7 +82,7 @@ const WipeShader = {
 
     // a tween that starts from one side of the texture and ends at the other side.
     // this tween accounts for offsets due to the size of the blend gradient and angle of the wipe effect.
-    ' float wipeOffset = (-max(0.0, rotationOffset) - gradient) + ((1.0 + abs(rotationOffset) + gradient) * wipe) + rotatedPosition;',
+    ' float wipeOffset = (-max(0.0, rotationOffset) - gradient) + ((1.0 + abs(rotationOffset) + gradient) * amount) + rotatedPosition;',
     ' if (position <= wipeOffset) {',
     '   gl_FragColor = texel2;',
     ' } else if (position <= wipeOffset + gradient) {',
