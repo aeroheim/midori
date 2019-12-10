@@ -91,11 +91,8 @@ class Renderer {
 
     // kick off transition in post-processing
     this._transitionPass.transition(TransitionType.SLIDE, this._background, this._backgroundCamera, {
-      from: { amount: 0 },
-      to: { amount: 10 },
-      gradient: 0.5,
-      angle: threeMath.degToRad(15),
-      duration: 2,
+      slides: 5,
+      duration: 1.2,
       easing: TWEEN.Easing.Cubic.Out,
       onStart: () => {
         this._backgroundPass.setBackground(this._background.scene, this._backgroundCamera.camera);

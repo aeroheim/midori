@@ -11,7 +11,7 @@ const MotionBlurShader = {
     clipToWorldMatrix: { value: null },
     prevWorldToClipMatrix: { value: null },
     // a positive value that affects the intensity of the blur
-    intensity: { value: 0.0 },
+    intensity: { value: 1.0 },
   },
 
   vertexShader: [

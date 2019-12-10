@@ -190,20 +190,20 @@ class TransitionPass extends Pass {
         };
       }
       case TransitionType.SLIDE: {
-        const { from: { amount: slideFrom = 0, blendFrom = 0 }, to: { amount: slideTo = 1, blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
-        const { intensity = 1 } = additionalConfig;
+        const { from: { amount: slideFrom = 0 }, to: { amount: slideTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { slides = 1, intensity = 1 } = additionalConfig;
         return {
           ...baseTransitionConfig,
-          from: { amount: slideFrom, blend: blendFrom },
-          to: { amount: slideTo, blend: blendTo },
+          from: { amount: slideFrom },
+          to: { amount: slideTo },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, { intensity });
+            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, { slides, intensity });
             this._transitionQuad.material = this._transitionShader;
             onStart();
           },
-          onUpdate: ({ amount, blend }) => {
+          onUpdate: ({ amount }) => {
+            this._transitionShader.uniforms.prevAmount.value = this._transitionShader.uniforms.amount.value;
             this._transitionShader.uniforms.amount.value = amount;
-            this._transitionShader.uniforms.blend.value = blend;
             onUpdate();
           },
         };
