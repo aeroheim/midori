@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -53,28 +54,28 @@ const WipeShader = {
 
     ' float position;',
     ' if (direction == 0) {',
-    // WipeDirection.LEFT
+        // WipeDirection.LEFT
     '   position = 1.0 - vUv.x;',
     ' } else if (direction == 1) {',
-    // WipeDirection.RIGHT
+        // WipeDirection.RIGHT
     '   position = vUv.x;',
     ' } else if (direction == 2) {',
-    // WipeDirection.TOP
+        // WipeDirection.TOP
     '   position = vUv.y;',
     ' } else if (direction == 3) {',
-    // WipeDirection.BOTTOM
+        // WipeDirection.BOTTOM
     '   position = 1.0 - vUv.y;',
     ' }',
 
     ' float rotationOffset;',
     ' float rotatedPosition;',
     ' if (direction < 2) {',
-    // rotation for horizontal wipes
+        // rotation for horizontal wipes
     '   float slope = 1.0 / tan(angle);',
     '   rotationOffset = (1.0 / slope) / aspect;',
     '   rotatedPosition = (vUv.y / slope) / aspect;',
     ' } else {',
-    // rotation for vertical wipes
+        // rotation for vertical wipes
     '   float slope = tan(angle);',
     '   rotationOffset = slope / aspect;',
     '   rotatedPosition = (vUv.x * slope) / aspect;',
