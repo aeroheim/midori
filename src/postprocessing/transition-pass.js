@@ -3,7 +3,7 @@ import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend-shader';
 import { WipeShader } from './shaders/wipe-shader';
-import { SlideShader} from './shaders/slide-shader';
+import { SlideShader, SlideDirection } from './shaders/slide-shader';
 import { Background } from '../background';
 import { BackgroundCamera } from '../background-camera';
 
@@ -191,13 +191,18 @@ class TransitionPass extends Pass {
       }
       case TransitionType.SLIDE: {
         const { from: { amount: slideFrom = 0 }, to: { amount: slideTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
-        const { slides = 1, intensity = 1 } = additionalConfig;
+        const { gradient = 0, slides = 1, intensity = 1, direction = SlideDirection.RIGHT } = additionalConfig;
         return {
           ...baseTransitionConfig,
           from: { amount: slideFrom },
           to: { amount: slideTo },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, { slides, intensity });
+            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, {
+              gradient,
+              slides,
+              intensity,
+              direction,
+            });
             this._transitionQuad.material = this._transitionShader;
             onStart();
           },

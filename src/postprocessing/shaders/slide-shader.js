@@ -1,18 +1,30 @@
+/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
+
+const SlideDirection = Object.freeze({
+  LEFT: 0,
+  RIGHT: 1,
+  TOP: 2,
+  BOTTOM: 3,
+});
 
 const SlideShader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
     slides: { value: 1.0 },
-    // a positive value indicating the amount to slide
+    // an value from 0 to 1 indicating the slide ratio
     amount: { value: 0.0 },
     // the amount value of the previous frame - used to calculate the velocity for the blur
     prevAmount: { value: 0.0 },
-    // a positive value that affects the intensity of the blur
+    // an value from 0 to 1 indicating the size of the blend gradient
+    gradient: { value: 0.0 },
+    // a positive value that affects the intensity of the slide blur
     intensity: { value: 1.0 },
+    // the direction to slide to
+    direction: { value: SlideDirection.RIGHT },
   },
 
   vertexShader: [
@@ -33,46 +45,64 @@ const SlideShader = {
     'uniform int slides;',
     'uniform float amount;',
     'uniform float prevAmount;',
+    'uniform float gradient;',
     'uniform float intensity;',
+    'uniform int direction;',
     'varying vec2 vUv;',
 
-    'void main() {',
-    ' float blendDistance = 0.2;',
-    ' float screenRange = 1.0 - blendDistance;',
+    'float getComponentForDirection(int direction, vec2 uv) {',
+    ' return direction < 2 ? uv.x : uv.y;',
+    '}',
 
-    ' float offset = amount * (float(slides) * screenRange);',
-    ' vec2 position = vec2(mod(vUv.x + offset, screenRange), vUv.y);',
+    'vec2 getVectorForDirection(int direction, vec2 uv, float position) {',
+    ' return direction < 2 ? vec2(position, uv.y) : vec2(uv.x, position);',
+    '}',
 
-    // find index of current screen, apply first/last screen edge cases if necessary
-    ' vec4 texel = texture2D(tDiffuse2, position);',
-    ' int index = int(floor((vUv.x + offset) / screenRange));',
+    'vec4 getTexelForPosition(vec2 uv, float amount, int slides, float gradient, int direction) {',
+    ' float slideLength = 1.0 - gradient;',
+    ' float slideOffsetRange = float(slides) * slideLength;',
+    ' float slideOffset = amount * slideOffsetRange;',
+    ' float slidePosition = getComponentForDirection(direction, uv) + slideOffset;',
+    ' int slideIndex = int(floor(slidePosition / slideLength));',
 
-    ' if (position.x < blendDistance) {',
-    '   if (index >= slides + 1) {',
-    '     texel = texture2D(tDiffuse2, vec2((1.0 - blendDistance) + position.x, vUv.y));',
-    '   } else if (index != 0) {',
-    '     vec4 texel1 = texture2D(tDiffuse2, vec2((1.0 - blendDistance) + position.x, vUv.y));',
-    '     vec4 texel2 = texture2D(tDiffuse2, position);',
-    '     bool fadeOutBlend = int(floor((offset + screenRange + (blendDistance * 4.0)) / screenRange)) >= slides + 1;',
-    '     texel = mix(texel1, texel2, fadeOutBlend',
-    '       ? min(1.0, (position.x / blendDistance) / ((float(slides) * screenRange - offset) / (blendDistance * 4.0)))',
-    '       : position.x / blendDistance);',
+    ' float position = mod(slidePosition, slideLength);', // TODO: mod will rollover position values early - implement our own mod function instead
+    ' vec2 texelCoords = getVectorForDirection(direction, uv, position);',
+
+      // the position is within a blend section between two slides
+    ' if (position < gradient) {',
+    '   vec2 texelBlendCoords = getVectorForDirection(direction, uv, (1.0 - gradient) + position);',
+        // special case for final slide
+    '   if (slideIndex >= slides + 1) {',
+    '     return mix(texture2D(tDiffuse1, texelBlendCoords), texture2D(tDiffuse2, texelBlendCoords), amount);',
+    '   }',
+
+        // case for in-between slides
+    '   if (slideIndex != 0) {',
+          // fade out the blend section leading up the final slide
+    '     float fadeDistance = gradient * 4.0;',
+    '     bool fade = int(floor((slideOffset + slideLength + fadeDistance) / slideLength)) >= slides + 1;',
+    '     float blendRatio = position / gradient;',
+    '     blendRatio = fade ? min(blendRatio / ((slideOffsetRange - slideOffset) / fadeDistance), 1.0) : blendRatio;',
+    '     vec4 texel1 = mix(texture2D(tDiffuse1, texelBlendCoords), texture2D(tDiffuse1, texelCoords), blendRatio);',
+    '     vec4 texel2 = mix(texture2D(tDiffuse2, texelBlendCoords), texture2D(tDiffuse2, texelCoords), blendRatio);',
+    '     return mix(texel1, texel2, amount);',
     '   }',
     ' }',
 
-    /*
-    // sample the colors to achieve blurring effect
+    ' return mix(texture2D(tDiffuse1, texelCoords), texture2D(tDiffuse2, texelCoords), amount);',
+    '}',
+
+    'void main() {',
+    ' vec4 texel = getTexelForPosition(vUv, amount, slides, gradient, direction);',
+
     ' float velocity = (amount - prevAmount) * intensity;',
     ' const int numSamples = 100;',
     ' for (int i = 0; i < numSamples; ++i) {',
     '   float offset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
-    '   texel += texture2D(tDiffuse2, position);',
+    '   texel += getTexelForPosition(vec2(vUv.x + offset, vUv.y), amount, slides, gradient, direction);',
     ' }',
-    */
 
-    ' gl_FragColor = texel;',
-    // ' gl_FragColor = texture2D(tDiffuse2, position);',
-    // ' gl_FragColor = mix(texel1, texel2, amount);',
+    ' gl_FragColor = texel / max(1.0, float(numSamples));',
     '}',
 
   ].join('\n'),
@@ -80,6 +110,7 @@ const SlideShader = {
 
 export {
   SlideShader,
+  SlideDirection,
 };
 
 export default SlideShader;

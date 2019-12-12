@@ -91,8 +91,10 @@ class Renderer {
 
     // kick off transition in post-processing
     this._transitionPass.transition(TransitionType.SLIDE, this._background, this._backgroundCamera, {
+      gradient: 0.2,
       slides: 5,
-      duration: 1.2,
+      intensity: 10,
+      duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
       onStart: () => {
         this._backgroundPass.setBackground(this._background.scene, this._backgroundCamera.camera);
