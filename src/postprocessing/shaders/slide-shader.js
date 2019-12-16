@@ -45,7 +45,6 @@ const SlideShader = {
     'uniform int slides;',
     'uniform float amount;',
     'uniform float prevAmount;',
-    'uniform float gradient;',
     'uniform float intensity;',
     'uniform int direction;',
     'varying vec2 vUv;',
@@ -58,31 +57,63 @@ const SlideShader = {
     ' return direction < 2 ? vec2(position, uv.y) : vec2(uv.x, position);',
     '}',
 
-    'vec4 getTexelForPosition(vec2 uv, float amount, int slides, float gradient, int direction) {',
+    'vec4 getTexelForPosition(vec2 uv, float amount, int slides, int direction) {',
+      // the gradient represents the size of the blend section between slides
+    ' const float gradient = 0.2;',
+      // the slide length represents the "length" of each slide - essentially the length of the uv length of the texture excluding the gradient
     ' float slideLength = 1.0 - gradient;',
+      // the total uv distance to translate - determined by the number of slides and length of each slide
     ' float slideOffsetRange = float(slides) * slideLength;',
+      // the current uv offset - determined by the amount value
     ' float slideOffset = amount * slideOffsetRange;',
-    ' float slidePosition = getComponentForDirection(direction, uv) + slideOffset;',
-    ' int slideIndex = int(floor(slidePosition / slideLength));',
+      // the absolute uv position after factoring in the slide offset - note that this exceeds the default 0 - 1.0 uv value range
+    ' float slidePosition;',
+      // the current slide index out of the total number of slides that the slidePosition falls within
+    ' int slideIndex;',
+      // whether the slide is a special edge slide - special edge slides should not be blended
+    ' bool isEdgeSlide;',
+      // whether the slide is a middle slide - middle slides blend with each other to smooth out texture boundaries
+    ' bool isMiddleSlide;',
 
-    ' float position = mod(slidePosition, slideLength);', // TODO: mod will rollover position values early - implement our own mod function instead
+    ' if (direction == 1 || direction == 2) {',
+      // SlideDirection.RIGHT || SlideDirection.TOP
+    '   slidePosition = getComponentForDirection(direction, uv) + slideOffset;',
+    '   slideIndex = int(floor(slidePosition / slideLength));',
+    '   isEdgeSlide = slideIndex == slides + 1;',
+    '   isMiddleSlide = slideIndex > 0 && slideIndex <= slides;',
+    ' } else if (direction == 0 || direction == 3) {',
+      // SlideDirection.LEFT || SlideDirection.BOTTOM
+    '   slidePosition = getComponentForDirection(direction, uv) + (slideLength - mod(slideOffset, slideLength));',
+    '   slideIndex = int(floor((getComponentForDirection(direction, 1.0 - uv) + slideOffset) / slideLength));',
+    '   isEdgeSlide = slideIndex == 0;',
+    '   isMiddleSlide = slideIndex > 0 && slideIndex <= slides;',
+    ' }',
+
+    // the normalized 0 - 1.0 uv position after factoring in the slide offset
+    ' float position = mod(slidePosition, slideLength);',
     ' vec2 texelCoords = getVectorForDirection(direction, uv, position);',
+    ' vec2 texelBlendCoords = getVectorForDirection(direction, uv, slideLength + position);',
 
       // the position is within a blend section between two slides
     ' if (position < gradient) {',
-    '   vec2 texelBlendCoords = getVectorForDirection(direction, uv, (1.0 - gradient) + position);',
-        // special case for final slide
-    '   if (slideIndex >= slides + 1) {',
+        // the texel is within a special edge slide - don't blend the texel
+    '   if (isEdgeSlide) {',
     '     return mix(texture2D(tDiffuse1, texelBlendCoords), texture2D(tDiffuse2, texelBlendCoords), amount);',
     '   }',
 
-        // case for in-between slides
-    '   if (slideIndex != 0) {',
-          // fade out the blend section leading up the final slide
-    '     float fadeDistance = gradient * 4.0;',
-    '     bool fade = int(floor((slideOffset + slideLength + fadeDistance) / slideLength)) >= slides + 1;',
+        // the texel is within a middle slide - blend the texel
+    '   if (isMiddleSlide) {',
     '     float blendRatio = position / gradient;',
-    '     blendRatio = fade ? min(blendRatio / ((slideOffsetRange - slideOffset) / fadeDistance), 1.0) : blendRatio;',
+
+          // fade out the blend section leading up the last slide
+    '     float fadeDistance = gradient * 4.0;',
+    '     bool fadeOut = int(floor((slideOffset + slideLength + fadeDistance) / slideLength)) >= slides + 1;',
+    '     if (fadeOut) {',
+    '       blendRatio = direction == 1 || direction == 2 ',
+    '         ? min(blendRatio / ((slideOffsetRange - slideOffset) / fadeDistance), 1.0)',
+    '         : min(blendRatio * ((slideOffsetRange - slideOffset) / fadeDistance), 1.0);',
+    '     }',
+
     '     vec4 texel1 = mix(texture2D(tDiffuse1, texelBlendCoords), texture2D(tDiffuse1, texelCoords), blendRatio);',
     '     vec4 texel2 = mix(texture2D(tDiffuse2, texelBlendCoords), texture2D(tDiffuse2, texelCoords), blendRatio);',
     '     return mix(texel1, texel2, amount);',
@@ -93,16 +124,17 @@ const SlideShader = {
     '}',
 
     'void main() {',
-    ' vec4 texel = getTexelForPosition(vUv, amount, slides, gradient, direction);',
+    ' vec4 texel = getTexelForPosition(vUv, amount, slides, direction);',
 
     ' float velocity = (amount - prevAmount) * intensity;',
     ' const int numSamples = 100;',
-    ' for (int i = 0; i < numSamples; ++i) {',
+    ' for (int i = 1; i < numSamples; ++i) {',
     '   float offset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
-    '   texel += getTexelForPosition(vec2(vUv.x + offset, vUv.y), amount, slides, gradient, direction);',
+    '   texel += getTexelForPosition(getVectorForDirection(direction, vUv, getComponentForDirection(direction, vUv) + offset), amount, slides, direction);',
     ' }',
 
     ' gl_FragColor = texel / max(1.0, float(numSamples));',
+    // ' gl_FragColor = texel;',
     '}',
 
   ].join('\n'),

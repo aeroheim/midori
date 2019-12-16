@@ -91,7 +91,6 @@ class Renderer {
 
     // kick off transition in post-processing
     this._transitionPass.transition(TransitionType.SLIDE, this._background, this._backgroundCamera, {
-      gradient: 0.2,
       slides: 5,
       intensity: 10,
       duration: 1,
