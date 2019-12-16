@@ -213,7 +213,7 @@ class BackgroundCamera {
 
     this._swayDistance = relativeDistance || this._swayDistance;
     this._swayTransitionConfig = { ...this._swayTransitionConfig, ...transition };
-    const { loop, duration, easing } = this._swayTransitionConfig;
+    const { loop = true, duration = 0, easing = TWEEN.Easing.Linear.None } = this._swayTransitionConfig;
 
     // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
     // so dampen x/y sway based on the camera's current z position.
@@ -244,14 +244,10 @@ class BackgroundCamera {
         offsetZR: swayZR - this._position.w,
       }, duration * 1000)
       .easing(easing)
-      .onStart(() => {
-        // console.log('sway start');
-      })
       .onUpdate(({ offsetX, offsetY, offsetZ, offsetZR }) => {
         this._swayOffset.set(offsetX, offsetY, offsetZ, offsetZR);
       })
       .onComplete(() => {
-        // console.log('sway end');
         if (loop) {
           this.sway();
         }
@@ -267,13 +263,26 @@ class BackgroundCamera {
    * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
   rotate(angle, transition = {}) {
+    const {
+      duration = 0,
+      easing = TWEEN.Easing.Linear.None,
+      onStart = () => ({}),
+      onUpdate = () => ({}),
+      onComplete = () => ({}),
+      onStop = () => ({}),
+    } = transition;
+
     this._rotationTransition.stop();
     this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
-      .to({ zr: angle }, (transition.duration || 0) * 1000)
-      .easing(transition.easing || TWEEN.Easing.Linear.None)
+      .to({ zr: angle }, duration * 1000)
+      .easing(easing)
+      .onStart(onStart)
       .onUpdate(({ zr }) => {
         this._position.set(this._position.x, this._position.y, this._position.z, zr);
+        onUpdate();
       })
+      .onComplete(onComplete)
+      .onStop(onStop)
       .start();
   }
 
@@ -288,13 +297,26 @@ class BackgroundCamera {
    * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
   move(relativePosition, transition = {}) {
+    const {
+      duration = 0,
+      easing = TWEEN.Easing.Linear.None,
+      onStart = () => ({}),
+      onUpdate = () => ({}),
+      onComplete = () => ({}),
+      onStop = () => ({}),
+    } = transition;
+
     this._positionTransition.stop();
     this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
-      .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, (transition.duration || 0) * 1000)
-      .easing(transition.easing || TWEEN.Easing.Linear.None)
+      .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, duration * 1000)
+      .easing(easing)
+      .onStart(onStart)
       .onUpdate(({ x, y, z }) => {
         this._position.set(x, y, z, this._position.w);
+        onUpdate();
       })
+      .onComplete(onComplete)
+      .onStop(onStop)
       .start();
   }
 
