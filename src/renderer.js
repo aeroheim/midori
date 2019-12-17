@@ -1,4 +1,4 @@
-import { WebGLRenderer, Vector4, Math as threeMath } from 'three';
+import { WebGLRenderer, Vector4, Vector3, Math as threeMath } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import TWEEN from '@tweenjs/tween.js';
 import { BackgroundCamera } from './background-camera';
@@ -76,7 +76,7 @@ class Renderer {
     // set main background, re-initialize camera
     this._background = background;
     this._backgroundCamera = new BackgroundCamera(this._background, this._width, this._height);
-    this._backgroundCamera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    this._backgroundCamera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
       duration: 1,
       easing: TWEEN.Easing.Quartic.Out,
     });
@@ -90,9 +90,24 @@ class Renderer {
     });
 
     // kick off transition in post-processing
+    /*
     this._transitionPass.transition(TransitionType.SLIDE, this._background, this._backgroundCamera, {
       slides: 5,
       intensity: 10,
+      duration: 1,
+      easing: TWEEN.Easing.Cubic.Out,
+      onStart: () => {
+        this._backgroundPass.setBackground(this._background.scene, this._backgroundCamera.camera);
+        this._effectPass.setPersistentEffect(EffectType.MOTION_BLUR, {
+          intensity: 3.5,
+          camera: this._backgroundCamera.camera,
+          depthTexture: this._backgroundPass.depthTexture,
+        });
+      },
+      // TODO: make sure to dispose of old camera/background in onComplete
+    });
+    */
+    this._transitionPass.transition(TransitionType.ZOOM, this._background, this._backgroundCamera, {
       duration: 1,
       easing: TWEEN.Easing.Cubic.Out,
       onStart: () => {
