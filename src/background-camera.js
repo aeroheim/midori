@@ -165,7 +165,7 @@ class BackgroundCamera {
   _object;
   _camera;
 
-  _position = new Vector4(0, 0, 1, 0); // the current absolute position of the camera
+  _position = new Vector4(0, 0, 1, 0); // the current relative position of the camera
   _positionTransition = new TWEEN.Tween();
   _rotationTransition = new TWEEN.Tween();
 
@@ -189,7 +189,7 @@ class BackgroundCamera {
     // NOTE: the relative camera position is the unmodified position and does NOT include offsets from swaying.
     return {
       absolute: new Vector4(absoluteX, absoluteY, absoluteZ, rotationZ),
-      relative: toRelativePosition(this._object, this._camera, this._position),
+      relative: this._position.clone(),
     };
   }
 
