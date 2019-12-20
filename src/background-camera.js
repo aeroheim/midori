@@ -273,17 +273,22 @@ class BackgroundCamera {
     } = transition;
 
     this._rotationTransition.stop();
-    this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
-      .to({ zr: angle }, duration * 1000)
-      .easing(easing)
-      .onStart(onStart)
-      .onUpdate(({ zr }) => {
-        this._position.set(this._position.x, this._position.y, this._position.z, zr);
-        onUpdate();
-      })
-      .onComplete(onComplete)
-      .onStop(onStop)
-      .start();
+    if (duration <= 0) {
+      this._position.set(this._position.x, this._position.y, this._position.z, angle);
+      this.update();
+    } else {
+      this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
+        .to({ zr: angle }, duration * 1000)
+        .easing(easing)
+        .onStart(onStart)
+        .onUpdate(({ zr }) => {
+          this._position.set(this._position.x, this._position.y, this._position.z, zr);
+          onUpdate();
+        })
+        .onComplete(onComplete)
+        .onStop(onStop)
+        .start();
+    }
   }
 
   /**
@@ -297,6 +302,7 @@ class BackgroundCamera {
    * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
   move(relativePosition, transition = {}) {
+    const { x, y, z } = relativePosition;
     const {
       duration = 0,
       easing = TWEEN.Easing.Linear.None,
@@ -307,17 +313,22 @@ class BackgroundCamera {
     } = transition;
 
     this._positionTransition.stop();
-    this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
-      .to({ x: relativePosition.x, y: relativePosition.y, z: relativePosition.z }, duration * 1000)
-      .easing(easing)
-      .onStart(onStart)
-      .onUpdate(({ x, y, z }) => {
-        this._position.set(x, y, z, this._position.w);
-        onUpdate();
-      })
-      .onComplete(onComplete)
-      .onStop(onStop)
-      .start();
+    if (duration <= 0) {
+      this._position.set(x, y, z, this._position.w);
+      this.update();
+    } else {
+      this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
+        .to({ x, y, z }, duration * 1000)
+        .easing(easing)
+        .onStart(onStart)
+        .onUpdate(({ x, y, z }) => {
+          this._position.set(x, y, z, this._position.w);
+          onUpdate();
+        })
+        .onComplete(onComplete)
+        .onStop(onStop)
+        .start();
+    }
   }
 
   /**
