@@ -109,7 +109,7 @@ class Renderer {
     */
     this._transitionPass.transition(TransitionType.ZOOM, this._background, this._backgroundCamera, {
       duration: 1,
-      easing: TWEEN.Easing.Cubic.Out,
+      easing: TWEEN.Easing.Cubic.InOut,
       onStart: () => {
         this._backgroundPass.setBackground(this._background.scene, this._backgroundCamera.camera);
         this._effectPass.setPersistentEffect(EffectType.MOTION_BLUR, {

@@ -214,28 +214,23 @@ class TransitionPass extends Pass {
           },
         };
       }
+      // TODO: try to avoid per-frame object allocations (e.g vectors)
       case TransitionType.ZOOM: {
-        const { from: { z: zoomFrom = 0 }, to: { z: zoomTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { from: { z: zoomFrom = 0.5 }, to: { z: zoomTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
         return {
           ...baseTransitionConfig,
-          from: { z: zoomFrom },
-          to: { z: zoomTo },
+          from: { amount: 0 },
+          to: { amount: 1 },
           onStart: () => {
             // TODO: figure out what we want to do about shader for ZOOM
             this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
             this._transitionQuad.material = this._transitionShader;
-
-            const { x, y, z } = this._prevBackgroundCamera.position.relative;
-            this._prevBackgroundCamera.move(new Vector3(x, y, 1), {
-              duration: 0.5,
-              easing: TWEEN.Easing.Cubic.In,
-            });
-            console.log(`(${x}, ${y}, ${z})`);
             onStart();
           },
-          onUpdate: () => {
-            const { x, y, z } = this._prevBackgroundCamera.position.relative;
-            console.log(`(${x}, ${y}, ${z})`);
+          onUpdate: ({ amount }) => {
+            // TODO: logic before and after halfway point, transform into proper zoom ranges
+            // const { x, y, z } = this._prevBackgroundCamera.position.relative;
+            // console.log(`(${x}, ${y}, ${z})`);
             onUpdate();
           },
         };
