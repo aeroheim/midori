@@ -144,6 +144,7 @@ function toAbsolutePosition(object, camera, relativePosition) {
  * @param {three.Vector4} absolutePosition - a vector that represents the absolute camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
  */
+/*
 function toRelativePosition(object, camera, absolutePosition) {
   const { x, y, z, w: zr } = absolutePosition;
 
@@ -155,6 +156,7 @@ function toRelativePosition(object, camera, absolutePosition) {
   // TODO: make this support conversions from rotated absolute positions
   return new Vector4(relativeX, relativeY, relativeZ, zr);
 }
+*/
 
 // NOTE: all Vector4 instances in this class are of the following format:
 // x - the x-axis component of the vector
@@ -174,8 +176,14 @@ class BackgroundCamera {
   _swayTransitionConfig = { loop: true, duration: 1, easing: TWEEN.Easing.Linear.None }; // the current sway transition config - cached to loop sways
   _swayTransition = new TWEEN.Tween();
 
+  /**
+   * @param {three.Object3D} background - a three.js plane object representing the background.
+   * @param {Number} width - the width of the camera.
+   * @param {Number} height - the height of the camera.
+   * @param {Number} fov=35 - the field of view of the camera.
+   */
   constructor(background, width, height, fov = 35) {
-    this._object = background.plane;
+    this._object = background;
     this._camera = new PerspectiveCamera(fov, width / height);
   }
 
@@ -188,11 +196,16 @@ class BackgroundCamera {
     const rotationZ = this._camera.rotation.z;
     // NOTE: the relative camera position is the unmodified position and does NOT include offsets from swaying.
     return {
+      // TODO: consider returning existing vectors to avoid extra object allocations
       absolute: new Vector4(absoluteX, absoluteY, absoluteZ, rotationZ),
       relative: this._position.clone(),
     };
   }
 
+  /**
+   * @param {Number} width - the width of the camera.
+   * @param {Number} height - the height of the camera.
+   */
   setSize(width, height) {
     this._camera.aspect = width / height;
     this._camera.updateProjectionMatrix();
@@ -273,10 +286,7 @@ class BackgroundCamera {
     } = transition;
 
     this._rotationTransition.stop();
-    if (duration <= 0) {
-      this._position.set(this._position.x, this._position.y, this._position.z, angle);
-      this.update();
-    } else {
+    if (duration > 0) {
       this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
         .to({ zr: angle }, duration * 1000)
         .easing(easing)
@@ -288,6 +298,8 @@ class BackgroundCamera {
         .onComplete(onComplete)
         .onStop(onStop)
         .start();
+    } else {
+      this._position.set(this._position.x, this._position.y, this._position.z, angle);
     }
   }
 
@@ -313,10 +325,7 @@ class BackgroundCamera {
     } = transition;
 
     this._positionTransition.stop();
-    if (duration <= 0) {
-      this._position.set(x, y, z, this._position.w);
-      this.update();
-    } else {
+    if (duration > 0) {
       this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
         .to({ x, y, z }, duration * 1000)
         .easing(easing)
@@ -328,6 +337,8 @@ class BackgroundCamera {
         .onComplete(onComplete)
         .onStop(onStop)
         .start();
+    } else {
+      this._position.set(x, y, z, this._position.w);
     }
   }
 
