@@ -1,5 +1,6 @@
-import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { ShaderMaterial, UniformsUtils, Matrix4 } from 'three';
+import { Pass } from 'three/examples/jsm/postprocessing/Pass';
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { MotionBlurShader } from './shaders/motion-blur-shader';
 
 const EffectType = Object.freeze({
@@ -12,7 +13,7 @@ const EffectType = Object.freeze({
   PARTICLE: 'particle',
 });
 
-class EffectPassShader {
+class Effect {
   _quad = new Pass.FullScreenQuad();
 
   constructor(shader) {
@@ -45,7 +46,7 @@ class EffectPassShader {
 const EffectState = Object.freeze({
   INACTIVE: 'inactive',
   ACTIVE: 'active',
-  PERSiSTENT: 'persistent',
+  PASSIVE: 'passive',
 });
 
 class EffectPass extends Pass {
@@ -59,26 +60,29 @@ class EffectPass extends Pass {
     [EffectType.PARTICLE]: EffectState.INACTIVE,
   };
 
-  _motionBlurShader = new EffectPassShader(MotionBlurShader);
+  _copyShader = new Effect(CopyShader);
+  _motionBlurShader = new Effect(MotionBlurShader);
+
+  constructor(config = {}) {
+    super();
+    const { camera, depthTexture } = config;
+    this._motionBlurShader.camera = camera;
+    this._motionBlurShader.depthTexture = depthTexture;
+  }
 
   // TODO: accepts a config + tween for a one-time effect animation
-  /*
-  effect() {
-
-  }
-  */
-
   // TODO: accept configurable variance/sway for certain effects
-  setPersistentEffect(type, config = {}) {
+  effect(type, config = {}) {
+    // TODO: allow active/passive effect configuration
     if (type in this._effectStates) {
-      this._effectStates[type] = EffectState.PERSISTENT;
-      this.enabled = true;
+      this._effectStates[type] = EffectState.PASSIVE;
     }
 
     switch (type) {
       case EffectType.MOTION_BLUR: {
         const { intensity = 3.5, camera, depthTexture: tDepth } = config;
-        this._motionBlurShader.camera = camera;
+        this._motionBlurShader.camera = camera || this._motionBlurShader.camera;
+        this._motionBlurShader.depthTexture = tDepth || this._motionBlurShader.depthTexture;
         this._motionBlurShader.setUniforms({
           clipToWorldMatrix: new Matrix4(),
           prevWorldToClipMatrix: new Matrix4(),
@@ -97,28 +101,19 @@ class EffectPass extends Pass {
     }
   }
 
-  stopPersistentEffect(type) {
-    if (type in this._effectStates) {
-      this._effectStates[type] = EffectState.INACTIVE;
-    }
-    if (Object.values(this._effectStates).every(x => x === EffectState.INACTIVE)) {
-      this.enabled = false;
-    }
-  }
-
   render(renderer, writeBuffer, readBuffer /* deltaTime, maskActive */) {
-    if (this._effectStates[EffectType.MOTION_BLUR] !== EffectState.INACTIVE) {
-      const { camera } = this._motionBlurShader;
-      const { clipToWorldMatrix, prevWorldToClipMatrix } = this._motionBlurShader.uniforms;
+    renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+    this._copyShader.setUniforms({ tDiffuse: readBuffer.texture });
+    this._copyShader.render(renderer);
 
+    if (this._effectStates[EffectType.MOTION_BLUR] !== EffectState.INACTIVE) {
+      const { camera, uniforms: { clipToWorldMatrix, prevWorldToClipMatrix } } = this._motionBlurShader;
       // the clip to world space matrix is calculated using the inverse projection-view matrix
       // NOTE: camera.matrixWorld is actually the inverse view matrix of the camera (instead of matrixWorldInverse...)
       this._motionBlurShader.setUniforms({
         tDiffuse: readBuffer.texture,
         clipToWorldMatrix: clipToWorldMatrix.value.copy(camera.projectionMatrixInverse).multiply(camera.matrixWorld),
       });
-
-      renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
       this._motionBlurShader.render(renderer);
 
       // the world to clip space matrix is calculated using the view-projection matrix
