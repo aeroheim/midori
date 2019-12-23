@@ -68,6 +68,10 @@ class Renderer {
     });
   }
 
+  isTransitioning() {
+    return this._transitionPass.isTransitioning();
+  }
+
   setBackground(texture) {
     this._background = new Background(texture, this._width, this._height);
     this._background.effects.effect(EffectType.MOTION_BLUR, { intensity: 3.5 });
@@ -82,25 +86,58 @@ class Renderer {
     });
 
     // kick off transition in post-processing
-    this._transitionPass.transition(TransitionType.SLIDE, this._background, {
-      slides: 5,
-      intensity: 10,
-      duration: 1,
-      easing: TWEEN.Easing.Cubic.Out,
+    const transitions = [
+      /*
+      {
+        type: TransitionType.BLEND,
+        config: {
+          duration: 1,
+          easing: TWEEN.Easing.Cubic.Out,
+        },
+      },
+      {
+        type: TransitionType.WIPE,
+        config: {
+          gradient: 0.5,
+          angle: threeMath.degToRad(15),
+          duration: 1,
+          easing: TWEEN.Easing.Cubic.Out,
+        },
+      },
+      {
+        type: TransitionType.SLIDE,
+        config: {
+          slides: 5,
+          intensity: 10,
+          duration: 1,
+          easing: TWEEN.Easing.Cubic.Out,
+        },
+      },
+      */
+      {
+        type: TransitionType.ZOOM,
+        config: {
+          from: { z: 1.0 },
+          to: { z: 0.8 },
+          duration: 1.5,
+          easing: TWEEN.Easing.Quartic.InOut,
+        },
+      },
+      {
+        type: TransitionType.ZOOM,
+        config: {
+          from: { z: 0.5 },
+          to: { z: 0.8 },
+          duration: 1.5,
+          easing: TWEEN.Easing.Quartic.InOut,
+        },
+      },
+    ];
+    const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
+    this._transitionPass.transition(type, this._background, {
+      ...config,
       onStart: () => this._backgroundPass.setBackground(this._background),
     });
-    /*
-    this._transitionPass.transition(TransitionType.ZOOM, this._background, {
-      from: { z: 1.0 },
-      to: { z: 0.8 },
-      duration: 1,
-      easing: TWEEN.Easing.Quartic.InOut,
-      onStart: () => {
-        this._backgroundPass.setBackground(this._background);
-      },
-      // TODO: make sure to dispose of old camera/background in onComplete
-    });
-    */
   }
 
   render() {
