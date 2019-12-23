@@ -1,6 +1,6 @@
 import TWEEN from '@tweenjs/tween.js';
 import { Renderer } from './renderer';
-import { Background } from './background';
+import { loadImageAsTexture } from './background';
 
 let renderer;
 
@@ -15,9 +15,9 @@ function render(time) {
 
 function init() {
   renderer = new Renderer(document.getElementById('container'));
-  Background.loadBackground(`images/${image}.png`)
-    .then((bg) => {
-      renderer.setBackground(bg);
+  loadImageAsTexture(`images/${image}.png`)
+    .then((texture) => {
+      renderer.setBackground(texture);
       render();
     })
     .catch(e => console.log(e));
@@ -28,16 +28,16 @@ window.onload = init;
 window.onkeyup = (e) => {
   if (e.key === 'ArrowLeft') {
     const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
-    Background.loadBackground(`images/${newIndex}.png`)
-      .then((bg) => {
-        renderer.setBackground(bg);
+    loadImageAsTexture(`images/${newIndex}.png`)
+      .then((texture) => {
+        renderer.setBackground(texture);
         image = newIndex;
       })
       .catch(e => console.log(e));
   } else if (e.key === 'ArrowRight') {
-    Background.loadBackground(`images/${(image + 1) % imageCount}.png`)
-      .then((bg) => {
-        renderer.setBackground(bg);
+    loadImageAsTexture(`images/${(image + 1) % imageCount}.png`)
+      .then((texture) => {
+        renderer.setBackground(texture);
         image = (image + 1) % imageCount;
       })
       .catch(e => console.log(e));

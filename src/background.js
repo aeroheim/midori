@@ -1,63 +1,89 @@
-import * as three from 'three';
+import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter, DepthTexture } from 'three';
+import { BackgroundCamera } from './background-camera';
+import { EffectPass } from './postprocessing/effect-pass';
+
+/**
+ * Loads an image as a texture.
+ * @async
+ * @param {string} path - path to the image file.
+ * @return {Promise} - texture on success, error on failure.
+ */
+async function loadImageAsTexture(path) {
+  return new Promise((resolve, reject) => {
+    new TextureLoader().load(path, (texture) => {
+      // image should never wrap
+      texture.wrapS = ClampToEdgeWrapping;
+      texture.wrapT = ClampToEdgeWrapping;
+
+      // image should be able to be UV mapped directly
+      texture.minFilter = LinearFilter;
+
+      // image should never repeat
+      texture.repeat.set(1, 1);
+
+      resolve(texture);
+    },
+    () => {},
+    errorEvent => reject(errorEvent.error));
+  });
+}
 
 class Background {
+  _buffer;
   _scene;
   _plane;
+  _camera;
+  _effects;
 
-  constructor(texture = null, material = null) {
-    this._scene = new three.Scene();
-    const aspectRatio = texture && texture.image
+  constructor(texture, width, height) {
+    this._buffer = new WebGLRenderTarget(width, height);
+    this._buffer.depthTexture = new DepthTexture(width, height);
+
+    const textureAspectRatio = texture && texture.image
       ? texture.image.width / texture.image.height
       : 1;
-    this._plane = new three.Mesh(
-      new three.PlaneGeometry(1, 1 / aspectRatio),
-      material || new three.MeshBasicMaterial({ map: texture }),
+    this._scene = new Scene();
+    this._plane = new Mesh(
+      new PlaneGeometry(1, 1 / textureAspectRatio),
+      new MeshBasicMaterial({ map: texture }),
     );
     this._scene.add(this._plane);
+    this._camera = new BackgroundCamera(this._plane, width, height);
+    this._effects = new EffectPass({
+      camera: this._camera.camera,
+      depthTexture: this._buffer.depthTexture,
+    });
   }
 
-  get plane() {
-    return this._plane;
+  get camera() {
+    return this._camera;
   }
 
-  get scene() {
-    return this._scene;
+  get effects() {
+    return this._effects;
   }
 
   setSize(width, height) {
-    const aspectRatio = width / height;
-    this._plane.geometry.parameters.width = 1;
-    this._plane.geometry.parameters.height = 1 / aspectRatio;
+    this._camera.setSize(width, height);
+    this._buffer.setSize(width, height);
+    this._buffer.depthTexture.image.width = width;
+    this._buffer.depthTexture.image.height = height;
   }
 
-  /**
- * Loads an image as a background.
- * @async
- * @param {string} path - path to the image file.
- * @return {Promise} - background on success, error on failure.
- */
-  static async loadBackground(path) {
-    return new Promise((resolve, reject) => {
-      new three.TextureLoader().load(path, (texture) => {
-        // image should never wrap
-        texture.wrapS = three.ClampToEdgeWrapping;
-        texture.wrapT = three.ClampToEdgeWrapping;
+  render(renderer, writeBuffer = null) {
+    this._camera.update();
 
-        // image should be able to be UV mapped directly
-        texture.minFilter = three.LinearFilter;
+    // render to internal buffer to update depth texture
+    renderer.setRenderTarget(this._buffer);
+    renderer.render(this._scene, this._camera.camera);
 
-        // image should never repeat
-        texture.repeat.set(1, 1);
-
-        resolve(new Background(texture));
-      },
-      () => {},
-      errorEvent => reject(errorEvent.error));
-    });
+    // render background with effects
+    this._effects.render(renderer, writeBuffer, this._buffer);
   }
 }
 
 export {
+  loadImageAsTexture,
   Background,
 };
 

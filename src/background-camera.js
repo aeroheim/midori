@@ -158,15 +158,15 @@ function toRelativePosition(object, camera, absolutePosition) {
 }
 */
 
-// NOTE: all Vector4 instances in this class are of the following format:
-// x - the x-axis component of the vector
-// y - the y-axis component of the vector
-// z - the z-axis component of the vector
-// w - the z-axis rotation component of the vector (also aliased as zr)
 class BackgroundCamera {
   _object;
   _camera;
 
+  // NOTE: all Vector4 instances in this class are of the following format:
+  // x - the x-axis component of the vector
+  // y - the y-axis component of the vector
+  // z - the z-axis component of the vector
+  // w - the z-axis rotation component of the vector (also aliased as zr)
   _position = new Vector4(0, 0, 1, 0); // the current relative position of the camera
   _positionTransition = new TWEEN.Tween();
   _rotationTransition = new TWEEN.Tween();
@@ -177,7 +177,7 @@ class BackgroundCamera {
   _swayTransition = new TWEEN.Tween();
 
   /**
-   * @param {three.Object3D} background - a three.js plane object representing the background.
+   * @param {three.Mesh} background - a three.js plane object representing the background.
    * @param {Number} width - the width of the camera.
    * @param {Number} height - the height of the camera.
    * @param {Number} fov=35 - the field of view of the camera.
