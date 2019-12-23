@@ -5,34 +5,31 @@ import { BlendShader } from './shaders/blend-shader';
 import { WipeShader } from './shaders/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/slide-shader';
 import { Background } from '../background';
-import { BackgroundCamera } from '../background-camera';
 
 const TransitionType = Object.freeze({
   BLEND: 'blend',
   WIPE: 'wipe',
   SLIDE: 'slide',
   ZOOM: 'zoom',
-  GLITCH: 'glitch', // you already know :^)
+  GLITCH: 'glitch',
 });
 
 class TransitionPass extends Pass {
   _width;
   _height;
 
-  _prevBackground; // the cached background to transition away from
-  _prevBackgroundCamera;// the cached background camera to transition away from
-  _buffer; // a buffer to render the cached background & camera during transitions
+  _prevBackground; // the prev background to transition away from
+  _buffer; // a buffer to render the prev background during transitions
 
   _transition = new TWEEN.Tween();
   _transitionQuad = new Pass.FullScreenQuad();
   _transitionShader;
 
-  constructor(background, backgroundCamera, width, height) {
+  constructor(background, width, height) {
     super();
     this._width = width;
     this._height = height;
-    this._prevBackground = background || new Background();
-    this._prevBackgroundCamera = backgroundCamera || new BackgroundCamera(this._prevBackground, width, height);
+    this._prevBackground = background || new Background(null, width, height);
     this._buffer = new WebGLRenderTarget(width, height);
 
     // this pass only needs to render when a transition occurs, so it should be disabled by default.
@@ -43,11 +40,10 @@ class TransitionPass extends Pass {
     this._width = width;
     this._height = height;
     this._prevBackground.setSize(width, height);
-    this._prevBackgroundCamera.setSize(width, height);
     this._buffer.setSize(width, height);
   }
 
-  isPlaying() {
+  isTransitioning() {
     return this._transition.isPlaying();
   }
 
@@ -55,7 +51,6 @@ class TransitionPass extends Pass {
    * Renders a transition effect over the screen.
    * @param {TransitionType} type - the type of the transition.
    * @param {Background} nextBackground - the background to transition to.
-   * @param {BackgroundCamera} nextBackgroundCamera - the background camera to transition to.
    * @param {Object} config - configuration for the transition.
    * @param {Object} config.from={} - the starting transition values to start the transition from.
    * @param {Object} config.to={} - the ending transition values to finish the transition at.
@@ -67,7 +62,7 @@ class TransitionPass extends Pass {
    * @param {Function} config.onStop=()=>({}) - an optional callback when the transition stops or pauses.
    * @param {any} config... - any additional configuration specific to the transition type.
    */
-  transition(type, nextBackground, nextBackgroundCamera, config = {}) {
+  transition(type, nextBackground, config = {}) {
     const {
       from,
       to,
@@ -77,9 +72,8 @@ class TransitionPass extends Pass {
       onUpdate,
       onComplete,
       onStop,
-    } = this._getTransitionConfig(type, nextBackground, nextBackgroundCamera, config);
+    } = this._getTransitionConfig(type, nextBackground, config);
 
-    // TODO: maybe add generic chain support? getTransitionConfig could generate named chains and this function loops and chains them
     this._transition.stop();
     this._transition = new TWEEN.Tween(from)
       .to(to, duration)
@@ -95,10 +89,9 @@ class TransitionPass extends Pass {
    * Returns a valid configuration for the specified transition type.
    * @param {TransitionType} type - the type of the transition.
    * @param {Background} nextBackground - the background to transition to.
-   * @param {BackgroundCamera} nextBackgroundCamera - the background camera to transition to.
    * @param {Object} config - see TransitionPass.transition.
    */
-  _getTransitionConfig(type, nextBackground, nextBackgroundCamera, config = {}) {
+  _getTransitionConfig(type, nextBackground, config = {}) {
     const onTransitionStart = () => {
       // enable this pass when a transition starts.
       this.enabled = true;
@@ -107,11 +100,11 @@ class TransitionPass extends Pass {
       // disable this pass after a transition finishes.
       this.enabled = false;
 
-      // cache the new background/camera to be used for the next transition.
-      this._prevBackground = nextBackground || new Background();
-      this._prevBackgroundCamera = nextBackgroundCamera || new BackgroundCamera(this._prevBackground, this._width, this._height);
+      // cache the new background to be used for the next transition.
+      this._prevBackground = nextBackground || new Background(null, this._width, this._height);
 
       // cleanup
+      // TODO: dispose old background/camera after transition finishes
       this._transitionShader.dispose();
       this._transitionQuad.material = null;
     };
@@ -216,21 +209,32 @@ class TransitionPass extends Pass {
       }
       // TODO: try to avoid per-frame object allocations (e.g vectors)
       case TransitionType.ZOOM: {
-        const { from: { z: zoomFrom = 0.5 }, to: { z: zoomTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { from: { z: nextCameraFrom = 0.5 }, to: { z: nextCameraTo = 0.8 }, onStart, onUpdate } = baseTransitionConfig;
+        const nextCameraRange = nextCameraTo - nextCameraFrom;
+        const prevCameraFrom = this._prevBackground.camera.position.relative.z;
+        const prevCameraTo = Math.max(Math.min(prevCameraFrom + nextCameraRange, 1), 0);
+        const prevCameraRange = prevCameraTo - prevCameraFrom;
+
         return {
           ...baseTransitionConfig,
           from: { amount: 0 },
           to: { amount: 1 },
           onStart: () => {
-            // TODO: figure out what we want to do about shader for ZOOM
             this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
             this._transitionQuad.material = this._transitionShader;
             onStart();
           },
           onUpdate: ({ amount }) => {
-            // TODO: logic before and after halfway point, transform into proper zoom ranges
-            // const { x, y, z } = this._prevBackgroundCamera.position.relative;
-            // console.log(`(${x}, ${y}, ${z})`);
+            this._transitionShader.uniforms.amount.value = Math.round(amount);
+            if (amount < 0.5) {
+              const prevCameraOffset = (amount / 0.5) * prevCameraRange;
+              const { x, y } = this._prevBackground.camera.position.relative;
+              this._prevBackground.camera.move(new Vector3(x, y, prevCameraFrom + prevCameraOffset));
+            } else {
+              const nextCameraOffset = ((amount - 0.5) / 0.5) * nextCameraRange;
+              const { x, y } = nextBackground.camera.position.relative;
+              nextBackground.camera.move(new Vector3(x, y, nextCameraFrom + nextCameraOffset));
+            }
             onUpdate();
           },
         };
@@ -264,14 +268,8 @@ class TransitionPass extends Pass {
   }
 
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
-    if (this._transition.isPlaying()) {
-      // make sure we continue to update the old camera while transitioning to a new one
-      this._prevBackgroundCamera.update();
-
-      // render the scene we're transitioning from
-      renderer.setRenderTarget(this._buffer);
-      renderer.render(this._prevBackground.scene, this._prevBackgroundCamera.camera);
-
+    if (this.isTransitioning()) {
+      this._prevBackground.render(renderer, this._buffer);
       this._transitionShader.uniforms.tDiffuse1.value = this._buffer.texture;
       this._transitionShader.uniforms.tDiffuse2.value = readBuffer.texture;
 
