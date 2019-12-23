@@ -43,7 +43,7 @@ const MotionBlurShader = {
 
     ' vec4 prevClipPosition = prevWorldToClipMatrix * worldPosition;',
     ' prevClipPosition /= prevClipPosition.w;',
-    ' vec2 velocity = (clipPosition - prevClipPosition).xy * intensity;',
+    ' vec2 velocity = ((clipPosition - prevClipPosition).xy + (clipPosition - prevClipPosition).zz) * intensity;',
 
     ' vec4 texel = texture2D(tDiffuse, vUv);',
     ' vec2 texelCoord = vUv;',
