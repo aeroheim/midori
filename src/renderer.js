@@ -5,6 +5,7 @@ import { Background } from './background';
 import BackgroundPass from './postprocessing/background-pass';
 import { EffectPass, EffectType } from './postprocessing/effect-pass';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
+import { SlideDirection } from './postprocessing/shaders/slide-shader';
 
 // TODO: properly dispose of three.js objects
 class Renderer {
@@ -37,12 +38,12 @@ class Renderer {
 
     // rendering pipeline
     this._backgroundPass = new BackgroundPass(this._background);
-    this._effectPass = new EffectPass();
+    // this._effectPass = new EffectPass();
     this._transitionPass = new TransitionPass(this._background, this._width, this._height);
 
     this._composer = new EffectComposer(this._renderer);
     this._composer.addPass(this._backgroundPass);
-    this._composer.addPass(this._effectPass);
+    // this._composer.addPass(this._effectPass);
     this._composer.addPass(this._transitionPass);
   }
 
@@ -60,11 +61,11 @@ class Renderer {
   test() {
     this._background.camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
       duration: 2,
-      easing: TWEEN.Easing.Quartic.Out,
+      easing: TWEEN.Easing.Cubic.InOut,
     });
     this._background.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
       duration: 2,
-      easing: TWEEN.Easing.Quartic.Out,
+      easing: TWEEN.Easing.Cubic.InOut,
     });
   }
 
@@ -74,8 +75,11 @@ class Renderer {
 
   setBackground(texture) {
     this._background = new Background(texture, this._width, this._height);
-    this._background.effects.effect(EffectType.MOTION_BLUR, { intensity: 3.5 });
-    this._background.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5));
+    this._background.effects.effect(EffectType.MOTION_BLUR, { intensity: 2 });
+    this._background.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+      duration: 1,
+      easing: TWEEN.Easing.Cubic.Out,
+    });
     this._background.camera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
       duration: 2,
       easing: TWEEN.Easing.Quadratic.InOut,
@@ -104,16 +108,18 @@ class Renderer {
           easing: TWEEN.Easing.Cubic.Out,
         },
       },
+      */
       {
         type: TransitionType.SLIDE,
         config: {
-          slides: 5,
+          direction: SlideDirection.RIGHT,
+          slides: 3,
           intensity: 10,
-          duration: 1,
-          easing: TWEEN.Easing.Cubic.Out,
+          duration: 1.5,
+          easing: TWEEN.Easing.Quintic.InOut,
         },
       },
-      */
+      /*
       {
         type: TransitionType.ZOOM,
         config: {
@@ -126,12 +132,13 @@ class Renderer {
       {
         type: TransitionType.ZOOM,
         config: {
-          from: { z: 0.5 },
+          from: { z: 0.6 },
           to: { z: 0.8 },
           duration: 1.5,
           easing: TWEEN.Easing.Quartic.InOut,
         },
       },
+      */
     ];
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, this._background, {
