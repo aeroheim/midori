@@ -22,7 +22,7 @@ const SlideShader = {
     prevAmount: { value: 0.0 },
     // an value from 0 to 1 indicating the size of the blend gradient
     gradient: { value: 0.0 },
-    // a positive value that affects the intensity of the slide blur
+    // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
     // the direction to slide to
     direction: { value: SlideDirection.RIGHT },

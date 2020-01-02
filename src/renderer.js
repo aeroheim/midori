@@ -108,18 +108,16 @@ class Renderer {
           easing: TWEEN.Easing.Quartic.InOut,
         },
       },
-      */
       {
         type: TransitionType.SLIDE,
         config: {
-          direction: SlideDirection.BOTTOM,
-          slides: 3,
-          intensity: 10,
+          direction: SlideDirection.RIGHT,
+          slides: 2,
+          intensity: 5,
           duration: 1.5,
           easing: TWEEN.Easing.Quintic.InOut,
         },
       },
-      /*
       {
         type: TransitionType.ZOOM,
         config: {
@@ -139,6 +137,14 @@ class Renderer {
         },
       },
       */
+      {
+        type: TransitionType.BLUR,
+        config: {
+          duration: 1,
+          intensity: 1.5,
+          easing: TWEEN.Easing.Quintic.InOut,
+        },
+      },
     ];
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, this._background, {

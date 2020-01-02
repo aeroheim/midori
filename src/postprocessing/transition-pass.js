@@ -4,6 +4,7 @@ import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend-shader';
 import { WipeShader } from './shaders/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/slide-shader';
+import { BlurShader } from './shaders/blur-shader';
 import { Background } from '../background';
 import { createShaderMaterial, updateUniforms, getUniforms } from './shader-utils';
 
@@ -12,8 +13,8 @@ const TransitionType = Object.freeze({
   BLEND: 'blend',
   WIPE: 'wipe',
   SLIDE: 'slide',
+  BLUR: 'blur',
   ZOOM: 'zoom',
-  GLITCH: 'glitch',
 });
 
 class TransitionPass extends Pass {
@@ -225,6 +226,24 @@ class TransitionPass extends Pass {
           },
         };
       }
+      case TransitionType.BLUR: {
+        const { from: { amount: blurFrom = 0 }, to: { amount: blurTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { intensity = 1 } = additionalConfig;
+        return {
+          ...baseTransitionConfig,
+          from: { amount: blurFrom },
+          to: { amount: blurTo },
+          onStart: () => {
+            this._setTransitionShader(BlurShader, { intensity });
+            onStart();
+          },
+          onUpdate: ({ amount }) => {
+            const { amount: prevAmount } = this._getTransitionUniforms();
+            this._updateTransitionUniforms({ prevAmount, amount });
+            onUpdate();
+          },
+        };
+      }
       // TODO: try to avoid per-frame object allocations (e.g vectors)
       case TransitionType.ZOOM: {
         const { from: { z: nextCameraFrom = 0.5 }, to: { z: nextCameraTo = 0.8 }, onStart, onUpdate } = baseTransitionConfig;
@@ -256,7 +275,6 @@ class TransitionPass extends Pass {
           },
         };
       }
-      case TransitionType.GLITCH:
       default:
         return baseTransitionConfig;
     }
