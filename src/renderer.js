@@ -96,7 +96,7 @@ class Renderer {
         type: TransitionType.BLEND,
         config: {
           duration: 1,
-          easing: TWEEN.Easing.Cubic.Out,
+          easing: TWEEN.Easing.Quintic.InOut,
         },
       },
       {
@@ -105,14 +105,14 @@ class Renderer {
           gradient: 0.5,
           angle: threeMath.degToRad(15),
           duration: 1,
-          easing: TWEEN.Easing.Cubic.Out,
+          easing: TWEEN.Easing.Quartic.InOut,
         },
       },
       */
       {
         type: TransitionType.SLIDE,
         config: {
-          direction: SlideDirection.RIGHT,
+          direction: SlideDirection.BOTTOM,
           slides: 3,
           intensity: 10,
           duration: 1.5,

@@ -1,12 +1,14 @@
-import { ShaderMaterial, UniformsUtils, WebGLRenderTarget, Vector3 } from 'three';
+import { WebGLRenderTarget, Vector3 } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend-shader';
 import { WipeShader } from './shaders/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/slide-shader';
 import { Background } from '../background';
+import { createShaderMaterial, updateUniforms, getUniforms } from './shader-utils';
 
 const TransitionType = Object.freeze({
+  NONE: 'none',
   BLEND: 'blend',
   WIPE: 'wipe',
   SLIDE: 'slide',
@@ -23,7 +25,6 @@ class TransitionPass extends Pass {
 
   _transition = new TWEEN.Tween();
   _transitionQuad = new Pass.FullScreenQuad();
-  _transitionShader;
 
   constructor(background, width, height) {
     super();
@@ -85,6 +86,23 @@ class TransitionPass extends Pass {
       .start();
   }
 
+  _setTransitionShader(shader, uniforms = {}) {
+    if (this._transitionQuad.material) {
+      this._transitionQuad.material.dispose();
+      this._transitionQuad.material = null;
+    }
+
+    this._transitionQuad.material = createShaderMaterial(shader, uniforms);
+  }
+
+  _updateTransitionUniforms(uniforms = {}) {
+    updateUniforms(this._transitionQuad.material, uniforms);
+  }
+
+  _getTransitionUniforms() {
+    return getUniforms(this._transitionQuad.material);
+  }
+
   /**
    * Returns a valid configuration for the specified transition type.
    * @param {TransitionType} type - the type of the transition.
@@ -102,11 +120,6 @@ class TransitionPass extends Pass {
 
       // cache the new background to be used for the next transition.
       this._prevBackground = nextBackground || new Background(null, this._width, this._height);
-
-      // cleanup
-      // TODO: dispose old background/camera after transition finishes
-      this._transitionShader.dispose();
-      this._transitionQuad.material = null;
     };
 
     const {
@@ -142,6 +155,15 @@ class TransitionPass extends Pass {
     };
 
     switch (type) {
+      case TransitionType.NONE: {
+        return {
+          ...baseTransitionConfig,
+          onStart: () => {
+            this._setTransitionShader(BlendShader, { amount: 1 });
+            onStart();
+          },
+        };
+      }
       case TransitionType.BLEND: {
         const { from: { amount: blendFrom = 0 }, to: { amount: blendTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
         return {
@@ -149,12 +171,11 @@ class TransitionPass extends Pass {
           from: { amount: blendFrom },
           to: { amount: blendTo },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
-            this._transitionQuad.material = this._transitionShader;
+            this._setTransitionShader(BlendShader);
             onStart();
           },
           onUpdate: ({ amount }) => {
-            this._transitionShader.uniforms.amount.value = amount;
+            this._updateTransitionUniforms({ amount });
             onUpdate();
           },
         };
@@ -167,18 +188,16 @@ class TransitionPass extends Pass {
           from: { amount: wipeFrom },
           to: { amount: wipeTo },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(WipeShader, {
+            this._setTransitionShader(WipeShader, {
               gradient,
               angle,
               aspect: this._width / this._height,
             });
-            this._transitionQuad.material = this._transitionShader;
             onStart();
           },
           onUpdate: ({ amount }) => {
             // update the aspect ratio incase it changes in the middle of the transition
-            this._transitionShader.uniforms.aspect.value = this._width / this._height;
-            this._transitionShader.uniforms.amount.value = amount;
+            this._updateTransitionUniforms({ amount, aspect: this._width / this._height });
             onUpdate();
           },
         };
@@ -191,18 +210,17 @@ class TransitionPass extends Pass {
           from: { amount: slideFrom },
           to: { amount: slideTo },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(SlideShader, {
+            this._setTransitionShader(SlideShader, {
               gradient,
               slides,
               intensity,
               direction,
             });
-            this._transitionQuad.material = this._transitionShader;
             onStart();
           },
           onUpdate: ({ amount }) => {
-            this._transitionShader.uniforms.prevAmount.value = this._transitionShader.uniforms.amount.value;
-            this._transitionShader.uniforms.amount.value = amount;
+            const { amount: prevAmount } = this._getTransitionUniforms();
+            this._updateTransitionUniforms({ prevAmount, amount });
             onUpdate();
           },
         };
@@ -220,12 +238,11 @@ class TransitionPass extends Pass {
           from: { amount: 0 },
           to: { amount: 1 },
           onStart: () => {
-            this._transitionShader = TransitionPass._createShaderMaterial(BlendShader);
-            this._transitionQuad.material = this._transitionShader;
+            this._setTransitionShader(BlendShader);
             onStart();
           },
           onUpdate: ({ amount }) => {
-            this._transitionShader.uniforms.amount.value = Math.round(amount);
+            this._updateTransitionUniforms({ amount: Math.round(amount) });
             if (amount < 0.5) {
               const prevCameraOffset = (amount / 0.5) * prevCameraRange;
               const { x, y } = this._prevBackground.camera.position.relative;
@@ -245,33 +262,13 @@ class TransitionPass extends Pass {
     }
   }
 
-  /**
-   * Returns a new ShaderMaterial given a shader definition and uniforms.
-   * @param {Object} shader - an object defining a shader.
-   * @param {Object} shader.uniforms - a map that defines the uniforms of the given shader
-   * @param {string} shader.vertexShader - a string that defines the vertex shader program
-   * @param {string} shader.fragmentShader - a string that defines the fragment shader program
-   * @param {Object} uniforms - a map that defines the values of the uniforms to be used
-   */
-  static _createShaderMaterial(shader, uniforms = {}) {
-    const material = new ShaderMaterial({
-      uniforms: UniformsUtils.clone(shader.uniforms),
-      vertexShader: shader.vertexShader,
-      fragmentShader: shader.fragmentShader,
-    });
-
-    for (const uniform in uniforms) {
-      material.uniforms[uniform].value = uniforms[uniform];
-    }
-
-    return material;
-  }
-
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this.isTransitioning()) {
       this._prevBackground.render(renderer, this._buffer);
-      this._transitionShader.uniforms.tDiffuse1.value = this._buffer.texture;
-      this._transitionShader.uniforms.tDiffuse2.value = readBuffer.texture;
+      this._updateTransitionUniforms({
+        tDiffuse1: this._buffer.texture,
+        tDiffuse2: readBuffer.texture,
+      });
 
       renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
       this._transitionQuad.render(renderer);
