@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, Vector3 } from 'three';
+import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
 import { BlendShader } from './shaders/blend-shader';
@@ -14,7 +14,6 @@ const TransitionType = Object.freeze({
   WIPE: 'wipe',
   SLIDE: 'slide',
   BLUR: 'blur',
-  ZOOM: 'zoom',
 });
 
 class TransitionPass extends Pass {
@@ -57,7 +56,9 @@ class TransitionPass extends Pass {
    * @param {Object} config.from={} - the starting transition values to start the transition from.
    * @param {Object} config.to={} - the ending transition values to finish the transition at.
    * @param {Number} config.duration=0 - the duration of the transition in seconds.
+   * @param {Number} config.delay=0 - a delay in seconds before the transition starts.
    * @param {TWEEN.Easing} config.easing=TWEEN.Easing.Linear.None - the easing function to use for the transition.
+   * @param {Function} config.onInit=()=>({}) - an optional callback when the transition is initialized.
    * @param {Function} config.onStart=()=>({}) - an optional callback when the transition starts.
    * @param {Function} config.onUpdate=()=>({}) - an optional callback when the transition updates.
    * @param {Function} config.onComplete=()=>({}) - an optional callback when the transition finishes.
@@ -69,7 +70,9 @@ class TransitionPass extends Pass {
       from,
       to,
       duration,
+      delay,
       easing,
+      onInit,
       onStart,
       onUpdate,
       onComplete,
@@ -77,6 +80,7 @@ class TransitionPass extends Pass {
     } = this._getTransitionConfig(type, nextBackground, config);
 
     this._transition.stop();
+    onInit();
     this._transition = new TWEEN.Tween(from)
       .to(to, duration)
       .easing(easing)
@@ -84,6 +88,7 @@ class TransitionPass extends Pass {
       .onUpdate(onUpdate)
       .onComplete(onComplete)
       .onStop(onStop)
+      .delay(delay)
       .start();
   }
 
@@ -128,6 +133,8 @@ class TransitionPass extends Pass {
       to = {},
       easing = TWEEN.Easing.Linear.None,
       duration = 0,
+      delay = 0,
+      onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
@@ -140,6 +147,8 @@ class TransitionPass extends Pass {
       to,
       easing,
       duration: duration * 1000,
+      delay: delay * 1000,
+      onInit,
       onStart: () => {
         onTransitionStart();
         onStart();
@@ -240,37 +249,6 @@ class TransitionPass extends Pass {
           onUpdate: ({ amount }) => {
             const { amount: prevAmount } = this._getTransitionUniforms();
             this._updateTransitionUniforms({ prevAmount, amount });
-            onUpdate();
-          },
-        };
-      }
-      // TODO: try to avoid per-frame object allocations (e.g vectors)
-      case TransitionType.ZOOM: {
-        const { from: { z: nextCameraFrom = 0.5 }, to: { z: nextCameraTo = 0.8 }, onStart, onUpdate } = baseTransitionConfig;
-        const nextCameraRange = nextCameraTo - nextCameraFrom;
-        const prevCameraFrom = this._prevBackground.camera.position.relative.z;
-        const prevCameraTo = Math.max(Math.min(prevCameraFrom + nextCameraRange, 1), 0);
-        const prevCameraRange = prevCameraTo - prevCameraFrom;
-
-        return {
-          ...baseTransitionConfig,
-          from: { amount: 0 },
-          to: { amount: 1 },
-          onStart: () => {
-            this._setTransitionShader(BlendShader);
-            onStart();
-          },
-          onUpdate: ({ amount }) => {
-            this._updateTransitionUniforms({ amount: Math.round(amount) });
-            if (amount < 0.5) {
-              const prevCameraOffset = (amount / 0.5) * prevCameraRange;
-              const { x, y } = this._prevBackground.camera.position.relative;
-              this._prevBackground.camera.move(new Vector3(x, y, prevCameraFrom + prevCameraOffset));
-            } else {
-              const nextCameraOffset = ((amount - 0.5) / 0.5) * nextCameraRange;
-              const { x, y } = nextBackground.camera.position.relative;
-              nextBackground.camera.move(new Vector3(x, y, nextCameraFrom + nextCameraOffset));
-            }
             onUpdate();
           },
         };

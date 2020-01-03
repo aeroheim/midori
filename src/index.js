@@ -8,8 +8,8 @@ let image = 0;
 const imageCount = 3;
 
 function render(time) {
-  renderer.render();
   TWEEN.update(time);
+  renderer.render();
   requestAnimationFrame(render); // TODO consider using renderer.setAnimationLoop() instead
 }
 
@@ -31,8 +31,10 @@ window.onkeyup = (e) => {
       const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
       loadImageAsTexture(`images/${newIndex}.png`)
         .then((texture) => {
-          renderer.setBackground(texture);
-          image = newIndex;
+          requestAnimationFrame(() => {
+            renderer.setBackground(texture);
+            image = newIndex;
+          });
         })
         .catch(e => console.log(e));
     }
@@ -40,8 +42,10 @@ window.onkeyup = (e) => {
     if (!renderer.isTransitioning()) {
       loadImageAsTexture(`images/${(image + 1) % imageCount}.png`)
         .then((texture) => {
-          renderer.setBackground(texture);
-          image = (image + 1) % imageCount;
+          requestAnimationFrame(() => {
+            renderer.setBackground(texture);
+            image = (image + 1) % imageCount;
+          });
         })
         .catch(e => console.log(e));
     }

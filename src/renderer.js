@@ -13,7 +13,6 @@ class Renderer {
   _width;
   _height;
 
-  _background;
   _renderer;
   _composer;
   _backgroundPass;
@@ -33,37 +32,35 @@ class Renderer {
     this.onResize = this.onResize.bind(this);
     window.onresize = this.onResize;
 
-    // main scene and camera
-    this._background = new Background(null, this._width, this._height);
-
     // rendering pipeline
-    this._backgroundPass = new BackgroundPass(this._background);
-    // this._effectPass = new EffectPass();
-    this._transitionPass = new TransitionPass(this._background, this._width, this._height);
+    this._backgroundPass = new BackgroundPass(new Background(null, this._width, this._height));
+    this._transitionPass = new TransitionPass(this._backgroundPass.background, this._width, this._height);
+    this._effectPass = new EffectPass();
 
     this._composer = new EffectComposer(this._renderer);
     this._composer.addPass(this._backgroundPass);
-    // this._composer.addPass(this._effectPass);
     this._composer.addPass(this._transitionPass);
+    this._composer.addPass(this._effectPass);
   }
 
   // TODO: define a setSize instead?
   onResize() {
     this._width = this._domElement.clientWidth;
     this._height = this._domElement.clientHeight;
-    this._background.setSize(this._width, this._height);
     this._composer.setSize(this._width, this._height);
     this._renderer.setSize(this._width, this._height);
+    this._backgroundPass.setSize(this._width, this._height);
     this._transitionPass.setSize(this._width, this._height);
   }
 
   // TODO: for testing purposes
   test() {
-    this._background.camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    const { camera } = this._backgroundPass.background;
+    camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
       duration: 2,
       easing: TWEEN.Easing.Cubic.InOut,
     });
-    this._background.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+    camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
       duration: 2,
       easing: TWEEN.Easing.Cubic.InOut,
     });
@@ -74,69 +71,16 @@ class Renderer {
   }
 
   setBackground(texture) {
-    this._background = new Background(texture, this._width, this._height);
-    this._background.effects.effect(EffectType.MOTION_BLUR, { intensity: 2 });
-    this._background.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
-      duration: 1,
-      easing: TWEEN.Easing.Cubic.Out,
-    });
-    this._background.camera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
-      duration: 2,
-      easing: TWEEN.Easing.Quadratic.InOut,
-    });
-    this._background.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
-      duration: 1,
-      easing: TWEEN.Easing.Quartic.Out,
-    });
-
-    // kick off transition in post-processing
     const transitions = [
-      /*
-      {
-        type: TransitionType.BLEND,
-        config: {
-          duration: 1,
-          easing: TWEEN.Easing.Quintic.InOut,
-        },
-      },
       {
         type: TransitionType.WIPE,
         config: {
           gradient: 0.5,
           angle: threeMath.degToRad(15),
-          duration: 1,
-          easing: TWEEN.Easing.Quartic.InOut,
-        },
-      },
-      {
-        type: TransitionType.SLIDE,
-        config: {
-          direction: SlideDirection.RIGHT,
-          slides: 2,
-          intensity: 5,
           duration: 1.5,
           easing: TWEEN.Easing.Quintic.InOut,
         },
       },
-      {
-        type: TransitionType.ZOOM,
-        config: {
-          from: { z: 1.0 },
-          to: { z: 0.8 },
-          duration: 1.5,
-          easing: TWEEN.Easing.Quartic.InOut,
-        },
-      },
-      {
-        type: TransitionType.ZOOM,
-        config: {
-          from: { z: 0.6 },
-          to: { z: 0.8 },
-          duration: 1.5,
-          easing: TWEEN.Easing.Quartic.InOut,
-        },
-      },
-      */
       {
         type: TransitionType.BLUR,
         config: {
@@ -145,11 +89,51 @@ class Renderer {
           easing: TWEEN.Easing.Quintic.InOut,
         },
       },
+      {
+        type: TransitionType.SLIDE,
+        config: {
+          direction: SlideDirection[Object.keys(SlideDirection)[Math.floor(Math.random() * Object.keys(SlideDirection).length)]],
+          slides: 2,
+          intensity: 5,
+          duration: 1.5,
+          easing: TWEEN.Easing.Quintic.InOut,
+        },
+      },
     ];
+
+    const prevBackground = this._backgroundPass.background;
+    const nextBackground = new Background(texture, this._width, this._height);
+    nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 2 });
+
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
-    this._transitionPass.transition(type, this._background, {
+    this._transitionPass.transition(type, nextBackground, {
       ...config,
-      onStart: () => this._backgroundPass.setBackground(this._background),
+      delay: 1.25,
+      onInit: () => {
+        prevBackground.camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
+          duration: 2.25,
+          easing: TWEEN.Easing.Quartic.In,
+        });
+        prevBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+          duration: 2.25,
+          easing: TWEEN.Easing.Quartic.In,
+        });
+      },
+      onStart: () => {
+        this._backgroundPass.setBackground(nextBackground);
+        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
+          duration: 2,
+          easing: TWEEN.Easing.Quartic.Out,
+        });
+        nextBackground.camera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
+          duration: 1.5,
+          easing: TWEEN.Easing.Quadratic.InOut,
+        });
+        nextBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+          duration: 2,
+          easing: TWEEN.Easing.Quartic.Out,
+        });
+      },
     });
   }
 

@@ -12,6 +12,14 @@ class BackgroundPass extends Pass {
     this._background = background;
   }
 
+  get background() {
+    return this._background;
+  }
+
+  setSize(width, height) {
+    this._background.setSize(width, height);
+  }
+
   render(renderer, writeBuffer /* readBuffer, deltaTime, maskActive */) {
     this._background.render(renderer, this.renderToScreen ? null : writeBuffer);
   }
