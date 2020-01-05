@@ -1,8 +1,13 @@
 /* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
+ *
  * A motion blur implemention based off of GPU Gems 3: Chapter 27. Motion Blur as a Post-Processing Effect
  * https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch27.html
+ *
+ * Also based off of an implementation by John Chapman:
+ * https://john-chapman-graphics.blogspot.com/2013/01/what-is-motion-blur-motion-pictures-are.html
+ *
  */
 
 const MotionBlurShader = {
@@ -50,7 +55,6 @@ const MotionBlurShader = {
     ' const int numSamples = 100;',
     ' for (int i = 1; i < numSamples; ++i) {',
         // this offset calculation centers the blur which avoids unevenness favoring the direction of the velocity
-        // see https://john-chapman-graphics.blogspot.com/2013/01/what-is-motion-blur-motion-pictures-are.html
     '   vec2 offset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
     '   texel += texture2D(tDiffuse, vUv + offset);',
     ' }',
