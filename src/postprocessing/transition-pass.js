@@ -6,7 +6,7 @@ import { WipeShader } from './shaders/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/slide-shader';
 import { BlurShader } from './shaders/blur-shader';
 import { Background } from '../background';
-import { createShaderMaterial, updateUniforms, getUniforms } from './shader-utils';
+import { Effect } from './effect';
 
 const TransitionType = Object.freeze({
   NONE: 'none',
@@ -24,7 +24,7 @@ class TransitionPass extends Pass {
   _buffer; // a buffer to render the prev background during transitions
 
   _transition = new TWEEN.Tween();
-  _transitionQuad = new Pass.FullScreenQuad();
+  _transitionEffect;
 
   constructor(background, width, height) {
     super();
@@ -92,21 +92,18 @@ class TransitionPass extends Pass {
       .start();
   }
 
-  _setTransitionShader(shader, uniforms = {}) {
-    if (this._transitionQuad.material) {
-      this._transitionQuad.material.dispose();
-      this._transitionQuad.material = null;
+  /**
+   * Sets the internal transition effect to be used.
+   * @param {Object} shader - an object defining a shader
+   * @param {Object} uniforms - a map that defines the values of the uniforms to be used
+   */
+  _setTransitionEffect(shader, uniforms = {}) {
+    if (this._transitionEffect) {
+      this._transitionEffect.dispose();
+      this._transitionEffect = null;
     }
 
-    this._transitionQuad.material = createShaderMaterial(shader, uniforms);
-  }
-
-  _updateTransitionUniforms(uniforms = {}) {
-    updateUniforms(this._transitionQuad.material, uniforms);
-  }
-
-  _getTransitionUniforms() {
-    return getUniforms(this._transitionQuad.material);
+    this._transitionEffect = new Effect(shader, uniforms);
   }
 
   /**
@@ -169,7 +166,7 @@ class TransitionPass extends Pass {
         return {
           ...baseTransitionConfig,
           onStart: () => {
-            this._setTransitionShader(BlendShader, { amount: 1 });
+            this._setTransitionEffect(BlendShader, { amount: 1 });
             onStart();
           },
         };
@@ -181,11 +178,11 @@ class TransitionPass extends Pass {
           from: { amount: blendFrom },
           to: { amount: blendTo },
           onStart: () => {
-            this._setTransitionShader(BlendShader);
+            this._setTransitionEffect(BlendShader);
             onStart();
           },
           onUpdate: ({ amount }) => {
-            this._updateTransitionUniforms({ amount });
+            this._transitionEffect.updateUniforms({ amount });
             onUpdate();
           },
         };
@@ -198,7 +195,7 @@ class TransitionPass extends Pass {
           from: { amount: wipeFrom },
           to: { amount: wipeTo },
           onStart: () => {
-            this._setTransitionShader(WipeShader, {
+            this._setTransitionEffect(WipeShader, {
               gradient,
               angle,
               aspect: this._width / this._height,
@@ -207,7 +204,7 @@ class TransitionPass extends Pass {
           },
           onUpdate: ({ amount }) => {
             // update the aspect ratio incase it changes in the middle of the transition
-            this._updateTransitionUniforms({ amount, aspect: this._width / this._height });
+            this._transitionEffect.updateUniforms({ amount, aspect: this._width / this._height });
             onUpdate();
           },
         };
@@ -220,7 +217,7 @@ class TransitionPass extends Pass {
           from: { amount: slideFrom },
           to: { amount: slideTo },
           onStart: () => {
-            this._setTransitionShader(SlideShader, {
+            this._setTransitionEffect(SlideShader, {
               gradient,
               slides,
               intensity,
@@ -229,8 +226,8 @@ class TransitionPass extends Pass {
             onStart();
           },
           onUpdate: ({ amount }) => {
-            const { amount: prevAmount } = this._getTransitionUniforms();
-            this._updateTransitionUniforms({ prevAmount, amount });
+            const { amount: prevAmount } = this._transitionEffect.getUniforms();
+            this._transitionEffect.updateUniforms({ prevAmount, amount });
             onUpdate();
           },
         };
@@ -243,12 +240,12 @@ class TransitionPass extends Pass {
           from: { amount: blurFrom },
           to: { amount: blurTo },
           onStart: () => {
-            this._setTransitionShader(BlurShader, { intensity });
+            this._setTransitionEffect(BlurShader, { intensity });
             onStart();
           },
           onUpdate: ({ amount }) => {
-            const { amount: prevAmount } = this._getTransitionUniforms();
-            this._updateTransitionUniforms({ prevAmount, amount });
+            const { amount: prevAmount } = this._transitionEffect.getUniforms();
+            this._transitionEffect.updateUniforms({ prevAmount, amount });
             onUpdate();
           },
         };
@@ -261,13 +258,12 @@ class TransitionPass extends Pass {
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this.isTransitioning()) {
       this._prevBackground.render(renderer, this._buffer);
-      this._updateTransitionUniforms({
+
+      renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
+      this._transitionEffect.render(renderer, {
         tDiffuse1: this._buffer.texture,
         tDiffuse2: readBuffer.texture,
       });
-
-      renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
-      this._transitionQuad.render(renderer);
     }
   }
 }
