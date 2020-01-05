@@ -20,17 +20,6 @@ function createShaderMaterial(shader, uniforms = {}) {
 }
 
 /**
- * Updates the uniforms for a given ShaderMaterial.
- * @param {ShaderMaterial} shader - a ShaderMaterial object.
- * @param {Object} uniforms - a map that defines the values of the uniforms to be used
- */
-function updateUniforms(shader, uniforms = {}) {
-  for (const uniform in uniforms) {
-    shader.uniforms[uniform].value = uniforms[uniform];
-  }
-}
-
-/**
  * Returns the values of the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  */
@@ -43,8 +32,34 @@ function getUniforms(shader) {
   return uniforms;
 }
 
-export {
+/**
+ * Updates the uniforms for a given ShaderMaterial.
+ * @param {ShaderMaterial} shader - a ShaderMaterial object.
+ * @param {Object} uniforms - a map that defines the values of the uniforms to be used
+ */
+function updateUniforms(shader, uniforms = {}) {
+  for (const uniform in uniforms) {
+    shader.uniforms[uniform].value = uniforms[uniform];
+  }
+}
+
+/**
+ * Resets the uniforms for a given ShaderMaterial.
+ * @param {ShaderMaterial} shader - a ShaderMaterial object.
+ */
+function clearUniforms(shader) {
+  shader.uniforms = UniformsUtils.clone(shader.uniforms);
+}
+
+const ShaderUtils = {
   createShaderMaterial,
-  updateUniforms,
   getUniforms,
+  updateUniforms,
+  clearUniforms,
 };
+
+export {
+  ShaderUtils,
+};
+
+export default ShaderUtils;
