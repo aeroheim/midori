@@ -3,7 +3,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
 import BackgroundPass from './postprocessing/background-pass';
-import { EffectPass, EffectType } from './postprocessing/effect-pass';
+import { EffectPass } from './postprocessing/effect-pass';
+import { EffectType } from './postprocessing/effect';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 import { SlideDirection } from './postprocessing/shaders/slide-shader';
 

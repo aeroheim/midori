@@ -1,6 +1,7 @@
 import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter, DepthTexture } from 'three';
 import { BackgroundCamera } from './background-camera';
 import { EffectPass } from './postprocessing/effect-pass';
+import { EffectType } from './postprocessing/effect';
 
 /**
  * Loads an image as a texture.
@@ -31,7 +32,6 @@ async function loadImageAsTexture(path) {
 class Background {
   _buffer;
   _scene;
-  _plane;
   _camera;
   _effects;
 
@@ -42,16 +42,19 @@ class Background {
     const textureAspectRatio = texture && texture.image
       ? texture.image.width / texture.image.height
       : 1;
+
     this._scene = new Scene();
-    this._plane = new Mesh(
+    const plane = new Mesh(
       new PlaneGeometry(1, 1 / textureAspectRatio),
       new MeshBasicMaterial({ map: texture }),
     );
-    this._scene.add(this._plane);
-    this._camera = new BackgroundCamera(this._plane, width, height);
-    this._effects = new EffectPass({
+    this._scene.add(plane);
+    this._camera = new BackgroundCamera(plane, width, height);
+    this._effects = new EffectPass();
+    this._effects.effect(EffectType.MOTION_BLUR, {
       camera: this._camera.camera,
-      depthTexture: this._buffer.depthTexture,
+      depthBuffer: this._buffer.depthTexture,
+      intensity: 0,
     });
   }
 
@@ -77,8 +80,13 @@ class Background {
     renderer.setRenderTarget(this._buffer);
     renderer.render(this._scene, this._camera.camera);
 
-    // render background with effects
-    this._effects.render(renderer, writeBuffer, this._buffer);
+    // render to the given write buffer
+    if (this._effects.hasEffects()) {
+      this._effects.render(renderer, writeBuffer, this._buffer);
+    } else {
+      renderer.setRenderTarget(writeBuffer);
+      renderer.render(this._scene, this._camera.camera);
+    }
   }
 }
 
