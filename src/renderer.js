@@ -6,7 +6,7 @@ import BackgroundPass from './postprocessing/background-pass';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
-import { SlideDirection } from './postprocessing/shaders/slide-shader';
+import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
 
 // TODO: properly dispose of three.js objects
 class Renderer {

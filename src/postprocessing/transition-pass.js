@@ -1,10 +1,10 @@
 import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import TWEEN from '@tweenjs/tween.js';
-import { BlendShader } from './shaders/blend-shader';
-import { WipeShader } from './shaders/wipe-shader';
-import { SlideShader, SlideDirection } from './shaders/slide-shader';
-import { BlurShader } from './shaders/blur-shader';
+import { BlendShader } from './shaders/transition/blend-shader';
+import { WipeShader } from './shaders/transition/wipe-shader';
+import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
+import { BlurShader } from './shaders/transition/blur-shader';
 import { Background } from '../background';
 import { Effect } from './effect';
 

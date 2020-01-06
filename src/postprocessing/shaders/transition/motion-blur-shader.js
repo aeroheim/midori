@@ -2,7 +2,7 @@
 /**
  * @author aeroheim / http://aeroheim.moe/
  *
- * A motion blur implemention based off of GPU Gems 3: Chapter 27. Motion Blur as a Post-Processing Effect
+ * A motion blur implemention based off of GPU Gems 3: Chapter 27. Motion Blur as a Post-Processing Effect:
  * https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch27.html
  *
  * Also based off of an implementation by John Chapman:
