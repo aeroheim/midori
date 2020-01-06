@@ -1,7 +1,7 @@
 import { Matrix4 } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { ShaderUtils } from './shaders/shader-utils';
-import { MotionBlurShader } from './shaders/motion-blur-shader';
+import { MotionBlurShader } from './shaders/transition/motion-blur-shader';
 
 const EffectType = Object.freeze({
   BLUR: 'blur',
