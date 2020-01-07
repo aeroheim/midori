@@ -36,7 +36,7 @@ class Renderer {
     // rendering pipeline
     this._backgroundPass = new BackgroundPass(new Background(null, this._width, this._height));
     this._transitionPass = new TransitionPass(this._backgroundPass.background, this._width, this._height);
-    this._effectPass = new EffectPass();
+    this._effectPass = new EffectPass(this._width, this._height);
 
     this._composer = new EffectComposer(this._renderer);
     this._composer.addPass(this._backgroundPass);
@@ -52,6 +52,7 @@ class Renderer {
     this._renderer.setSize(this._width, this._height);
     this._backgroundPass.setSize(this._width, this._height);
     this._transitionPass.setSize(this._width, this._height);
+    this._effectPass.setSize(this._width, this._height);
   }
 
   // TODO: for testing purposes
@@ -105,6 +106,7 @@ class Renderer {
     const prevBackground = this._backgroundPass.background;
     const nextBackground = new Background(texture, this._width, this._height);
     nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 2 });
+    nextBackground.effects.effect(EffectType.BLUR, { radius: 3 });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, nextBackground, {

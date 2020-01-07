@@ -1,14 +1,38 @@
+import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import { EffectType, Effect, MotionBlurEffect } from './effect';
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
+import { EffectType, MotionBlurEffect, GaussianBlurEffect, Effect } from './effect';
 
 class EffectPass extends Pass {
+  _width;
+  _height;
+
+  _readBuffer;
+  _writeBuffer;
+  _copyShader = new Effect(CopyShader);
+
   _effects = {};
 
-  constructor() {
+  constructor(width, height) {
     super();
+    this._width = width;
+    this._height = height;
+    this._readBuffer = new WebGLRenderTarget(width, height);
+    this._writeBuffer = new WebGLRenderTarget(width, height);
 
     // this pass only needs to render when there is at least one effect, so it should be disabled by default.
     this.enabled = false;
+  }
+
+  setSize(width, height) {
+    this._width = width;
+    this._height = height;
+    this._readBuffer.setSize(width, height);
+    this._writeBuffer.setSize(width, height);
+
+    if (this._effects[EffectType.BLUR]) {
+      this._effects[EffectType.BLUR].setSize(width, height);
+    }
   }
 
   get effects() {
@@ -22,12 +46,14 @@ class EffectPass extends Pass {
   _getOrCreateEffect(type, config = {}) {
     if (!(type in this._effects)) {
       switch (type) {
+        case EffectType.BLUR:
+          this._effects[type] = new GaussianBlurEffect(this._width, this._height);
+          break;
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
         case EffectType.RGB_SHIFT:
         case EffectType.BLOOM:
-        case EffectType.BLUR:
         case EffectType.DOF:
         case EffectType.PARTICLE:
         default:
@@ -38,22 +64,28 @@ class EffectPass extends Pass {
     return this._effects[type];
   }
 
-  // TODO: accepts a config + tween for a one-time effect animation
-  // TODO: accept configurable variance/sway for certain effects
   effect(type, config = {}) {
     const effect = this._getOrCreateEffect(type, config);
     if (effect) {
       // enable this pass when there is at least one effect.
       this.enabled = true;
+
       switch (type) {
+        case EffectType.BLUR: {
+          const { radius = 1 } = config;
+          effect.updateUniforms({ radius });
+          break;
+        }
         case EffectType.MOTION_BLUR: {
-          const { camera, depthBuffer, intensity = 3.5 } = config;
-          effect.updateUniforms({ intensity }, camera, depthBuffer);
+          const { camera: prevCamera, depthBuffer: prevDepthBuffer } = effect;
+          const { camera = prevCamera, depthBuffer = prevDepthBuffer, intensity = 1 } = config;
+          effect.camera = camera;
+          effect.depthBuffer = depthBuffer;
+          effect.updateUniforms({ intensity });
           break;
         }
         case EffectType.RGB_SHIFT:
         case EffectType.BLOOM:
-        case EffectType.BLUR:
         case EffectType.DOF:
         case EffectType.PARTICLE:
         default:
@@ -75,11 +107,47 @@ class EffectPass extends Pass {
     return false;
   }
 
+  _swapBuffers() {
+    const tmp = this._readBuffer;
+    this._readBuffer = this._writeBuffer;
+    this._writeBuffer = tmp;
+  }
+
   render(renderer, writeBuffer, readBuffer /* deltaTime, maskActive */) {
-    renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
-    if (this._effects[EffectType.MOTION_BLUR]) {
-      this._effects[EffectType.MOTION_BLUR].render(renderer, { tDiffuse: readBuffer.texture });
+    this._copyShader.render(renderer, this._readBuffer, { tDiffuse: readBuffer.texture });
+
+    if (this._effects[EffectType.BLUR]) {
+      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
+      this._swapBuffers();
     }
+    // TODO: add configurable number of passes for blur effect
+    /*
+    if (this._effects[EffectType.BLUR]) {
+      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
+      this._swapBuffers();
+    }
+    if (this._effects[EffectType.BLUR]) {
+      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
+      this._swapBuffers();
+    }
+    */
+
+    if (this._effects[EffectType.MOTION_BLUR]) {
+      this._effects[EffectType.MOTION_BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
+      this._swapBuffers();
+    }
+
+    this._copyShader.render(renderer, this.renderToScreen ? null : writeBuffer, { tDiffuse: this._readBuffer.texture });
+  }
+
+  // TODO: call this as necessary
+  dispose() {
+    this._copyShader.dispose();
+    this._readBuffer.dispose();
+    this._readBuffer.texture.dispose();
+    this._writeBuffer.dispose();
+    this._writeBuffer.texture.dispose();
+    Object.values(this._effects).forEach(effect => effect.dispose());
   }
 }
 

@@ -1,7 +1,8 @@
-import { Matrix4 } from 'three';
+import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { ShaderUtils } from './shaders/shader-utils';
 import { MotionBlurShader } from './shaders/transition/motion-blur-shader';
+import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 
 const EffectType = Object.freeze({
   BLUR: 'blur',
@@ -31,7 +32,8 @@ class Effect {
     ShaderUtils.clearUniforms(this._quad.material);
   }
 
-  render(renderer, uniforms = {}) {
+  render(renderer, writeBuffer, uniforms = {}) {
+    renderer.setRenderTarget(writeBuffer);
     this.updateUniforms(uniforms);
     this._quad.render(renderer);
   }
@@ -42,42 +44,67 @@ class Effect {
 }
 
 class MotionBlurEffect extends Effect {
-  _camera;
-  _depthBuffer;
+  camera;
+  depthBuffer;
 
   constructor(camera, depthBuffer, uniforms = {}) {
     super(MotionBlurShader, uniforms);
 
-    this._camera = camera;
-    this._depthBuffer = depthBuffer;
-    this.updateUniforms({
-      tDepth: depthBuffer,
-      clipToWorldMatrix: new Matrix4(),
-      prevWorldToClipMatrix: new Matrix4(),
-    });
+    this.camera = camera;
+    this.depthBuffer = depthBuffer;
   }
 
-  updateUniforms(uniforms = {}, camera, depthBuffer) {
-    this._camera = camera || this._camera;
-    this._depthBuffer = depthBuffer || this._depthBuffer;
-    super.updateUniforms({
-      ...uniforms,
-      tDepth: this._depthBuffer,
-    });
-  }
-
-  render(renderer, uniforms = {}) {
+  render(renderer, writeBuffer, uniforms = {}) {
     const { clipToWorldMatrix, prevWorldToClipMatrix } = this.getUniforms();
 
     // the clip to world space matrix is calculated using the inverse projection-view matrix
     // NOTE: camera.matrixWorld is the inverse view matrix of the camera (instead of matrixWorldInverse)
-    super.render(renderer, {
+    super.render(renderer, writeBuffer, {
       ...uniforms,
-      clipToWorldMatrix: clipToWorldMatrix.copy(this._camera.projectionMatrixInverse).multiply(this._camera.matrixWorld),
+      tDepth: this.depthBuffer,
+      clipToWorldMatrix: clipToWorldMatrix.copy(this.camera.projectionMatrixInverse).multiply(this.camera.matrixWorld),
     });
 
     // the world to clip space matrix is calculated using the view-projection matrix
-    prevWorldToClipMatrix.copy(this._camera.matrixWorldInverse).multiply(this._camera.projectionMatrix);
+    prevWorldToClipMatrix.copy(this.camera.matrixWorldInverse).multiply(this.camera.projectionMatrix);
+  }
+}
+
+class GaussianBlurEffect extends Effect {
+  _width;
+  _height;
+  _buffer;
+
+  constructor(width, height, uniforms = {}) {
+    super(GaussianBlurShader, uniforms);
+    this._width = width;
+    this._height = height;
+    this._buffer = new WebGLRenderTarget(width, height);
+  }
+
+  setSize(width, height) {
+    this._width = width;
+    this._height = height;
+    this._buffer.setSize(width, height);
+  }
+
+  render(renderer, writeBuffer, uniforms = {}) {
+    super.render(renderer, this._buffer, {
+      ...uniforms,
+      direction: GaussianBlurDirection.HORIZONTAL,
+      resolution: this._width,
+    });
+    super.render(renderer, writeBuffer, {
+      ...uniforms,
+      tDiffuse: this._buffer.texture,
+      direction: GaussianBlurDirection.VERTICAL,
+      resolution: this._height,
+    });
+  }
+
+  dispose() {
+    this._buffer.dispose();
+    super.dispose();
   }
 }
 
@@ -85,4 +112,5 @@ export {
   EffectType,
   Effect,
   MotionBlurEffect,
+  GaussianBlurEffect,
 };
