@@ -2,7 +2,7 @@
 /**
  * @author aeroheim / http://aeroheim.moe/
  *
- * A 9-tap two-pass gaussian blur filter based off of:
+ * A two-pass gaussian blur that uses a 17-tap filter based off of:
  * http://rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
  *
  * Also based off of the following implementation:
@@ -19,7 +19,7 @@ const GaussianBlurShader = {
   uniforms: {
     tDiffuse: { value: null },
     radius: { value: 1.0 },
-    resolution: { value: [0.0, 0.0] },
+    resolution: { value: 0.0 },
     direction: { value: [0.0, 0.0] },
   },
 
@@ -38,7 +38,7 @@ const GaussianBlurShader = {
 
     'uniform sampler2D tDiffuse;',
     'uniform float radius;',
-    'uniform vec2 resolution;',
+    'uniform float resolution;',
     'uniform vec2 direction;',
     'varying vec2 vUv;',
 
@@ -47,20 +47,28 @@ const GaussianBlurShader = {
     ' float h = direction.x;',
     ' float v = direction.y;',
 
-    ' sum = vec4(0.0);',
+    ' vec4 sum = vec4(0.0);',
 
-      // blur with 9-tap filter using precomputed gaussian weights
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 4.0 * blur * h, vUv.y - 4.0 * blur * v)) * 0.01621621621;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 3.0 * blur * h, vUv.y - 4.0 * blur * v)) * 0.05405405405;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 2.0 * blur * h, vUv.y - 4.0 * blur * v)) * 0.12162162162;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 1.0 * blur * h, vUv.y - 4.0 * blur * v)) * 0.19459459459;',
+      // blur with 17-tap filter using precomputed gaussian weights
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 8.0 * blur * h, vUv.y - 8.0 * blur * v)) * 0.00018120537;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 7.0 * blur * h, vUv.y - 7.0 * blur * v)) * 0.00108723226;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 6.0 * blur * h, vUv.y - 6.0 * blur * v)) * 0.00462073714;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 5.0 * blur * h, vUv.y - 5.0 * blur * v)) * 0.01478635885;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 4.0 * blur * h, vUv.y - 4.0 * blur * v)) * 0.03696589714;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 3.0 * blur * h, vUv.y - 3.0 * blur * v)) * 0.07393179429;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 2.0 * blur * h, vUv.y - 2.0 * blur * v)) * 0.12013916573;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x - 1.0 * blur * h, vUv.y - 1.0 * blur * v)) * 0.1601855543;',
 
-    ' sum += texture2D(tDiffuse, vUv) * 0.22702702702;',
+    ' sum += texture2D(tDiffuse, vUv) * 0.17620410973;',
 
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 1.0 * blur * h, vUv.y + 4.0 * blur * v)) * 0.19459459459;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 2.0 * blur * h, vUv.y + 4.0 * blur * v)) * 0.12162162162;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 3.0 * blur * h, vUv.y + 4.0 * blur * v)) * 0.05405405405;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 4.0 * blur * h, vUv.y + 4.0 * blur * v)) * 0.01621621621;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 1.0 * blur * h, vUv.y + 1.0 * blur * v)) * 0.1601855543;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 2.0 * blur * h, vUv.y + 2.0 * blur * v)) * 0.12013916573;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 3.0 * blur * h, vUv.y + 3.0 * blur * v)) * 0.07393179429;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 4.0 * blur * h, vUv.y + 4.0 * blur * v)) * 0.03696589714;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 5.0 * blur * h, vUv.y + 5.0 * blur * v)) * 0.01478635885;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 6.0 * blur * h, vUv.y + 6.0 * blur * v)) * 0.00462073714;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 7.0 * blur * h, vUv.y + 7.0 * blur * v)) * 0.00108723226;',
+    ' sum += texture2D(tDiffuse, vec2(vUv.x + 8.0 * blur * h, vUv.y + 8.0 * blur * v)) * 0.00018120537;',
 
     ' gl_FragColor = sum;',
     '}',
