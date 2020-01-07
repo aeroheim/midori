@@ -32,6 +32,7 @@ async function loadImageAsTexture(path) {
 class Background {
   _buffer;
   _scene;
+  _plane;
   _camera;
   _effects;
 
@@ -44,13 +45,13 @@ class Background {
       : 1;
 
     this._scene = new Scene();
-    const plane = new Mesh(
+    this._plane = new Mesh(
       new PlaneGeometry(1, 1 / textureAspectRatio),
       new MeshBasicMaterial({ map: texture }),
     );
-    this._scene.add(plane);
-    this._camera = new BackgroundCamera(plane, width, height);
-    this._effects = new EffectPass();
+    this._scene.add(this._plane);
+    this._camera = new BackgroundCamera(this._plane, width, height);
+    this._effects = new EffectPass(width, height);
     this._effects.effect(EffectType.MOTION_BLUR, {
       camera: this._camera.camera,
       depthBuffer: this._buffer.depthTexture,
@@ -87,6 +88,18 @@ class Background {
       renderer.setRenderTarget(writeBuffer);
       renderer.render(this._scene, this._camera.camera);
     }
+  }
+
+  // TODO: call this as necessary
+  dispose() {
+    this._buffer.dispose();
+    this._buffer.texture.dispose();
+    this._buffer.depthTexture.dispose();
+    this._plane.geometry.dispose();
+    this._plane.material.dispose();
+    this._plane.material.map.dispose();
+    this._scene.dispose();
+    this._effects.dispose();
   }
 }
 

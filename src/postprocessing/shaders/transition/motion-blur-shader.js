@@ -1,3 +1,5 @@
+import { Matrix4 } from 'three';
+
 /* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
@@ -14,8 +16,8 @@ const MotionBlurShader = {
   uniforms: {
     tDiffuse: { value: null },
     tDepth: { value: null },
-    clipToWorldMatrix: { value: null },
-    prevWorldToClipMatrix: { value: null },
+    clipToWorldMatrix: { value: new Matrix4() },
+    prevWorldToClipMatrix: { value: new Matrix4() },
     // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
   },

@@ -258,9 +258,7 @@ class TransitionPass extends Pass {
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this.isTransitioning()) {
       this._prevBackground.render(renderer, this._buffer);
-
-      renderer.setRenderTarget(this.renderToScreen ? null : writeBuffer);
-      this._transitionEffect.render(renderer, {
+      this._transitionEffect.render(renderer, this.renderToScreen ? null : writeBuffer, {
         tDiffuse1: this._buffer.texture,
         tDiffuse2: readBuffer.texture,
       });
