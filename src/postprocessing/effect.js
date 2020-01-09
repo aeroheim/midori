@@ -75,6 +75,8 @@ class GaussianBlurEffect extends Effect {
   _height;
   _buffer;
 
+  passes = 1;
+
   constructor(width, height, uniforms = {}) {
     super(GaussianBlurShader, uniforms);
     this._width = width;
@@ -89,17 +91,21 @@ class GaussianBlurEffect extends Effect {
   }
 
   render(renderer, writeBuffer, uniforms = {}) {
-    super.render(renderer, this._buffer, {
-      ...uniforms,
-      direction: GaussianBlurDirection.HORIZONTAL,
-      resolution: this._width,
-    });
-    super.render(renderer, writeBuffer, {
-      ...uniforms,
-      tDiffuse: this._buffer.texture,
-      direction: GaussianBlurDirection.VERTICAL,
-      resolution: this._height,
-    });
+    const { tDiffuse } = uniforms;
+    for (let i = 0; i < this.passes; ++i) {
+      super.render(renderer, this._buffer, {
+        ...uniforms,
+        tDiffuse: i === 0 ? tDiffuse : writeBuffer.texture,
+        direction: GaussianBlurDirection.HORIZONTAL,
+        resolution: this._width,
+      });
+      super.render(renderer, writeBuffer, {
+        ...uniforms,
+        tDiffuse: this._buffer.texture,
+        direction: GaussianBlurDirection.VERTICAL,
+        resolution: this._height,
+      });
+    }
   }
 
   dispose() {
