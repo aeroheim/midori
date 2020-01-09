@@ -1,3 +1,4 @@
+/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -12,6 +13,8 @@ const BlurShader = {
     prevAmount: { value: 0.0 },
     // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
+    // the number of samples to use (up to 128) - higher samples result in better quality at the cost of performance
+    samples: { value: 32 },
   },
 
   vertexShader: [
@@ -27,23 +30,30 @@ const BlurShader = {
 
   fragmentShader: [
 
+    'const int MAX_SAMPLES = 128;',
+
     'uniform sampler2D tDiffuse1;',
     'uniform sampler2D tDiffuse2;',
     'uniform float amount;',
     'uniform float prevAmount;',
     'uniform float intensity;',
+    'uniform int samples;',
     'varying vec2 vUv;',
+
 
     'void main() {',
     ' vec4 texel = mix(texture2D(tDiffuse1, vUv), texture2D(tDiffuse2, vUv), amount);',
     ' float velocity = (amount - prevAmount) * intensity;',
-    ' const int numSamples = 100;',
-    ' for (int i = 1; i < numSamples; ++i) {',
-    '   float offset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
+    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
+    '   if (i >= samples) {',
+          // hack to allow loop comparisons against uniforms
+    '     break;',
+    '   }',
+    '   float offset = velocity * (float(i) / float(samples - 1) - 0.5);',
     '   texel += mix(texture2D(tDiffuse1, vec2(vUv.x + offset, vUv.y)), texture2D(tDiffuse2, vec2(vUv.x + offset, vUv.y)), amount);',
     ' }',
 
-    ' gl_FragColor = texel / max(1.0, float(numSamples));',
+    ' gl_FragColor = texel / max(1.0, float(samples));',
     '}',
 
   ].join('\n'),

@@ -18,8 +18,11 @@ const GaussianBlurDirection = Object.freeze({
 const GaussianBlurShader = {
   uniforms: {
     tDiffuse: { value: null },
+    // the radius of the blur - determines the offset distance for each tap
     radius: { value: 1.0 },
+    // the length of the direction to be blurred (i.e width or height of texture)
     resolution: { value: 0.0 },
+    // the direction of the blur
     direction: { value: [0.0, 0.0] },
   },
 

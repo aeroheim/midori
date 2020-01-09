@@ -211,7 +211,7 @@ class TransitionPass extends Pass {
       }
       case TransitionType.SLIDE: {
         const { from: { amount: slideFrom = 0 }, to: { amount: slideTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
-        const { gradient = 0, slides = 1, intensity = 1, direction = SlideDirection.RIGHT } = additionalConfig;
+        const { gradient = 0, slides = 1, intensity = 1, samples = 32, direction = SlideDirection.RIGHT } = additionalConfig;
         return {
           ...baseTransitionConfig,
           from: { amount: slideFrom },
@@ -221,6 +221,7 @@ class TransitionPass extends Pass {
               gradient,
               slides,
               intensity,
+              samples,
               direction,
             });
             onStart();
@@ -234,13 +235,13 @@ class TransitionPass extends Pass {
       }
       case TransitionType.BLUR: {
         const { from: { amount: blurFrom = 0 }, to: { amount: blurTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
-        const { intensity = 1 } = additionalConfig;
+        const { intensity = 1, samples = 32 } = additionalConfig;
         return {
           ...baseTransitionConfig,
           from: { amount: blurFrom },
           to: { amount: blurTo },
           onStart: () => {
-            this._setTransitionEffect(BlurShader, { intensity });
+            this._setTransitionEffect(BlurShader, { intensity, samples });
             onStart();
           },
           onUpdate: ({ amount }) => {

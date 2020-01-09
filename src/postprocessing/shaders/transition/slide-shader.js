@@ -26,6 +26,8 @@ const SlideShader = {
     intensity: { value: 1.0 },
     // the direction to slide to
     direction: { value: SlideDirection.RIGHT },
+    // the number of samples to use (up to 128) - higher samples result in better quality at the cost of performance
+    samples: { value: 32 },
   },
 
   vertexShader: [
@@ -41,6 +43,8 @@ const SlideShader = {
 
   fragmentShader: [
 
+    'const int MAX_SAMPLES = 128;',
+
     'uniform sampler2D tDiffuse1;',
     'uniform sampler2D tDiffuse2;',
     'uniform int slides;',
@@ -48,6 +52,7 @@ const SlideShader = {
     'uniform float prevAmount;',
     'uniform float intensity;',
     'uniform int direction;',
+    'uniform int samples;',
     'varying vec2 vUv;',
 
     'float getComponentForDirection(int direction, vec2 uv) {',
@@ -80,9 +85,12 @@ const SlideShader = {
     ' }',
 
     ' float velocity = (amount - prevAmount) * intensity;',
-    ' const int numSamples = 100;',
-    ' for (int i = 1; i < numSamples; ++i) {',
-    '   float blurOffset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
+    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
+    '   if (i >= samples) {',
+          // hack to allow loop comparisons against uniforms
+    '     break;',
+    '   }',
+    '   float blurOffset = velocity * (float(i) / float(samples - 1) - 0.5);',
     '   bool isFirstSlide = direction == 1 || direction == 3',
     '     ? position + offset + blurOffset <= 1.0',
     '     : position - offset - blurOffset >= 0.0;',
@@ -93,7 +101,7 @@ const SlideShader = {
     '   }',
     ' }',
 
-    ' gl_FragColor = texel / max(1.0, float(numSamples));',
+    ' gl_FragColor = texel / max(1.0, float(samples));',
     '}',
 
   ].join('\n'),

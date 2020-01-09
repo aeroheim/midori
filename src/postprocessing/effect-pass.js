@@ -72,16 +72,16 @@ class EffectPass extends Pass {
 
       switch (type) {
         case EffectType.BLUR: {
-          const { radius = 1 } = config;
+          const { radius = 1, passes = effect.passes } = config;
+          effect.passes = passes;
           effect.updateUniforms({ radius });
           break;
         }
         case EffectType.MOTION_BLUR: {
-          const { camera: prevCamera, depthBuffer: prevDepthBuffer } = effect;
-          const { camera = prevCamera, depthBuffer = prevDepthBuffer, intensity = 1 } = config;
+          const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples } = config;
           effect.camera = camera;
           effect.depthBuffer = depthBuffer;
-          effect.updateUniforms({ intensity });
+          effect.updateUniforms({ intensity, samples });
           break;
         }
         case EffectType.RGB_SHIFT:
@@ -120,18 +120,6 @@ class EffectPass extends Pass {
       this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
       this._swapBuffers();
     }
-    // TODO: add configurable number of passes for blur effect
-    /*
-    if (this._effects[EffectType.BLUR]) {
-      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
-      this._swapBuffers();
-    }
-    if (this._effects[EffectType.BLUR]) {
-      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
-      this._swapBuffers();
-    }
-    */
-
     if (this._effects[EffectType.MOTION_BLUR]) {
       this._effects[EffectType.MOTION_BLUR].render(renderer, this._writeBuffer, { tDiffuse: this._readBuffer.texture });
       this._swapBuffers();

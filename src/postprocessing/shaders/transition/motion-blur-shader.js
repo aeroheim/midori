@@ -15,11 +15,16 @@ import { Matrix4 } from 'three';
 const MotionBlurShader = {
   uniforms: {
     tDiffuse: { value: null },
+    // a depth buffer of the frame to be blurred
     tDepth: { value: null },
+    // the clip -> world matrix of the current frame - used to calculate the velocity of the blur
     clipToWorldMatrix: { value: new Matrix4() },
+    // the world -> clip matrix of the previous frame - used to calculate the velocity of the blur
     prevWorldToClipMatrix: { value: new Matrix4() },
     // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
+    // the number of samples to use (up to 128) - higher samples result in better quality at the cost of performance
+    samples: { value: 32 },
   },
 
   vertexShader: [
@@ -35,11 +40,14 @@ const MotionBlurShader = {
 
   fragmentShader: [
 
+    'const int MAX_SAMPLES = 128;',
+
     'uniform sampler2D tDiffuse;',
     'uniform sampler2D tDepth;',
     'uniform mat4 clipToWorldMatrix;',
     'uniform mat4 prevWorldToClipMatrix;',
     'uniform float intensity;',
+    'uniform int samples;',
     'varying vec2 vUv;',
 
     'void main() {',
@@ -54,14 +62,17 @@ const MotionBlurShader = {
 
     ' vec4 texel = texture2D(tDiffuse, vUv);',
     ' vec2 texelCoord = vUv;',
-    ' const int numSamples = 100;',
-    ' for (int i = 1; i < numSamples; ++i) {',
+    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
+    '   if (i >= samples) {',
+          // hack to allow loop comparisons against uniforms
+    '     break;',
+    '   }',
         // this offset calculation centers the blur which avoids unevenness favoring the direction of the velocity
-    '   vec2 offset = velocity * (float(i) / float(numSamples - 1) - 0.5);',
+    '   vec2 offset = velocity * (float(i) / float(samples - 1) - 0.5);',
     '   texel += texture2D(tDiffuse, vUv + offset);',
     ' }',
 
-    ' gl_FragColor = texel / max(1.0, float(numSamples));',
+    ' gl_FragColor = texel / max(1.0, float(samples));',
     '}',
 
   ].join('\n'),
