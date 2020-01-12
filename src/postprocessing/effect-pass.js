@@ -1,7 +1,8 @@
 import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
-import { EffectType, MotionBlurEffect, GaussianBlurEffect, Effect, BloomEffect } from './effect';
+import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect } from './effect';
 
 class EffectPass extends Pass {
   _width;
@@ -55,10 +56,12 @@ class EffectPass extends Pass {
         case EffectType.BLOOM:
           this._effects[type] = new BloomEffect(this._width, this._height);
           break;
+        case EffectType.RGB_SHIFT:
+          this._effects[type] = new Effect(RGBShiftShader);
+          break;
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
-        case EffectType.RGB_SHIFT:
         case EffectType.DOF:
         case EffectType.PARTICLE:
         default:
@@ -83,6 +86,11 @@ class EffectPass extends Pass {
           effect.updateUniforms({ radius });
           break;
         }
+        case EffectType.RGB_SHIFT: {
+          const { amount, angle } = config;
+          effect.updateUniforms({ amount, angle });
+          break;
+        }
         case EffectType.MOTION_BLUR: {
           const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples } = config;
           effect.camera = camera;
@@ -90,7 +98,6 @@ class EffectPass extends Pass {
           effect.updateUniforms({ intensity, samples });
           break;
         }
-        case EffectType.RGB_SHIFT:
         case EffectType.DOF:
         case EffectType.PARTICLE:
         default:
@@ -120,20 +127,10 @@ class EffectPass extends Pass {
 
   render(renderer, writeBuffer, readBuffer /* deltaTime, maskActive */) {
     this._copyShader.render(renderer, this._readBuffer, readBuffer);
-
-    if (this._effects[EffectType.BLOOM]) {
-      this._effects[EffectType.BLOOM].render(renderer, this._writeBuffer, this._readBuffer);
+    for (const effect of Object.values(this._effects)) {
+      effect.render(renderer, this._writeBuffer, this._readBuffer);
       this._swapBuffers();
     }
-    if (this._effects[EffectType.BLUR]) {
-      this._effects[EffectType.BLUR].render(renderer, this._writeBuffer, this._readBuffer);
-      this._swapBuffers();
-    }
-    if (this._effects[EffectType.MOTION_BLUR]) {
-      this._effects[EffectType.MOTION_BLUR].render(renderer, this._writeBuffer, this._readBuffer);
-      this._swapBuffers();
-    }
-
     this._copyShader.render(renderer, this.renderToScreen ? null : writeBuffer, this._readBuffer);
   }
 
