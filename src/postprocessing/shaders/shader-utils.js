@@ -39,6 +39,9 @@ function getUniforms(shader) {
  */
 function updateUniforms(shader, uniforms = {}) {
   for (const uniform in uniforms) {
+    if (!shader.uniforms[uniform]) {
+      throw new Error(`Uniform "${uniform}" does not exist on shader "${shader.name}"`);
+    }
     shader.uniforms[uniform].value = uniforms[uniform];
   }
 }
