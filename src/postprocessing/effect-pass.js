@@ -2,6 +2,7 @@ import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader';
 import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect } from './effect';
 
 class EffectPass extends Pass {
@@ -59,6 +60,9 @@ class EffectPass extends Pass {
         case EffectType.RGB_SHIFT:
           this._effects[type] = new Effect(RGBShiftShader);
           break;
+        case EffectType.VIGNETTE:
+          this._effects[type] = new Effect(VignetteShader);
+          break;
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
@@ -87,12 +91,17 @@ class EffectPass extends Pass {
           break;
         }
         case EffectType.RGB_SHIFT: {
-          const { amount, angle } = config;
+          const { amount = 0.005, angle = 0 } = config;
           effect.updateUniforms({ amount, angle });
           break;
         }
+        case EffectType.VIGNETTE: {
+          const { offset = 1, darkness = 1 } = config;
+          effect.updateUniforms({ offset, darkness });
+          break;
+        }
         case EffectType.MOTION_BLUR: {
-          const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples } = config;
+          const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples = 32 } = config;
           effect.camera = camera;
           effect.depthBuffer = depthBuffer;
           effect.updateUniforms({ intensity, samples });

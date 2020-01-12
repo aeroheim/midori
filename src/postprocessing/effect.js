@@ -9,6 +9,7 @@ const EffectType = Object.freeze({
   BLUR: 'blur',
   BLOOM: 'bloom',
   RGB_SHIFT: 'rgbShift',
+  VIGNETTE: 'vignette',
   MOTION_BLUR: 'motionBlur',
   PARTICLE: 'particle',
   GLITCH: 'glitch',
