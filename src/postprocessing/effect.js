@@ -1,8 +1,9 @@
 import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import { ShaderUtils } from './shaders/shader-utils';
+import { BlendShader } from './shaders/transition/blend-shader';
 import { MotionBlurShader } from './shaders/transition/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
+import { ShaderUtils } from './shaders/shader-utils';
 
 const EffectType = Object.freeze({
   BLUR: 'blur',
@@ -25,21 +26,36 @@ class Effect {
   }
 
   updateUniforms(uniforms = {}) {
-    return ShaderUtils.updateUniforms(this._quad.material, uniforms);
+    ShaderUtils.updateUniforms(this._quad.material, uniforms);
   }
 
   clearUniforms() {
     ShaderUtils.clearUniforms(this._quad.material);
   }
 
-  render(renderer, writeBuffer, uniforms = {}) {
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
     renderer.setRenderTarget(writeBuffer);
-    this.updateUniforms(uniforms);
+    this.updateUniforms({
+      ...uniforms,
+      tDiffuse: readBuffer.texture,
+    });
     this._quad.render(renderer);
   }
 
   dispose() {
     this._quad.material.dispose();
+  }
+}
+
+class TransitionEffect extends Effect {
+  render(renderer, writeBuffer, fromBuffer, toBuffer, uniforms = {}) {
+    renderer.setRenderTarget(writeBuffer);
+    this.updateUniforms({
+      ...uniforms,
+      tDiffuse1: fromBuffer.texture,
+      tDiffuse2: toBuffer.texture,
+    });
+    this._quad.render(renderer);
   }
 }
 
@@ -54,12 +70,12 @@ class MotionBlurEffect extends Effect {
     this.depthBuffer = depthBuffer;
   }
 
-  render(renderer, writeBuffer, uniforms = {}) {
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
     const { clipToWorldMatrix, prevWorldToClipMatrix } = this.getUniforms();
 
     // the clip to world space matrix is calculated using the inverse projection-view matrix
     // NOTE: camera.matrixWorld is the inverse view matrix of the camera (instead of matrixWorldInverse)
-    super.render(renderer, writeBuffer, {
+    super.render(renderer, writeBuffer, readBuffer, {
       ...uniforms,
       tDepth: this.depthBuffer,
       clipToWorldMatrix: clipToWorldMatrix.copy(this.camera.projectionMatrixInverse).multiply(this.camera.matrixWorld),
@@ -90,18 +106,15 @@ class GaussianBlurEffect extends Effect {
     this._buffer.setSize(width, height);
   }
 
-  render(renderer, writeBuffer, uniforms = {}) {
-    const { tDiffuse } = uniforms;
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
     for (let i = 0; i < this.passes; ++i) {
-      super.render(renderer, this._buffer, {
+      super.render(renderer, this._buffer, i === 0 ? readBuffer : writeBuffer, {
         ...uniforms,
-        tDiffuse: i === 0 ? tDiffuse : writeBuffer.texture,
         direction: GaussianBlurDirection.HORIZONTAL,
         resolution: this._width,
       });
-      super.render(renderer, writeBuffer, {
+      super.render(renderer, writeBuffer, this._buffer, {
         ...uniforms,
-        tDiffuse: this._buffer.texture,
         direction: GaussianBlurDirection.VERTICAL,
         resolution: this._height,
       });
@@ -114,9 +127,38 @@ class GaussianBlurEffect extends Effect {
   }
 }
 
+class BloomEffect extends GaussianBlurEffect {
+  _blendEffect;
+  _blendBuffer;
+
+  constructor(width, height) {
+    super(width, height);
+    this._blendEffect = new TransitionEffect(BlendShader, { amount: 0.5 });
+    this._blendBuffer = new WebGLRenderTarget(width, height);
+  }
+
+  setSize(width, height) {
+    super.setSize(width, height);
+    this._blendBuffer.setSize(width, height);
+  }
+
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+    super.render(renderer, this._blendBuffer, readBuffer, uniforms);
+    this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
+  }
+
+  dispose() {
+    this._blendEffect.dispose();
+    this._blendBuffer.dispose();
+    super.dispose();
+  }
+}
+
 export {
   EffectType,
   Effect,
+  TransitionEffect,
   MotionBlurEffect,
   GaussianBlurEffect,
+  BloomEffect,
 };

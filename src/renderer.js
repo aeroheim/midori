@@ -105,8 +105,9 @@ class Renderer {
 
     const prevBackground = this._backgroundPass.background;
     const nextBackground = new Background(texture, this._width, this._height);
-    nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 2 });
-    nextBackground.effects.effect(EffectType.BLUR, { radius: 3 });
+    nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 3 });
+    // nextBackground.effects.effect(EffectType.BLUR, { radius: 0.2, passes: 6 });
+    nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, nextBackground, {
@@ -124,7 +125,7 @@ class Renderer {
       },
       onStart: () => {
         this._backgroundPass.setBackground(nextBackground);
-        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
+        nextBackground.camera.move(new Vector3(0, 0, 1), {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });

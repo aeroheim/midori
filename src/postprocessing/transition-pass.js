@@ -6,7 +6,7 @@ import { WipeShader } from './shaders/transition/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
 import { BlurShader } from './shaders/transition/blur-shader';
 import { Background } from '../background';
-import { Effect } from './effect';
+import { TransitionEffect } from './effect';
 
 const TransitionType = Object.freeze({
   NONE: 'none',
@@ -103,7 +103,7 @@ class TransitionPass extends Pass {
       this._transitionEffect = null;
     }
 
-    this._transitionEffect = new Effect(shader, uniforms);
+    this._transitionEffect = new TransitionEffect(shader, uniforms);
   }
 
   /**
@@ -259,10 +259,7 @@ class TransitionPass extends Pass {
   render(renderer, writeBuffer, readBuffer /* , deltaTime, maskActive */) {
     if (this.isTransitioning()) {
       this._prevBackground.render(renderer, this._buffer);
-      this._transitionEffect.render(renderer, this.renderToScreen ? null : writeBuffer, {
-        tDiffuse1: this._buffer.texture,
-        tDiffuse2: readBuffer.texture,
-      });
+      this._transitionEffect.render(renderer, this.renderToScreen ? null : writeBuffer, this._buffer, readBuffer);
     }
   }
 }
