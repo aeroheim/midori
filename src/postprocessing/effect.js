@@ -1,7 +1,7 @@
 import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import { BlendShader } from './shaders/transition/blend-shader';
-import { MotionBlurShader } from './shaders/transition/motion-blur-shader';
+import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
+import { MotionBlurShader } from './shaders/effect/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 import { ShaderUtils } from './shaders/shader-utils';
 
@@ -134,7 +134,7 @@ class BloomEffect extends GaussianBlurEffect {
 
   constructor(width, height) {
     super(width, height);
-    this._blendEffect = new TransitionEffect(BlendShader, { amount: 0.5 });
+    this._blendEffect = new TransitionEffect(BlendShader, { mixRatio: 0.5 });
     this._blendBuffer = new WebGLRenderTarget(width, height);
   }
 

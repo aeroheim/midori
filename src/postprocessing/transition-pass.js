@@ -1,7 +1,7 @@
+import TWEEN from '@tweenjs/tween.js';
 import { WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import TWEEN from '@tweenjs/tween.js';
-import { BlendShader } from './shaders/transition/blend-shader';
+import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { WipeShader } from './shaders/transition/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
 import { BlurShader } from './shaders/transition/blur-shader';
@@ -166,7 +166,7 @@ class TransitionPass extends Pass {
         return {
           ...baseTransitionConfig,
           onStart: () => {
-            this._setTransitionEffect(BlendShader, { amount: 1 });
+            this._setTransitionEffect(BlendShader, { mixRatio: 1 });
             onStart();
           },
         };
@@ -181,8 +181,8 @@ class TransitionPass extends Pass {
             this._setTransitionEffect(BlendShader);
             onStart();
           },
-          onUpdate: ({ amount }) => {
-            this._transitionEffect.updateUniforms({ amount });
+          onUpdate: ({ amount: mixRatio }) => {
+            this._transitionEffect.updateUniforms({ mixRatio });
             onUpdate();
           },
         };
