@@ -143,6 +143,25 @@ class BloomEffect extends GaussianBlurEffect {
     this._blendBuffer.setSize(width, height);
   }
 
+  getUniforms() {
+    const { opacity } = this._blendEffect.getUniforms();
+    return { ...super.getUniforms(), opacity };
+  }
+
+  updateUniforms(uniforms = {}) {
+    const { opacity, ...blurUniforms } = uniforms;
+    super.updateUniforms(blurUniforms);
+    if (opacity !== undefined) {
+      this._blendEffect.updateUniforms({ opacity });
+    }
+  }
+
+  clearUniforms() {
+    super.clearUniforms();
+    this._blendEffect.clearUniforms();
+    this._blendEffect.updateUniforms({ mixRatio: 0.5 });
+  }
+
   render(renderer, writeBuffer, readBuffer, uniforms = {}) {
     super.render(renderer, this._blendBuffer, readBuffer, uniforms);
     this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);

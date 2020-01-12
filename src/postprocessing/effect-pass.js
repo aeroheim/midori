@@ -83,7 +83,12 @@ class EffectPass extends Pass {
       this.enabled = true;
 
       switch (type) {
-        case EffectType.BLOOM:
+        case EffectType.BLOOM: {
+          const { opacity = 1, radius = 1, passes = effect.passes } = config;
+          effect.passes = passes;
+          effect.updateUniforms({ opacity, radius });
+          break;
+        };
         case EffectType.BLUR: {
           const { radius = 1, passes = effect.passes } = config;
           effect.passes = passes;
