@@ -22,25 +22,26 @@ function getVisibleHeightAtDepth(absoluteZ, camera) {
 }
 
 /**
- * Returns the maximum depth for an object such that it is still fullscreen.
- * @param {three.Object3D} object - a three.js object.
+ * Returns the maximum depth for a plane such that it is still fullscreen.
+ * @param {three.Object3D} plane - a three.js plane.
  * @param {three.Camera} camera - a three.js camera.
  * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getMaxFullScreenDepthForObject(object, camera, rotateZ) {
+function getMaxFullScreenDepthForPlane(plane, camera, rotateZ) {
   // When the camera is rotated, we treat the object as if it were rotated instead and
   // use the width/height of the maximal inner bounded box that fits within the object.
   // This ensures that the maximum depth calculated will always allow for the object to be
   // fullscreen even if rotated.
   // NOTE: if there is no rotation (i.e 0 degs) then the object's width and height will be used as normal.
-  const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
+  const { width: rectWidth, height: rectHeight } = plane.geometry.parameters;
+  const { width, height } = getInnerBoundedBoxForRect(rectWidth, rectHeight, rotateZ);
 
   const verticalFovConstant = 2 * Math.tan(threeMath.degToRad(camera.fov) / 2);
   const maxDepthForWidth = width / (verticalFovConstant * camera.aspect);
   const maxDepthForHeight = height / verticalFovConstant;
 
   // NOTE: this depth assumes the camera is centered on the object.
-  return Math.min(maxDepthForWidth, maxDepthForHeight) + object.position.z;
+  return Math.min(maxDepthForWidth, maxDepthForHeight) + plane.position.z;
 }
 /**
  * Adapted from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders/16778797#16778797.
@@ -49,10 +50,11 @@ function getMaxFullScreenDepthForObject(object, camera, rotateZ) {
  * radians), computes the width and height of the largest possible
  * axis-aligned rectangle (maximal area) within the rotated rectangle.
  * @param {three.Object3D} object - a three.js object.
- * @param {number} angleInRadians - the angle to rotate in radians.
+ * @param {Number} width - the width of the rectangle.
+ * @param {Number} height - the height of the rectangle.
+ * @param {Number} angleInRadians - the angle to rotate in radians.
  */
-function getInnerBoundedBoxForRotation(object, angleInRadians = 0) {
-  const { width, height } = object.geometry.parameters;
+function getInnerBoundedBoxForRect(width, height, angleInRadians = 0) {
   const widthIsLonger = width >= height;
   const longSide = widthIsLonger ? width : height;
   const shortSide = widthIsLonger ? height : width;
@@ -84,10 +86,10 @@ function getInnerBoundedBoxForRotation(object, angleInRadians = 0) {
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
- * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
 function getViewBox(object, camera, relativeZ, rotateZ) {
-  const maxDepth = getMaxFullScreenDepthForObject(object, camera, rotateZ);
+  const maxDepth = getMaxFullScreenDepthForPlane(object, camera, rotateZ);
   const absoluteDepth = relativeZ * maxDepth;
   return {
     width: getVisibleWidthAtDepth(absoluteDepth, camera),
@@ -100,10 +102,10 @@ function getViewBox(object, camera, relativeZ, rotateZ) {
  * @param {three.Object3D} object - a three.js object.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
- * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
 function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
-  const { width, height } = getInnerBoundedBoxForRotation(object, rotateZ);
+  const { width, height } = getInnerBoundedBoxForRect(object, rotateZ);
   const viewBox = getViewBox(object, camera, relativeZ, rotateZ);
   return {
     width: width - viewBox.width,
@@ -126,7 +128,7 @@ function toAbsolutePosition(object, camera, relativePosition) {
   // based on the relative proportion to the available x and y distance the viewbox can be moved.
   const absoluteX = -(panDistance.width / 2) + (x * panDistance.width);
   const absoluteY = (panDistance.height / 2) - (y * panDistance.height);
-  const absoluteDepth = getMaxFullScreenDepthForObject(object, camera, zr) * z;
+  const absoluteDepth = getMaxFullScreenDepthForPlane(object, camera, zr) * z;
 
   return new Vector4(
     // Make sure to rotate the x/y positions to get the actual correct positions relative to the camera rotation.
@@ -159,7 +161,7 @@ function toRelativePosition(object, camera, absolutePosition) {
 */
 
 class BackgroundCamera {
-  _object;
+  _plane;
   _camera;
 
   // NOTE: all Vector4 instances in this class are of the following format:
@@ -177,13 +179,13 @@ class BackgroundCamera {
   _swayTransition = new TWEEN.Tween();
 
   /**
-   * @param {three.Mesh} background - a three.js plane object representing the background.
+   * @param {three.Mesh} plane - a three.js plane representing the background.
    * @param {Number} width - the width of the camera.
    * @param {Number} height - the height of the camera.
    * @param {Number} fov=35 - the field of view of the camera.
    */
-  constructor(background, width, height, fov = 35) {
-    this._object = background;
+  constructor(plane, width, height, fov = 35) {
+    this._plane = plane;
     this._camera = new PerspectiveCamera(fov, width / height);
   }
 
@@ -347,7 +349,7 @@ class BackgroundCamera {
    */
   update() {
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
-      this._object,
+      this._plane,
       this._camera,
       new Vector4(
         // Ensure that the position is always valid despite sway.
@@ -365,6 +367,7 @@ class BackgroundCamera {
 }
 
 export {
+  getMaxFullScreenDepthForPlane as getMaxFullScreenDepthForObject,
   BackgroundCamera,
 };
 
