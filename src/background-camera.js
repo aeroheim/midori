@@ -49,7 +49,6 @@ function getMaxFullScreenDepthForPlane(plane, camera, rotateZ) {
  * Given a rectangle of size w x h that has been rotated by 'angle' (in
  * radians), computes the width and height of the largest possible
  * axis-aligned rectangle (maximal area) within the rotated rectangle.
- * @param {three.Object3D} object - a three.js object.
  * @param {Number} width - the width of the rectangle.
  * @param {Number} height - the height of the rectangle.
  * @param {Number} angleInRadians - the angle to rotate in radians.
@@ -83,13 +82,13 @@ function getInnerBoundedBoxForRect(width, height, angleInRadians = 0) {
 
 /**
  * Returns the visible width and height at the given depth in world units.
- * @param {three.Object3D} object - a three.js object.
+ * @param {three.Object3D} plane - a three.js plane.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
  * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getViewBox(object, camera, relativeZ, rotateZ) {
-  const maxDepth = getMaxFullScreenDepthForPlane(object, camera, rotateZ);
+function getViewBox(plane, camera, relativeZ, rotateZ) {
+  const maxDepth = getMaxFullScreenDepthForPlane(plane, camera, rotateZ);
   const absoluteDepth = relativeZ * maxDepth;
   return {
     width: getVisibleWidthAtDepth(absoluteDepth, camera),
@@ -99,14 +98,15 @@ function getViewBox(object, camera, relativeZ, rotateZ) {
 
 /**
  * Returns the available x and y distance a camera can be panned at the given depth in world units.
- * @param {three.Object3D} object - a three.js object.
+ * @param {three.Object3D} plane - a three.js plane.
  * @param {three.Camera} camera - a three.js camera.
  * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
  * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
  */
-function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
-  const { width, height } = getInnerBoundedBoxForRect(object, rotateZ);
-  const viewBox = getViewBox(object, camera, relativeZ, rotateZ);
+function getAvailablePanDistance(plane, camera, relativeZ, rotateZ) {
+  const { width: rectWidth, height: rectHeight } = plane.geometry.parameters;
+  const { width, height } = getInnerBoundedBoxForRect(rectWidth, rectHeight, rotateZ);
+  const viewBox = getViewBox(plane, camera, relativeZ, rotateZ);
   return {
     width: width - viewBox.width,
     height: height - viewBox.height,
@@ -114,21 +114,21 @@ function getAvailablePanDistance(object, camera, relativeZ, rotateZ) {
 }
 
 /**
- * Converts a relative vector to an absolute vector for a given object and camera.
- * @param {three.Object3D} object - a three.js object.
+ * Converts a relative vector to an absolute vector for a given plane and camera.
+ * @param {three.Object3D} plane - a three.js plane.
  * @param {three.Camera} camera - a three.js camera.
  * @param {three.Vector4} relativePosition - a vector that represents the relative camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
  */
-function toAbsolutePosition(object, camera, relativePosition) {
+function toAbsolutePosition(plane, camera, relativePosition) {
   const { x, y, z, w: zr } = relativePosition;
 
-  const panDistance = getAvailablePanDistance(object, camera, z, zr);
+  const panDistance = getAvailablePanDistance(plane, camera, z, zr);
   // offset the viewbox's position so that it starts at the top-left corner, then move it
   // based on the relative proportion to the available x and y distance the viewbox can be moved.
   const absoluteX = -(panDistance.width / 2) + (x * panDistance.width);
   const absoluteY = (panDistance.height / 2) - (y * panDistance.height);
-  const absoluteDepth = getMaxFullScreenDepthForPlane(object, camera, zr) * z;
+  const absoluteDepth = getMaxFullScreenDepthForPlane(plane, camera, zr) * z;
 
   return new Vector4(
     // Make sure to rotate the x/y positions to get the actual correct positions relative to the camera rotation.
@@ -141,17 +141,17 @@ function toAbsolutePosition(object, camera, relativePosition) {
 
 /**
  * Converts an absolute vector to a relative vector for a given object and camera.
- * @param {three.Object3D} object - a three.js object.
+ * @param {three.Object3D} plane - a three.js plane.
  * @param {three.Camera} camera - a three.js camera.
  * @param {three.Vector4} absolutePosition - a vector that represents the absolute camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
  */
 /*
-function toRelativePosition(object, camera, absolutePosition) {
+function toRelativePosition(plane, camera, absolutePosition) {
   const { x, y, z, w: zr } = absolutePosition;
 
-  const relativeZ = z / getMaxFullScreenDepthForObject(object, camera, zr);
-  const panDistance = getAvailablePanDistance(object, camera, relativeZ, zr);
+  const relativeZ = z / getMaxFullScreenDepthForPlane(plane, camera, zr);
+  const panDistance = getAvailablePanDistance(plane, camera, relativeZ, zr);
   const relativeX = (x / panDistance.width) + ((panDistance.width / 2) / panDistance.width);
   const relativeY = panDistance.height === 0 ? 0 : Math.abs((y / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
 
@@ -367,7 +367,7 @@ class BackgroundCamera {
 }
 
 export {
-  getMaxFullScreenDepthForPlane as getMaxFullScreenDepthForObject,
+  getMaxFullScreenDepthForPlane,
   BackgroundCamera,
 };
 
