@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -30,81 +29,82 @@ const SlideShader = {
     samples: { value: 32 },
   },
 
-  vertexShader: [
+  vertexShader: `
 
-    'varying vec2 vUv;',
+    varying vec2 vUv;
 
-    'void main() {',
-    ' vUv = uv;',
-    ' gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
-    '}',
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
 
-  ].join('\n'),
+  `,
 
-  fragmentShader: [
+  // TODO: refactor and reduce branching for performance
+  fragmentShader: `
 
-    'const int MAX_SAMPLES = 128;',
+    const int MAX_SAMPLES = 128;
 
-    'uniform sampler2D tDiffuse1;',
-    'uniform sampler2D tDiffuse2;',
-    'uniform int slides;',
-    'uniform float amount;',
-    'uniform float prevAmount;',
-    'uniform float intensity;',
-    'uniform int direction;',
-    'uniform int samples;',
-    'varying vec2 vUv;',
+    uniform sampler2D tDiffuse1;
+    uniform sampler2D tDiffuse2;
+    uniform int slides;
+    uniform float amount;
+    uniform float prevAmount;
+    uniform float intensity;
+    uniform int direction;
+    uniform int samples;
+    varying vec2 vUv;
 
-    'float getComponentForDirection(int direction, vec2 uv) {',
-    ' return direction < 2 ? uv.x : uv.y;',
-    '}',
+    float getComponentForDirection(int direction, vec2 uv) {
+      return direction < 2 ? uv.x : uv.y;
+    }
 
-    'vec2 getVectorForDirection(int direction, vec2 uv, float position) {',
-    ' return direction < 2 ? vec2(position, uv.y) : vec2(uv.x, position);',
-    '}',
+    vec2 getVectorForDirection(int direction, vec2 uv, float position) {
+      return direction < 2 ? vec2(position, uv.y) : vec2(uv.x, position);
+    }
 
-    'float getOffsetPosition(int direction, float uv, float offset) {',
-    ' return direction == 1 || direction == 3',
-    '   ? mod(uv + offset, 1.0)',
-    '   : mod(uv + (1.0 - offset), 1.0);',
-    '}',
+    float getOffsetPosition(int direction, float uv, float offset) {
+      return direction == 1 || direction == 3
+        ? mod(uv + offset, 1.0)
+        : mod(uv + (1.0 - offset), 1.0);
+    }
 
-    'void main() {',
-    ' vec4 texel;',
-    ' float offset = amount * float(slides);',
-    ' float position = getComponentForDirection(direction, vUv);',
+    void main() {
+      vec4 texel;
+      float offset = amount * float(slides);
+      float position = getComponentForDirection(direction, vUv);
 
-    ' bool isFirstSlide = direction == 1 || direction == 3',
-    '   ? position + offset <= 1.0',
-    '   : position - offset >= 0.0;',
+      bool isFirstSlide = direction == 1 || direction == 3
+        ? position + offset <= 1.0
+        : position - offset >= 0.0;
 
-    ' if (isFirstSlide) {',
-    '   texel = texture2D(tDiffuse1, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset)));',
-    ' } else {',
-    '   texel = texture2D(tDiffuse2, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset)));',
-    ' }',
+      if (isFirstSlide) {
+        texel = texture2D(tDiffuse1, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset)));
+      } else {
+        texel = texture2D(tDiffuse2, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset)));
+      }
 
-    ' float velocity = (amount - prevAmount) * intensity;',
-    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
-    '   if (i >= samples) {',
+      float velocity = (amount - prevAmount) * intensity;
+      for (int i = 1; i < MAX_SAMPLES; ++i) {
+        if (i >= samples) {
           // hack to allow loop comparisons against uniforms
-    '     break;',
-    '   }',
-    '   float blurOffset = velocity * (float(i) / float(samples - 1) - 0.5);',
-    '   bool isFirstSlide = direction == 1 || direction == 3',
-    '     ? position + offset + blurOffset <= 1.0',
-    '     : position - offset - blurOffset >= 0.0;',
-    '   if (isFirstSlide) {',
-    '     texel += texture2D(tDiffuse1, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset + blurOffset)));',
-    '   } else {',
-    '     texel += texture2D(tDiffuse2, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset + blurOffset)));',
-    '   }',
-    ' }',
+          break;
+        }
+        float blurOffset = velocity * (float(i) / float(samples - 1) - 0.5);
+        bool isFirstSlide = direction == 1 || direction == 3
+          ? position + offset + blurOffset <= 1.0
+          : position - offset - blurOffset >= 0.0;
+        if (isFirstSlide) {
+          texel += texture2D(tDiffuse1, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset + blurOffset)));
+        } else {
+          texel += texture2D(tDiffuse2, getVectorForDirection(direction, vUv, getOffsetPosition(direction, position, offset + blurOffset)));
+        }
+      }
 
-    ' gl_FragColor = texel / max(1.0, float(samples));',
-    '}',
+      gl_FragColor = texel / max(1.0, float(samples));
+    }
 
-  ].join('\n'),
+  `,
 };
 
 export {

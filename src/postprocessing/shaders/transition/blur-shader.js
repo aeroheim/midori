@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -17,46 +16,46 @@ const BlurShader = {
     samples: { value: 32 },
   },
 
-  vertexShader: [
+  vertexShader: `
 
-    'varying vec2 vUv;',
+    varying vec2 vUv;
 
-    'void main() {',
-    ' vUv = uv;',
-    ' gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
-    '}',
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
 
-  ].join('\n'),
+  `,
 
-  fragmentShader: [
+  fragmentShader: `
 
-    'const int MAX_SAMPLES = 128;',
+    const int MAX_SAMPLES = 128;
 
-    'uniform sampler2D tDiffuse1;',
-    'uniform sampler2D tDiffuse2;',
-    'uniform float amount;',
-    'uniform float prevAmount;',
-    'uniform float intensity;',
-    'uniform int samples;',
-    'varying vec2 vUv;',
+    uniform sampler2D tDiffuse1;
+    uniform sampler2D tDiffuse2;
+    uniform float amount;
+    uniform float prevAmount;
+    uniform float intensity;
+    uniform int samples;
+    varying vec2 vUv;
 
 
-    'void main() {',
-    ' vec4 texel = mix(texture2D(tDiffuse1, vUv), texture2D(tDiffuse2, vUv), amount);',
-    ' float velocity = (amount - prevAmount) * intensity;',
-    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
-    '   if (i >= samples) {',
+    void main() {
+      vec4 texel = mix(texture2D(tDiffuse1, vUv), texture2D(tDiffuse2, vUv), amount);
+      float velocity = (amount - prevAmount) * intensity;
+      for (int i = 1; i < MAX_SAMPLES; ++i) {
+        if (i >= samples) {
           // hack to allow loop comparisons against uniforms
-    '     break;',
-    '   }',
-    '   float offset = velocity * (float(i) / float(samples - 1) - 0.5);',
-    '   texel += mix(texture2D(tDiffuse1, vec2(vUv.x + offset, vUv.y)), texture2D(tDiffuse2, vec2(vUv.x + offset, vUv.y)), amount);',
-    ' }',
+          break;
+        }
+        float offset = velocity * (float(i) / float(samples - 1) - 0.5);
+        texel += mix(texture2D(tDiffuse1, vec2(vUv.x + offset, vUv.y)), texture2D(tDiffuse2, vec2(vUv.x + offset, vUv.y)), amount);
+      }
 
-    ' gl_FragColor = texel / max(1.0, float(samples));',
-    '}',
+      gl_FragColor = texel / max(1.0, float(samples));
+    }
 
-  ].join('\n'),
+  `,
 };
 
 export {

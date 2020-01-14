@@ -1,4 +1,3 @@
-/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  *
@@ -26,57 +25,56 @@ const GaussianBlurShader = {
     direction: { value: [0.0, 0.0] },
   },
 
-  vertexShader: [
+  vertexShader: `
 
-    'varying vec2 vUv;',
+    varying vec2 vUv;
 
-    'void main() {',
-    ' vUv = uv;',
-    ' gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
-    '}',
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
 
-  ].join('\n'),
+  `,
 
-  fragmentShader: [
+  fragmentShader: `
 
-    'uniform sampler2D tDiffuse;',
-    'uniform float radius;',
-    'uniform float resolution;',
-    'uniform vec2 direction;',
-    'varying vec2 vUv;',
+    uniform sampler2D tDiffuse;
+    uniform float radius;
+    uniform float resolution;
+    uniform vec2 direction;
+    varying vec2 vUv;
 
-    'void main() {',
-    ' float blur = radius / resolution;',
-    ' float h = direction.x;',
-    ' float v = direction.y;',
+    void main() {
+      float blur = radius / resolution;
+      float h = direction.x;
+      float v = direction.y;
 
-    ' vec4 sum = vec4(0.0);',
+      vec4 sum = vec4(0.0);
 
-    // optimized 33-tap filter that takes advantage of bilinear filtering (effectively 17 fetches)
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 15.0810810809 * blur * h, vUv.y - 15.0810810809 * blur * v)) * 1.13068382e-7;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 13.1351352551 * blur * h, vUv.y - 13.1351352551 * blur * v)) * 0.00000634313;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 11.1891891693 * blur * h, vUv.y - 11.1891891693 * blur * v)) * 0.00014981883;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 9.2432432422 * blur * h, vUv.y - 9.2432432422 * blur * v)) * 0.00181031093;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 7.29729729717 * blur * h, vUv.y - 7.29729729717 * blur * v)) * 0.01244177332;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 5.35135135135 * blur * h, vUv.y - 5.35135135135 * blur * v)) * 0.0518407222;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 3.40540540538 * blur * h, vUv.y - 3.40540540538 * blur * v)) * 0.13626704123;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x - 1.45945945945 * blur * h, vUv.y - 1.45945945945 * blur * v)) * 0.23145357738;',
+      // optimized 33-tap filter that takes advantage of bilinear filtering (effectively 17 fetches)
+      sum += texture2D(tDiffuse, vec2(vUv.x - 15.0810810809 * blur * h, vUv.y - 15.0810810809 * blur * v)) * 1.13068382e-7;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 13.1351352551 * blur * h, vUv.y - 13.1351352551 * blur * v)) * 0.00000634313;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 11.1891891693 * blur * h, vUv.y - 11.1891891693 * blur * v)) * 0.00014981883;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 9.2432432422 * blur * h, vUv.y - 9.2432432422 * blur * v)) * 0.00181031093;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 7.29729729717 * blur * h, vUv.y - 7.29729729717 * blur * v)) * 0.01244177332;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 5.35135135135 * blur * h, vUv.y - 5.35135135135 * blur * v)) * 0.0518407222;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 3.40540540538 * blur * h, vUv.y - 3.40540540538 * blur * v)) * 0.13626704123;
+      sum += texture2D(tDiffuse, vec2(vUv.x - 1.45945945945 * blur * h, vUv.y - 1.45945945945 * blur * v)) * 0.23145357738;
 
-    ' sum += texture2D(tDiffuse, vUv) * 0.13206059971;',
+      sum += texture2D(tDiffuse, vUv) * 0.13206059971;
 
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 1.45945945945 * blur * h, vUv.y + 1.45945945945 * blur * v)) * 0.23145357738;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 3.40540540538 * blur * h, vUv.y + 3.40540540538 * blur * v)) * 0.13626704123;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 5.35135135135 * blur * h, vUv.y + 5.35135135135 * blur * v)) * 0.0518407222;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 7.29729729717 * blur * h, vUv.y + 7.29729729717 * blur * v)) * 0.01244177332;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 9.2432432422 * blur * h, vUv.y + 9.2432432422 * blur * v)) * 0.00181031093;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 11.1891891693 * blur * h, vUv.y + 11.1891891693 * blur * v)) * 0.00014981883;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 13.1351352551 * blur * h, vUv.y + 13.1351352551 * blur * v)) * 0.00000634313;',
-    ' sum += texture2D(tDiffuse, vec2(vUv.x + 15.0810810809 * blur * h, vUv.y + 15.0810810809 * blur * v)) * 1.13068382e-7;',
+      sum += texture2D(tDiffuse, vec2(vUv.x + 1.45945945945 * blur * h, vUv.y + 1.45945945945 * blur * v)) * 0.23145357738;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 3.40540540538 * blur * h, vUv.y + 3.40540540538 * blur * v)) * 0.13626704123;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 5.35135135135 * blur * h, vUv.y + 5.35135135135 * blur * v)) * 0.0518407222;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 7.29729729717 * blur * h, vUv.y + 7.29729729717 * blur * v)) * 0.01244177332;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 9.2432432422 * blur * h, vUv.y + 9.2432432422 * blur * v)) * 0.00181031093;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 11.1891891693 * blur * h, vUv.y + 11.1891891693 * blur * v)) * 0.00014981883;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 13.1351352551 * blur * h, vUv.y + 13.1351352551 * blur * v)) * 0.00000634313;
+      sum += texture2D(tDiffuse, vec2(vUv.x + 15.0810810809 * blur * h, vUv.y + 15.0810810809 * blur * v)) * 1.13068382e-7;
 
-    ' gl_FragColor = sum;',
-    '}',
-
-  ].join('\n'),
+      gl_FragColor = sum;
+    }
+  `,
 };
 
 export {

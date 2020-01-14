@@ -1,6 +1,5 @@
 import { Matrix4 } from 'three';
 
-/* eslint-disable indent */
 /**
  * @author aeroheim / http://aeroheim.moe/
  *
@@ -27,55 +26,55 @@ const MotionBlurShader = {
     samples: { value: 32 },
   },
 
-  vertexShader: [
+  vertexShader: `
 
-    'varying vec2 vUv;',
+    varying vec2 vUv;
 
-    'void main() {',
-    ' vUv = uv;',
-    ' gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
-    '}',
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
 
-  ].join('\n'),
+  `,
 
-  fragmentShader: [
+  fragmentShader: `
 
-    'const int MAX_SAMPLES = 128;',
+    const int MAX_SAMPLES = 128;
 
-    'uniform sampler2D tDiffuse;',
-    'uniform sampler2D tDepth;',
-    'uniform mat4 clipToWorldMatrix;',
-    'uniform mat4 prevWorldToClipMatrix;',
-    'uniform float intensity;',
-    'uniform int samples;',
-    'varying vec2 vUv;',
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
+    uniform mat4 clipToWorldMatrix;
+    uniform mat4 prevWorldToClipMatrix;
+    uniform float intensity;
+    uniform int samples;
+    varying vec2 vUv;
 
-    'void main() {',
-    ' float zOverW = texture2D(tDepth, vUv).x;',
-    ' vec4 clipPosition = vec4(vUv.x, vUv.y, zOverW, 1.0);',
-    ' vec4 worldPosition = clipToWorldMatrix * clipPosition;',
-    ' worldPosition /= worldPosition.w;',
+    void main() {
+      float zOverW = texture2D(tDepth, vUv).x;
+      vec4 clipPosition = vec4(vUv.x, vUv.y, zOverW, 1.0);
+      vec4 worldPosition = clipToWorldMatrix * clipPosition;
+      worldPosition /= worldPosition.w;
 
-    ' vec4 prevClipPosition = prevWorldToClipMatrix * worldPosition;',
-    ' prevClipPosition /= prevClipPosition.w;',
-    ' vec2 velocity = ((clipPosition - prevClipPosition).xy + (clipPosition - prevClipPosition).zz) * intensity;',
+      vec4 prevClipPosition = prevWorldToClipMatrix * worldPosition;
+      prevClipPosition /= prevClipPosition.w;
+      vec2 velocity = ((clipPosition - prevClipPosition).xy + (clipPosition - prevClipPosition).zz) * intensity;
 
-    ' vec4 texel = texture2D(tDiffuse, vUv);',
-    ' vec2 texelCoord = vUv;',
-    ' for (int i = 1; i < MAX_SAMPLES; ++i) {',
-    '   if (i >= samples) {',
+      vec4 texel = texture2D(tDiffuse, vUv);
+      vec2 texelCoord = vUv;
+      for (int i = 1; i < MAX_SAMPLES; ++i) {
+        if (i >= samples) {
           // hack to allow loop comparisons against uniforms
-    '     break;',
-    '   }',
+          break;
+        }
         // this offset calculation centers the blur which avoids unevenness favoring the direction of the velocity
-    '   vec2 offset = velocity * (float(i) / float(samples - 1) - 0.5);',
-    '   texel += texture2D(tDiffuse, vUv + offset);',
-    ' }',
+        vec2 offset = velocity * (float(i) / float(samples - 1) - 0.5);
+        texel += texture2D(tDiffuse, vUv + offset);
+      }
 
-    ' gl_FragColor = texel / max(1.0, float(samples));',
-    '}',
+      gl_FragColor = texel / max(1.0, float(samples));
+    }
 
-  ].join('\n'),
+  `,
 };
 
 export {
