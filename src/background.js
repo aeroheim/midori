@@ -1,4 +1,5 @@
-import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter, DepthTexture } from 'three';
+import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter,
+  DepthTexture, BufferGeometry, Float32BufferAttribute, PointsMaterial, Points } from 'three';
 import { BackgroundCamera } from './background-camera';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
@@ -49,7 +50,10 @@ class Background {
       new PlaneGeometry(1, 1 / textureAspectRatio),
       new MeshBasicMaterial({ map: texture }),
     );
+
     this._scene.add(this._plane);
+    // this._scene.add(this._particles);
+
     this._camera = new BackgroundCamera(this._plane, width, height);
     this._effects = new EffectPass(width, height);
     this._effects.effect(EffectType.MOTION_BLUR, {
