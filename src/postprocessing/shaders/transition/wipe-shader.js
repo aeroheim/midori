@@ -15,7 +15,7 @@ const WipeShader = {
     tDiffuse2: { value: null },
     // a value from 0 to 1 indicating the ratio of the texture wipe
     amount: { value: 0.0 },
-    // an value from 0 to 1 indicating the size of the blend gradient
+    // a value from 0 to 1 indicating the size of the blend gradient
     gradient: { value: 0.0 },
     // the direction to wipe to
     direction: { value: WipeDirection.RIGHT },
