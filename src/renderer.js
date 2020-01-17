@@ -107,7 +107,29 @@ class Renderer {
     const nextBackground = new Background(texture, this._width, this._height);
     nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 3 });
     // nextBackground.effects.effect(EffectType.BLUR, { radius: 0.2, passes: 6 });
+    // nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
     nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
+    nextBackground.effects.effect(EffectType.VIGNETTE);
+    nextBackground.particles.particles([
+      {
+        name: 'layer1',
+        size: 20,
+        amount: 100,
+        opacity: 0.3,
+      },
+      {
+        name: 'layer2',
+        size: 10,
+        amount: 100,
+        opacity: 0.8,
+      },
+      {
+        name: 'layer3',
+        size: 5,
+        amount: 100,
+        opacity: 1.0,
+      },
+    ]);
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, nextBackground, {

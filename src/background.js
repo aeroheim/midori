@@ -1,8 +1,8 @@
-import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter,
-  DepthTexture, BufferGeometry, Float32BufferAttribute, PointsMaterial, Points } from 'three';
-import { BackgroundCamera } from './background-camera';
+import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter, DepthTexture } from 'three';
+import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-camera';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
+import { Particles } from './particles';
 
 /**
  * Loads an image as a texture.
@@ -32,9 +32,10 @@ async function loadImageAsTexture(path) {
 
 class Background {
   _buffer;
+  _camera;
   _scene;
   _plane;
-  _camera;
+  _particles;
   _effects;
 
   constructor(texture, width, height) {
@@ -50,11 +51,11 @@ class Background {
       new PlaneGeometry(1, 1 / textureAspectRatio),
       new MeshBasicMaterial({ map: texture }),
     );
-
-    this._scene.add(this._plane);
-    // this._scene.add(this._particles);
-
     this._camera = new BackgroundCamera(this._plane, width, height);
+    this._particles = new Particles(1, 1 / textureAspectRatio, getMaxFullScreenDepthForPlane(this._plane, this._camera.camera, 0));
+    this._scene.add(this._particles.object);
+    this._scene.add(this._plane);
+
     this._effects = new EffectPass(width, height);
     this._effects.effect(EffectType.MOTION_BLUR, {
       camera: this._camera.camera,
@@ -65,6 +66,10 @@ class Background {
 
   get camera() {
     return this._camera;
+  }
+
+  get particles() {
+    return this._particles;
   }
 
   get effects() {
