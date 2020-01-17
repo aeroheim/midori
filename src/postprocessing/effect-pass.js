@@ -76,6 +76,11 @@ class EffectPass extends Pass {
     return this._effects[type];
   }
 
+  /**
+   * Sets an effect.
+   * @param {EffectType} type - the effect to set.
+   * @param {Object} config - configuration specific to the effect specified.
+   */
   effect(type, config = {}) {
     const effect = this._getOrCreateEffect(type, config);
     if (effect) {
@@ -119,7 +124,10 @@ class EffectPass extends Pass {
       }
     }
   }
-
+  /**
+   * Removes a previously set effect. Returns true if the effect was removed, otherwise false.
+   * @param {EffectType} type - the type of the effect.
+   */
   removeEffect(type) {
     if (type in this._effects) {
       this._effects[type].dispose();
