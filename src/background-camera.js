@@ -223,7 +223,15 @@ class BackgroundCamera {
    */
   sway(relativeDistance, transition = {}) {
     this._swayTransition.stop();
-    const { loop = true, duration = 0, easing = TWEEN.Easing.Linear.None } = transition;
+    const {
+      loop = true,
+      duration = 0,
+      easing = TWEEN.Easing.Linear.None,
+      onStart = () => ({}),
+      onUpdate = () => ({}),
+      onComplete = () => ({}),
+      onStop = () => ({}),
+    } = transition;
 
     // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
     // so dampen x/y sway based on the camera's current z position.
@@ -254,14 +262,18 @@ class BackgroundCamera {
         offsetZR: swayZR - this._position.w,
       }, duration * 1000)
       .easing(easing)
+      .onStart(onStart)
       .onUpdate(({ offsetX, offsetY, offsetZ, offsetZR }) => {
         this._swayOffset.set(offsetX, offsetY, offsetZ, offsetZR);
+        onUpdate();
       })
       .onComplete(() => {
         if (loop) {
           this.sway(relativeDistance, transition);
         }
+        onComplete();
       })
+      .onStop(onStop)
       .start();
   }
 
