@@ -174,8 +174,6 @@ class BackgroundCamera {
   _rotationTransition = new TWEEN.Tween();
 
   _swayOffset = new Vector4(0, 0, 0, 0); // the current relative vector offset to sway away from the camera
-  _swayDistance = new Vector4(0, 0, 0, 0); // the current relative distances to sway the camera - cached to loop sways
-  _swayTransitionConfig = { loop: true, duration: 1, easing: TWEEN.Easing.Linear.None }; // the current sway transition config - cached to loop sways
   _swayTransition = new TWEEN.Tween();
 
   /**
@@ -225,16 +223,13 @@ class BackgroundCamera {
    */
   sway(relativeDistance, transition = {}) {
     this._swayTransition.stop();
-
-    this._swayDistance = relativeDistance || this._swayDistance;
-    this._swayTransitionConfig = { ...this._swayTransitionConfig, ...transition };
-    const { loop = true, duration = 0, easing = TWEEN.Easing.Linear.None } = this._swayTransitionConfig;
+    const { loop = true, duration = 0, easing = TWEEN.Easing.Linear.None } = transition;
 
     // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
     // so dampen x/y sway based on the camera's current z position.
     const dampeningFactor = this._position.z / 2;
 
-    const { x, y, z, w: zr } = this._swayDistance;
+    const { x, y, z, w: zr } = relativeDistance;
     const swayMinX = Math.max(0, this._position.x - (x * dampeningFactor));
     const swayMaxX = Math.min(1, this._position.x + (x * dampeningFactor));
     const swayX = Math.random() * (swayMaxX - swayMinX) + swayMinX;
@@ -264,7 +259,7 @@ class BackgroundCamera {
       })
       .onComplete(() => {
         if (loop) {
-          this.sway();
+          this.sway(relativeDistance, transition);
         }
       })
       .start();

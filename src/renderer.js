@@ -154,6 +154,7 @@ class Renderer {
         nextBackground.camera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
           duration: 1.5,
           easing: TWEEN.Easing.Quadratic.InOut,
+          loop: true,
         });
         nextBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
           duration: 2,
