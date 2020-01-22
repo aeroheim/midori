@@ -212,19 +212,19 @@ class BackgroundCamera {
   }
 
   /**
-   * Sways the camera around its current position repeatedly.
+   * Sways the camera around its current position.
    * @param {three.Vector4} relativeDistance - the relative distances allowed on each axis for swaying.
    * The x/y distances should be set based off a z-value of 1 and will be scaled down appropriately based on the camera's current z position.
    * The rotation component of the vector MUST be in units of radians.
    * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.loop=true - sway repeatedly in a loop.
+   * @param {Number} transition.loop=false - sway repeatedly in a loop.
    * @param {Number} transition.duration=0 - the duration of the sway in seconds.
    * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
   sway(relativeDistance, transition = {}) {
     this._swayTransition.stop();
     const {
-      loop = true,
+      loop = false,
       duration = 0,
       easing = TWEEN.Easing.Linear.None,
       onStart = () => ({}),

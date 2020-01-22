@@ -1,4 +1,4 @@
-import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2, Vector3 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2 } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import { ParticleShader } from './postprocessing/shaders/particle-shader';
 import { ShaderUtils } from './postprocessing/shaders/shader-utils';
@@ -8,30 +8,22 @@ class Particles {
   _height;
   _maxDepth;
 
-  // TODO: document
   // groups also store the transitions related to the attributes and offsets
   _groups = {};
   _particles;
-
   _positions = [];
 
-  _sizes = [];
-  _gradients = [];
-  _opacities = [];
-  _colors = [];
-
-  // TODO: make sure setSize doesn't fuck up maxDepth
   constructor(width, height, maxDepth) {
     this._width = width;
     this._height = height;
     this._maxDepth = maxDepth;
 
     const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new Float32BufferAttribute(this._positions, 3));
-    geometry.setAttribute('size', new Float32BufferAttribute(this._sizes, 1));
-    geometry.setAttribute('gradient', new Float32BufferAttribute(this._gradients, 1));
-    geometry.setAttribute('opacity', new Float32BufferAttribute(this._opacities, 1));
-    geometry.setAttribute('color', new Float32BufferAttribute(this._colors, 3));
+    geometry.setAttribute('position', new Float32BufferAttribute(0, 3));
+    geometry.setAttribute('size', new Float32BufferAttribute(0, 1));
+    geometry.setAttribute('gradient', new Float32BufferAttribute(0, 1));
+    geometry.setAttribute('opacity', new Float32BufferAttribute(0, 1));
+    geometry.setAttribute('color', new Float32BufferAttribute(0, 3));
 
     this._particles = new Points(
       geometry,
@@ -44,9 +36,12 @@ class Particles {
    * @param {Object || Array} config - a particle group configuration or array of particle group configurations.
    * @param {String} config.name - the name of the particle group.
    * @param {Number} config.amount - the number of particles to generate.
-   * @param {Number} config.size=0 - the size of the particles in world units.
-   * @param {Number} config.gradient=1 - optional fade gradient of the particles in relative units (0 to 1). Defaults to 1.
-   * @param {Number} config.opacity=1 - optional opacity of the particles. Defaults to 1.
+   * @param {Number} config.minSize=0 - the minimum size of the particles in world units.
+   * @param {Number} config.maxSize=0 - the maximum size of the particles in world units.
+   * @param {Number} config.minGradient=0 - the minimum fade gradient of the particles in relative units (0 to 1). Defaults to 0.
+   * @param {Number} config.maxGradient=1 - the maximum fade gradient of the particles in relative units (0 to 1). Defaults to 1.
+   * @param {Number} config.minOpacity=1 - the minimum opacity of the particles. Defaults to 0.
+   * @param {Number} config.maxOpacity=1 - the maximum opacity of the particles. Defaults to 1.
    * @param {Three.Color} config.color=0xffffff - optional color of the particles. Defaults to 0xffffff.
    */
   generate(configs) {
@@ -54,10 +49,6 @@ class Particles {
 
     // cleanup previous configs and objects
     this._positions = [];
-    this._sizes = [];
-    this._gradients = [];
-    this._opacities = [];
-    this._colors = [];
     this._groups = {};
     this._particles.geometry.dispose();
     this._particles.material.dispose();
@@ -67,32 +58,34 @@ class Particles {
       const {
         name,
         amount = 0,
-        size = 0,
-        gradient = 1,
-        opacity = 1,
+        minSize = 0,
+        maxSize = 0,
+        minGradient = 0,
+        maxGradient = 1,
+        minOpacity = 0,
+        maxOpacity = 1,
         color = new Color(0xffffff),
       } = config;
 
       // Generate points with attributes
       for (let i = 0; i < amount || 0; ++i) {
-        const x = (-this._width / 2) + this._width * Math.random();
-        const y = (-this._height / 2) + this._height * Math.random();
+        const x = (-this._width / 2) + Math.random() * this._width;
+        const y = (-this._height / 2) + Math.random() * this._height;
         const z = (this._maxDepth / 4) * Math.random();
         this._positions.push(x, y, z);
-        this._sizes.push(size);
-        this._gradients.push(gradient);
-        this._opacities.push(opacity);
-        this._colors.push(color.r, color.g, color.b);
       }
 
-      // Initialize group with respective and default properties
+      // Store group config
       this._groups[name] = {
         name,
         index,
         amount,
-        size,
-        gradient,
-        opacity,
+        minSize,
+        maxSize,
+        minGradient,
+        maxGradient,
+        minOpacity,
+        maxOpacity,
         color,
         swayOffset: new Vector2(0, 0),
       };
@@ -101,11 +94,11 @@ class Particles {
     }
 
     const geometry = new BufferGeometry();
-    geometry.setAttribute('position', new Float32BufferAttribute(this._positions, 3));
-    geometry.setAttribute('size', new Float32BufferAttribute(this._sizes, 1));
-    geometry.setAttribute('gradient', new Float32BufferAttribute(this._gradients, 1));
-    geometry.setAttribute('opacity', new Float32BufferAttribute(this._opacities, 1));
-    geometry.setAttribute('color', new Float32BufferAttribute(this._colors, 3));
+    geometry.setAttribute('position', new Float32BufferAttribute(index * 3, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(index * 3, 3));
+    geometry.setAttribute('size', new Float32BufferAttribute(index, 1));
+    geometry.setAttribute('gradient', new Float32BufferAttribute(index, 1));
+    geometry.setAttribute('opacity', new Float32BufferAttribute(index, 1));
 
     const material = ShaderUtils.createShaderMaterial(ParticleShader);
     material.transparent = true;
@@ -218,15 +211,12 @@ class Particles {
     }
   }
 
-  // TODO: generic function that allows looped tweens of particle attributes (e.g position, opacity, gradient, size)
-  // offset()
-
   /**
-   * Sways a group of particles around repeatedly.
+   * Sways a group of particles around their current positions.
    * @param {String} name - the name of the group to sway.
    * @param {three.Vector2} distance - the distances in world units allowed on each axis for swaying.
    * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.loop=true - sway repeatedly in a loop.
+   * @param {Number} transition.loop=false - sway repeatedly in a loop.
    * @param {Number} transition.duration=0 - the duration of the sway in seconds.
    * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
    */
@@ -240,7 +230,7 @@ class Particles {
     }
 
     const {
-      loop = true,
+      loop = false,
       duration = 0,
       easing = TWEEN.Easing.Linear.None,
       onStart = () => ({}),
@@ -275,7 +265,7 @@ class Particles {
   }
 
   /**
-   * Updates the points position. Should be called on every render frame.
+   * Updates the positions of particles. Should be called on every render frame.
    */
   update() {
     const {
@@ -287,22 +277,30 @@ class Particles {
     } = this._particles.geometry.attributes;
 
     for (const group of Object.values(this._groups)) {
-      const { index, amount, swayOffset } = group;
+      const {
+        index,
+        amount,
+        minSize,
+        maxSize,
+        minGradient,
+        maxGradient,
+        minOpacity,
+        maxOpacity,
+        swayOffset,
+      } = group;
       for (let i = index; i < index + amount; ++i) {
-        const positionWithOffsets = this._getNewPosition(
-          new Vector2(this._positions[i * 3], this._positions[i * 3 + 1]),
-          swayOffset,
-        );
+        // Apply offset to current position (excluding z).
+        const position = this._getNewPosition(new Vector2(this._positions[i * 3], this._positions[i * 3 + 1]), swayOffset);
 
-        bufferPositions[i * 3] = positionWithOffsets.x;
-        bufferPositions[i * 3 + 1] = positionWithOffsets.y;
+        bufferPositions[i * 3] = position.x;
+        bufferPositions[i * 3 + 1] = position.y;
         bufferPositions[i * 3 + 2] = this._positions[i * 3 + 2];
-        bufferColors[i * 3] = this._colors[i * 3];
-        bufferColors[i * 3 + 1] = this._colors[i * 3 + 1];
-        bufferColors[i * 3 + 2] = this._colors[i * 3 + 2];
-        bufferGradients[i] = this._gradients[i];
-        bufferSizes[i] = this._sizes[i];
-        bufferOpacities[i] = this._opacities[i];
+        bufferColors[i * 3] = group.color.r;
+        bufferColors[i * 3 + 1] = group.color.g;
+        bufferColors[i * 3 + 2] = group.color.b;
+        bufferSizes[i] = minSize + Math.random() * (maxSize - minSize);
+        bufferGradients[i] = minGradient + Math.random() * (maxGradient - minGradient);
+        bufferOpacities[i] = minOpacity + Math.random() * (maxOpacity - minOpacity);
       }
     }
 
@@ -321,7 +319,6 @@ class Particles {
     return this._particles;
   }
 
-  // TODO: call as necessary
   dispose() {
     this._particles.geometry.dispose();
     this._particles.material.dispose();

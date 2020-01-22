@@ -113,32 +113,38 @@ class Renderer {
     nextBackground.particles.generate([
       {
         name: 'layer1',
-        size: 6,
         amount: 50,
-        opacity: 0.5,
+        maxSize: 10,
+        maxOpacity: 0.8,
+        minGradient: 0.75,
+        maxGradient: 1.0,
       },
       {
         name: 'layer2',
-        size: 8,
         amount: 50,
-        opacity: 0.5,
+        maxSize: 8,
+        maxOpacity: 0.8,
+        minGradient: 0.75,
+        maxGradient: 1.0,
       },
       {
         name: 'layer3',
-        size: 5,
         amount: 50,
-        opacity: 0.5,
+        maxSize: 5,
+        maxOpacity: 0.8,
+        minGradient: 0.75,
+        maxGradient: 1.0,
       },
     ]);
-    nextBackground.particles.move('layer1', new Vector2(0.1, threeMath.degToRad(45)), {
+    nextBackground.particles.move('layer1', new Vector2(0.3, threeMath.degToRad(45)), {
       duration: 5,
       loop: true,
     });
-    nextBackground.particles.move('layer2', new Vector2(0.2, threeMath.degToRad(35)), {
+    nextBackground.particles.move('layer2', new Vector2(0.4, threeMath.degToRad(35)), {
       duration: 5,
       loop: true,
     });
-    nextBackground.particles.move('layer3', new Vector2(0.3, threeMath.degToRad(25)), {
+    nextBackground.particles.move('layer3', new Vector2(0.5, threeMath.degToRad(25)), {
       duration: 5,
       loop: true,
     });
@@ -163,7 +169,7 @@ class Renderer {
       ...config,
       delay: 1.25,
       onInit: () => {
-        prevBackground.camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
+        prevBackground.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
           duration: 2.25,
           easing: TWEEN.Easing.Quartic.In,
         });
@@ -174,7 +180,7 @@ class Renderer {
       },
       onStart: () => {
         this._backgroundPass.setBackground(nextBackground);
-        nextBackground.camera.move(new Vector3(0, 0, 1), {
+        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.5 + Math.random() * 0.5), {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });
