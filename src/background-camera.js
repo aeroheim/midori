@@ -233,22 +233,7 @@ class BackgroundCamera {
       onStop = () => ({}),
     } = transition;
 
-    // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
-    // so dampen x/y sway based on the camera's current z position.
-    const dampeningFactor = this._position.z / 2;
-
     const { x, y, z, w: zr } = relativeDistance;
-    const swayMinX = Math.max(0, this._position.x - (x * dampeningFactor));
-    const swayMaxX = Math.min(1, this._position.x + (x * dampeningFactor));
-    const swayX = Math.random() * (swayMaxX - swayMinX) + swayMinX;
-    const swayMinY = Math.max(0, this._position.y - (y * dampeningFactor));
-    const swayMaxY = Math.min(1, this._position.y + (y * dampeningFactor));
-    const swayY = Math.random() * (swayMaxY - swayMinY) + swayMinY;
-    const swayMinZ = Math.max(0, this._position.z - z);
-    const swayMaxZ = Math.min(1, this._position.z + z);
-    const swayZ = Math.random() * (swayMaxZ - swayMinZ) + swayMinZ;
-    const swayZR = Math.random() * zr + (this._position.w - (zr / 2));
-
     this._swayTransition = new TWEEN.Tween({
       offsetX: this._swayOffset.x,
       offsetY: this._swayOffset.y,
@@ -256,10 +241,10 @@ class BackgroundCamera {
       offsetZR: this._swayOffset.w,
     })
       .to({
-        offsetX: swayX - this._position.x,
-        offsetY: swayY - this._position.y,
-        offsetZ: swayZ - this._position.z,
-        offsetZR: swayZR - this._position.w,
+        offsetX: -x + Math.random() * x,
+        offsetY: -y + Math.random() * y,
+        offsetZ: -z + Math.random() * z,
+        offsetZR: -zr + Math.random() * zr,
       }, duration * 1000)
       .easing(easing)
       .onStart(onStart)
