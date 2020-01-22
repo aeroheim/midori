@@ -1,4 +1,4 @@
-import { WebGLRenderer, Vector4, Vector3, Math as threeMath } from 'three';
+import { WebGLRenderer, Vector4, Vector3, Math as threeMath, Vector2 } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
@@ -110,26 +110,53 @@ class Renderer {
     // nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
     nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
     nextBackground.effects.effect(EffectType.VIGNETTE);
-    nextBackground.particles.particles([
+    nextBackground.particles.generate([
       {
         name: 'layer1',
-        size: 20,
-        amount: 100,
-        opacity: 0.3,
+        size: 6,
+        amount: 50,
+        opacity: 0.5,
       },
       {
         name: 'layer2',
-        size: 10,
-        amount: 100,
-        opacity: 0.8,
+        size: 8,
+        amount: 50,
+        opacity: 0.5,
       },
       {
         name: 'layer3',
         size: 5,
-        amount: 100,
-        opacity: 1.0,
+        amount: 50,
+        opacity: 0.5,
       },
     ]);
+    nextBackground.particles.move('layer1', new Vector2(0.1, threeMath.degToRad(45)), {
+      duration: 5,
+      loop: true,
+    });
+    nextBackground.particles.move('layer2', new Vector2(0.2, threeMath.degToRad(35)), {
+      duration: 5,
+      loop: true,
+    });
+    nextBackground.particles.move('layer3', new Vector2(0.3, threeMath.degToRad(25)), {
+      duration: 5,
+      loop: true,
+    });
+    nextBackground.particles.sway('layer1', new Vector2(0.025, 0.025), {
+      duration: 1.5,
+      easing: TWEEN.Easing.Sinusoidal.InOut,
+      loop: true,
+    });
+    nextBackground.particles.sway('layer2', new Vector2(0.025, 0.025), {
+      duration: 1.5,
+      easing: TWEEN.Easing.Sinusoidal.InOut,
+      loop: true,
+    });
+    nextBackground.particles.sway('layer3', new Vector2(0.025, 0.025), {
+      duration: 1.5,
+      easing: TWEEN.Easing.Sinusoidal.InOut,
+      loop: true,
+    });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, nextBackground, {

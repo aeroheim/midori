@@ -1,5 +1,3 @@
-import { Color } from 'three';
-
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -10,10 +8,6 @@ const ParticleShader = {
   vertexShader: `
 
     attribute float size;
-    
-    // a value from 0 to 1 indicating the diameter of the particle
-    attribute float diameter;
-    varying float v_diameter;
 
     // a value from 0 to 1 indicating the size of the blend gradient
     attribute float gradient;
@@ -28,7 +22,6 @@ const ParticleShader = {
     varying vec3 v_color;
 
     void main() {
-      v_diameter = diameter;
       v_gradient = gradient;
       v_opacity = opacity;
       v_color = color;
@@ -47,7 +40,7 @@ const ParticleShader = {
     varying vec3 v_color;
 
     void main() {
-      float radius = v_diameter / 2.0;
+      float radius = 0.5;
       float distanceFromCenter = length(gl_PointCoord - vec2(0.5, 0.5));
       if (distanceFromCenter > radius) {
         discard;

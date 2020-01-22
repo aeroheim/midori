@@ -52,7 +52,14 @@ class Background {
       new MeshBasicMaterial({ map: texture }),
     );
     this._camera = new BackgroundCamera(this._plane, width, height);
-    this._particles = new Particles(1, 1 / textureAspectRatio, getMaxFullScreenDepthForPlane(this._plane, this._camera.camera, 0));
+
+    // Use slightly larger boundaries for the particles to avoid sudden particle pop-ins.
+    this._particles = new Particles(
+      this._plane.geometry.parameters.width * 1.1,
+      this._plane.geometry.parameters.height * 1.1,
+      getMaxFullScreenDepthForPlane(this._plane, this._camera.camera, 0)
+    );
+
     this._scene.add(this._particles.object);
     this._scene.add(this._plane);
 
@@ -85,6 +92,7 @@ class Background {
 
   render(renderer, writeBuffer = null) {
     this._camera.update();
+    this._particles.update();
 
     // render to internal buffer to update depth texture
     renderer.setRenderTarget(this._buffer);
@@ -109,6 +117,7 @@ class Background {
     this._plane.material.map.dispose();
     this._scene.dispose();
     this._effects.dispose();
+    this._particles.dispose();
   }
 }
 
