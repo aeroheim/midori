@@ -3,7 +3,7 @@ import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect } from './effect';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect } from './effect';
 
 class EffectPass extends Pass {
   _width;
@@ -32,11 +32,10 @@ class EffectPass extends Pass {
     this._readBuffer.setSize(width, height);
     this._writeBuffer.setSize(width, height);
 
-    if (this._effects[EffectType.BLUR]) {
-      this._effects[EffectType.BLUR].setSize(width, height);
-    }
-    if (this._effects[EffectType.BLOOM]) {
-      this._effects[EffectType.BLOOM].setSize(width, height);
+    for (const effect of Object.values(this._effects)) {
+      if (effect.setSize) {
+        effect.setSize(width, height);
+      }
     }
   }
 
@@ -62,6 +61,9 @@ class EffectPass extends Pass {
           break;
         case EffectType.VIGNETTE:
           this._effects[type] = new Effect(VignetteShader);
+          break;
+        case EffectType.VIGNETTE_BLUR:
+          this._effects[type] = new VignetteBlurEffect(this._width, this._height);
           break;
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
@@ -108,6 +110,12 @@ class EffectPass extends Pass {
         case EffectType.VIGNETTE: {
           const { offset = 1, darkness = 1 } = config;
           effect.updateUniforms({ offset, darkness });
+          break;
+        }
+        case EffectType.VIGNETTE_BLUR: {
+          const { opacity = 1, size = 1, radius = 1, passes = effect.passes } = config;
+          effect.passes = passes;
+          effect.updateUniforms({ opacity, radius, size });
           break;
         }
         case EffectType.MOTION_BLUR: {

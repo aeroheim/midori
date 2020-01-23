@@ -4,12 +4,14 @@ import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { MotionBlurShader } from './shaders/effect/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 import { ShaderUtils } from './shaders/shader-utils';
+import VignetteBlendShader from './shaders/effect/vignette-blend-shader';
 
 const EffectType = Object.freeze({
   BLUR: 'blur',
   BLOOM: 'bloom',
   RGB_SHIFT: 'rgbShift',
   VIGNETTE: 'vignette',
+  VIGNETTE_BLUR: 'vignetteBlur',
   MOTION_BLUR: 'motionBlur',
   PARTICLE: 'particle',
   GLITCH: 'glitch',
@@ -128,6 +130,54 @@ class GaussianBlurEffect extends Effect {
   }
 }
 
+class VignetteBlurEffect extends GaussianBlurEffect {
+  _blendEffect;
+  _blendBuffer;
+
+  constructor(width, height) {
+    super(width, height);
+    this._blendEffect = new TransitionEffect(VignetteBlendShader);
+    this._blendBuffer = new WebGLRenderTarget(width, height);
+  }
+
+  setSize(width, height) {
+    super.setSize(width, height);
+    this._blendBuffer.setSize(width, height);
+  }
+
+  getUniforms() {
+    const { opacity, size } = this._blendEffect.getUniforms();
+    return { ...super.getUniforms(), opacity, size };
+  }
+
+  updateUniforms(uniforms = {}) {
+    const { opacity, size, ...blurUniforms } = uniforms;
+    super.updateUniforms(blurUniforms);
+    if (opacity !== undefined) {
+      this._blendEffect.updateUniforms({ opacity });
+    }
+    if (size !== undefined) {
+      this._blendEffect.updateUniforms({ size });
+    }
+  }
+
+  clearUniforms() {
+    super.clearUniforms();
+    this._blendEffect.clearUniforms();
+  }
+
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+    super.render(renderer, this._blendBuffer, readBuffer, uniforms);
+    this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
+  }
+
+  dispose() {
+    this._blendEffect.dispose();
+    this._blendBuffer.dispose();
+    super.dispose();
+  }
+}
+
 class BloomEffect extends GaussianBlurEffect {
   _blendEffect;
   _blendBuffer;
@@ -180,5 +230,6 @@ export {
   TransitionEffect,
   MotionBlurEffect,
   GaussianBlurEffect,
+  VignetteBlurEffect,
   BloomEffect,
 };

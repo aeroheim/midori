@@ -105,23 +105,24 @@ class Renderer {
 
     const prevBackground = this._backgroundPass.background;
     const nextBackground = new Background(texture, this._width, this._height);
-    nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 3 });
-    // nextBackground.effects.effect(EffectType.BLUR, { radius: 0.2, passes: 6 });
+    nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 2 });
+    // nextBackground.effects.effect(EffectType.BLUR, { radius: 1, passes: 6 });
+    nextBackground.effects.effect(EffectType.VIGNETTE_BLUR, { size: 3, radius: 1.5, passes: 2 });
     // nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
     nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
-    nextBackground.effects.effect(EffectType.VIGNETTE);
+    nextBackground.effects.effect(EffectType.VIGNETTE, { darkness: 1, offset: 1 });
     nextBackground.particles.generate([
       {
         name: 'layer1',
-        amount: 50,
-        maxSize: 10,
+        amount: 25,
+        maxSize: 15,
         maxOpacity: 0.8,
         minGradient: 0.75,
         maxGradient: 1.0,
       },
       {
         name: 'layer2',
-        amount: 50,
+        amount: 75,
         maxSize: 8,
         maxOpacity: 0.8,
         minGradient: 0.75,
@@ -129,7 +130,7 @@ class Renderer {
       },
       {
         name: 'layer3',
-        amount: 50,
+        amount: 100,
         maxSize: 5,
         maxOpacity: 0.8,
         minGradient: 0.75,
@@ -180,7 +181,7 @@ class Renderer {
       },
       onStart: () => {
         this._backgroundPass.setBackground(nextBackground);
-        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.5 + Math.random() * 0.5), {
+        nextBackground.camera.move(new Vector3(0, 0, 1), {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });
