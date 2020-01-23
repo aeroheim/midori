@@ -81,8 +81,8 @@ const WipeShader = {
         rotatedPosition = (vUv.x * slope) / aspect;
       }
 
-    // a tween that starts from one side of the texture and ends at the other side.
-    // this tween accounts for offsets due to the size of the blend gradient and angle of the wipe effect.
+      // a tween that starts from one side of the texture and ends at the other side.
+      // this tween accounts for offsets due to the size of the blend gradient and angle of the wipe effect.
       float wipeOffset = (-max(0.0, rotationOffset) - gradient) + ((1.0 + abs(rotationOffset) + gradient) * amount) + rotatedPosition;
       if (position <= wipeOffset) {
         gl_FragColor = texel2;
