@@ -113,64 +113,45 @@ class Renderer {
     nextBackground.effects.effect(EffectType.VIGNETTE, { darkness: 1, offset: 1 });
     nextBackground.particles.generate([
       {
-        name: 'layer1',
-        amount: 25,
-        maxSize: 15,
-        maxOpacity: 0.8,
-        minGradient: 0.75,
-        maxGradient: 1.0,
-      },
-      {
-        name: 'layer2',
-        amount: 75,
-        maxSize: 8,
-        maxOpacity: 0.8,
-        minGradient: 0.75,
-        maxGradient: 1.0,
-      },
-      {
-        name: 'layer3',
-        amount: 100,
+        name: 'small',
+        amount: 200,
         maxSize: 5,
         maxOpacity: 0.8,
         minGradient: 0.75,
         maxGradient: 1.0,
       },
+      {
+        name: 'medium',
+        amount: 50,
+        maxSize: 12,
+        maxOpacity: 0.8,
+        minGradient: 0.75,
+        maxGradient: 1.0,
+      },
+      {
+        name: 'large',
+        amount: 20,
+        minSize: 75,
+        maxSize: 100,
+        maxOpacity: 0.05,
+        minGradient: 1.0,
+        maxGradient: 1.0,
+      },
+
     ]);
-    nextBackground.particles.move('layer1', new Vector2(0.3, threeMath.degToRad(45)), {
-      duration: 5,
-      loop: true,
-    });
-    nextBackground.particles.move('layer2', new Vector2(0.4, threeMath.degToRad(35)), {
-      duration: 5,
-      loop: true,
-    });
-    nextBackground.particles.move('layer3', new Vector2(0.5, threeMath.degToRad(25)), {
-      duration: 5,
-      loop: true,
-    });
-    nextBackground.particles.sway('layer1', new Vector2(0.025, 0.025), {
-      duration: 1.5,
-      easing: TWEEN.Easing.Sinusoidal.InOut,
-      loop: true,
-    });
-    nextBackground.particles.sway('layer2', new Vector2(0.025, 0.025), {
-      duration: 1.5,
-      easing: TWEEN.Easing.Sinusoidal.InOut,
-      loop: true,
-    });
-    nextBackground.particles.sway('layer3', new Vector2(0.025, 0.025), {
-      duration: 1.5,
-      easing: TWEEN.Easing.Sinusoidal.InOut,
-      loop: true,
-    });
+    nextBackground.particles.move('small', new Vector2(0.5, threeMath.degToRad(25)), { duration: 5, loop: true });
+    nextBackground.particles.sway('small', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
+    nextBackground.particles.move('medium', new Vector2(0.3, threeMath.degToRad(45)), { duration: 5, loop: true });
+    nextBackground.particles.sway('medium', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
+    nextBackground.particles.move('large', new Vector2(0.4, threeMath.degToRad(35)), { duration: 5, loop: true });
+    nextBackground.particles.sway('large', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
     this._transitionPass.transition(type, nextBackground, {
       ...config,
       delay: 1.25,
       onInit: () => {
-        prevBackground.camera.move(new Vector3(Math.random(), Math.random(), (Math.random() * 0.7) + 0.3), {
+        prevBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.3 + Math.random() * 0.7), {
           duration: 2.25,
           easing: TWEEN.Easing.Quartic.In,
         });
@@ -181,7 +162,7 @@ class Renderer {
       },
       onStart: () => {
         this._backgroundPass.setBackground(nextBackground);
-        nextBackground.camera.move(new Vector3(0, 0, 1), {
+        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.7 + Math.random() * 0.3), {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });

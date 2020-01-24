@@ -265,6 +265,18 @@ class Particles {
   }
 
   /**
+   * Generates a new random averaged value based off a given value and its range.
+   * @param {Number} value - the value to use.
+   * @param {Number} minValue - the minimum value for the given value.
+   * @param {Number} maxValue - the maximum value for the given value.
+   */
+  _generateNewRandomAveragedValue(value, minValue, maxValue) {
+    const offset = (maxValue - minValue) / 2;
+    const newValue = Math.max(Math.min(value + (-offset + Math.random() * offset * 2), maxValue), minValue);
+    return Math.max(Math.min((value + newValue) / 2, maxValue), minValue);
+  }
+
+  /**
    * Updates the positions of particles. Should be called on every render frame.
    */
   update() {
@@ -298,9 +310,9 @@ class Particles {
         bufferColors[i * 3] = group.color.r;
         bufferColors[i * 3 + 1] = group.color.g;
         bufferColors[i * 3 + 2] = group.color.b;
-        bufferSizes[i] = minSize + Math.random() * (maxSize - minSize);
-        bufferGradients[i] = minGradient + Math.random() * (maxGradient - minGradient);
-        bufferOpacities[i] = minOpacity + Math.random() * (maxOpacity - minOpacity);
+        bufferSizes[i] = this._generateNewRandomAveragedValue(bufferSizes[i], minSize, maxSize);
+        bufferGradients[i] = this._generateNewRandomAveragedValue(bufferGradients[i], minGradient, maxGradient);
+        bufferOpacities[i] = this._generateNewRandomAveragedValue(bufferOpacities[i], minOpacity, maxOpacity);
       }
     }
 
