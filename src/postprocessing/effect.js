@@ -13,7 +13,6 @@ const EffectType = Object.freeze({
   VIGNETTE: 'vignette',
   VIGNETTE_BLUR: 'vignetteBlur',
   MOTION_BLUR: 'motionBlur',
-  PARTICLE: 'particle',
   GLITCH: 'glitch',
 });
 

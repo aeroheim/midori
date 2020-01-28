@@ -41,11 +41,11 @@ const ParticleShader = {
 
     void main() {
       float radius = 0.5;
-      float distanceFromCenter = length(gl_PointCoord - vec2(0.5, 0.5));
+      float distanceFromCenter = distance(gl_PointCoord, vec2(0.5, 0.5));
       if (distanceFromCenter > radius) {
         discard;
       }
-      gl_FragColor = vec4(v_color, min((radius - distanceFromCenter) / (v_gradient * radius), 1.0) * v_opacity);
+      gl_FragColor = vec4(v_color, min((radius - distanceFromCenter) / smoothstep(0.0, 1.0, v_gradient * radius), 1.0) * v_opacity);
     }
 
   `,

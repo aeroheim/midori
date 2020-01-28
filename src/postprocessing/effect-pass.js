@@ -68,8 +68,6 @@ class EffectPass extends Pass {
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
-        case EffectType.DOF:
-        case EffectType.PARTICLE:
         default:
           break;
       }
@@ -125,8 +123,6 @@ class EffectPass extends Pass {
           effect.updateUniforms({ intensity, samples });
           break;
         }
-        case EffectType.DOF:
-        case EffectType.PARTICLE:
         default:
           break;
       }
