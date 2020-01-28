@@ -1,10 +1,11 @@
-import { WebGLRenderTarget } from 'three';
+import { WebGLRenderTarget, Vector2 } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { MotionBlurShader } from './shaders/effect/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
+import { VignetteBlendShader } from './shaders/effect/vignette-blend-shader';
+import { GlitchShader } from './shaders/effect/glitch-shader';
 import { ShaderUtils } from './shaders/shader-utils';
-import VignetteBlendShader from './shaders/effect/vignette-blend-shader';
 
 const EffectType = Object.freeze({
   BLUR: 'blur',
@@ -223,6 +224,27 @@ class BloomEffect extends GaussianBlurEffect {
   }
 }
 
+class GlitchEffect extends Effect {
+  _width;
+  _height;
+
+  constructor(width, height, uniforms = {}) {
+    super(GlitchShader, uniforms);
+    this.setSize(width, height);
+  }
+
+  setSize(width, height) {
+    this._width = width;
+    this._height = height;
+    this.updateUniforms({ resolution: new Vector2(this._width, this._height) });
+  }
+
+  clearUniforms() {
+    super.clearUniforms();
+    this.updateUniforms({ resolution: new Vector2(this._width, this._height) });
+  }
+}
+
 export {
   EffectType,
   Effect,
@@ -231,4 +253,5 @@ export {
   GaussianBlurEffect,
   VignetteBlurEffect,
   BloomEffect,
+  GlitchEffect,
 };

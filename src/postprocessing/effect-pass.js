@@ -3,7 +3,7 @@ import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect } from './effect';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect } from './effect';
 
 class EffectPass extends Pass {
   _width;
@@ -68,7 +68,8 @@ class EffectPass extends Pass {
         case EffectType.MOTION_BLUR:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
-        default:
+        case EffectType.GLITCH:
+          this._effects[type] = new GlitchEffect(this._width, this._height);
           break;
       }
     }
@@ -123,8 +124,9 @@ class EffectPass extends Pass {
           effect.updateUniforms({ intensity, samples });
           break;
         }
-        default:
+        case EffectType.GLITCH: {
           break;
+        }
       }
     }
   }
