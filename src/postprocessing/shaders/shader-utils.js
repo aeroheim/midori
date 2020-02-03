@@ -59,6 +59,7 @@ function clearUniforms(shader) {
  * See https://github.com/ashima/webgl-noise/wiki by Stefan Gustavson.
  */
 const noiseHelpers = `
+
   //
   // Description : Array and textureless GLSL 2D simplex noise function.
   //      Author : Ian McEwan, Ashima Arts.
@@ -129,6 +130,7 @@ const noiseHelpers = `
     g.yz = a0.yz * x12.xz + h.yz * x12.yw;
     return 130.0 * dot(m, g);
   }
+
 `;
 
 const ShaderUtils = {
