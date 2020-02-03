@@ -101,6 +101,16 @@ class Renderer {
           easing: TWEEN.Easing.Quintic.InOut,
         },
       },
+      {
+        type: TransitionType.GLITCH,
+        config: {
+          seed: Math.random(),
+          from: { amount: 0.0 },
+          to: { amount: 1.0 },
+          duration: 1.5,
+          easing: TWEEN.Easing.Cubic.InOut,
+        }
+      }
     ];
 
     const prevBackground = this._backgroundPass.background;
@@ -108,9 +118,10 @@ class Renderer {
     nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 2 });
     // nextBackground.effects.effect(EffectType.BLUR, { radius: 1, passes: 6 });
     nextBackground.effects.effect(EffectType.VIGNETTE_BLUR, { size: 3, radius: 1.5, passes: 2 });
-    // nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
+    nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
     nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
     nextBackground.effects.effect(EffectType.VIGNETTE, { darkness: 1, offset: 1 });
+    // nextBackground.effects.effect(EffectType.GLITCH, {});
     nextBackground.particles.generate([
       {
         name: 'small',
@@ -130,9 +141,9 @@ class Renderer {
       },
       {
         name: 'large',
-        amount: 20,
-        minSize: 75,
-        maxSize: 100,
+        amount: 30,
+        minSize: 100,
+        maxSize: 125,
         maxOpacity: 0.05,
         minGradient: 1.0,
         maxGradient: 1.0,
@@ -152,11 +163,11 @@ class Renderer {
       delay: 1.25,
       onInit: () => {
         prevBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.3 + Math.random() * 0.7), {
-          duration: 2.25,
+          duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
         prevBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
-          duration: 2.25,
+          duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
       },

@@ -1,10 +1,11 @@
 import TWEEN from '@tweenjs/tween.js';
-import { WebGLRenderTarget } from 'three';
+import { WebGLRenderTarget, Vector2 } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { WipeShader } from './shaders/transition/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
 import { BlurShader } from './shaders/transition/blur-shader';
+import { GlitchShader } from './shaders/transition/glitch-shader';
 import { Background } from '../background';
 import { TransitionEffect } from './effect';
 
@@ -14,6 +15,7 @@ const TransitionType = Object.freeze({
   WIPE: 'wipe',
   SLIDE: 'slide',
   BLUR: 'blur',
+  GLITCH: 'glitch',
 });
 
 class TransitionPass extends Pass {
@@ -247,6 +249,26 @@ class TransitionPass extends Pass {
           onUpdate: ({ amount }) => {
             const { amount: prevAmount } = this._transitionEffect.getUniforms();
             this._transitionEffect.updateUniforms({ prevAmount, amount });
+            onUpdate();
+          },
+        };
+      }
+      case TransitionType.GLITCH: {
+        const { from: { amount: glitchFrom = 0 }, to: { amount: glitchTo = 1 }, onStart, onUpdate } = baseTransitionConfig;
+        const { seed = 1 } = additionalConfig;
+        return {
+          ...baseTransitionConfig,
+          from: { amount: glitchFrom },
+          to: { amount: glitchTo },
+          onStart: () => {
+            this._setTransitionEffect(GlitchShader, { seed, resolution: new Vector2(this._width, this._height) });
+            onStart();
+          },
+          onUpdate: ({ amount }) => {
+            // update the resolution incase it changes in the middle of the transition
+            const { resolution } = this._transitionEffect.getUniforms();
+            resolution.set(this._width, this._height);
+            this._transitionEffect.updateUniforms({ amount, });
             onUpdate();
           },
         };

@@ -4,7 +4,7 @@ import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { MotionBlurShader } from './shaders/effect/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 import { VignetteBlendShader } from './shaders/effect/vignette-blend-shader';
-import { GlitchShader } from './shaders/effect/glitch-shader';
+import { GlitchShader } from './shaders/transition/glitch-shader';
 import { ShaderUtils } from './shaders/shader-utils';
 
 const EffectType = Object.freeze({
