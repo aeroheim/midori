@@ -9,7 +9,7 @@ const WipeDirection = Object.freeze({
   BOTTOM: 3,
 });
 
-const WipeShader = {
+const WipeTransitionShader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
@@ -97,8 +97,8 @@ const WipeShader = {
 };
 
 export {
-  WipeShader,
+  WipeTransitionShader,
   WipeDirection,
 };
 
-export default WipeShader;
+export default WipeTransitionShader;

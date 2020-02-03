@@ -2,10 +2,10 @@ import TWEEN from '@tweenjs/tween.js';
 import { WebGLRenderTarget, Vector2 } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
-import { WipeShader } from './shaders/transition/wipe-shader';
-import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
-import { BlurShader } from './shaders/transition/blur-shader';
-import { GlitchShader } from './shaders/transition/glitch-shader';
+import { WipeTransitionShader } from './shaders/transition/wipe-transition-shader';
+import { SlideTransitionShader, SlideDirection } from './shaders/transition/slide-transition-shader';
+import { BlurTransitionShader } from './shaders/transition/blur-transition-shader';
+import { GlitchTransitionShader } from './shaders/transition/glitch-transition-shader';
 import { Background } from '../background';
 import { TransitionEffect } from './effect';
 
@@ -197,7 +197,7 @@ class TransitionPass extends Pass {
           from: { amount: wipeFrom },
           to: { amount: wipeTo },
           onStart: () => {
-            this._setTransitionEffect(WipeShader, {
+            this._setTransitionEffect(WipeTransitionShader, {
               gradient,
               angle,
               aspect: this._width / this._height,
@@ -219,7 +219,7 @@ class TransitionPass extends Pass {
           from: { amount: slideFrom },
           to: { amount: slideTo },
           onStart: () => {
-            this._setTransitionEffect(SlideShader, {
+            this._setTransitionEffect(SlideTransitionShader, {
               gradient,
               slides,
               intensity,
@@ -243,7 +243,7 @@ class TransitionPass extends Pass {
           from: { amount: blurFrom },
           to: { amount: blurTo },
           onStart: () => {
-            this._setTransitionEffect(BlurShader, { intensity, samples });
+            this._setTransitionEffect(BlurTransitionShader, { intensity, samples });
             onStart();
           },
           onUpdate: ({ amount }) => {
@@ -261,7 +261,7 @@ class TransitionPass extends Pass {
           from: { amount: glitchFrom },
           to: { amount: glitchTo },
           onStart: () => {
-            this._setTransitionEffect(GlitchShader, { seed, resolution: new Vector2(this._width, this._height) });
+            this._setTransitionEffect(GlitchTransitionShader, { seed, resolution: new Vector2(this._width, this._height) });
             onStart();
           },
           onUpdate: ({ amount }) => {

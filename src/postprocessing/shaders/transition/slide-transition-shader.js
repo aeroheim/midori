@@ -9,7 +9,7 @@ const SlideDirection = Object.freeze({
   BOTTOM: 3,
 });
 
-const SlideShader = {
+const SlideTransitionShader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
@@ -108,8 +108,8 @@ const SlideShader = {
 };
 
 export {
-  SlideShader,
+  SlideTransitionShader,
   SlideDirection,
 };
 
-export default SlideShader;
+export default SlideTransitionShader;
