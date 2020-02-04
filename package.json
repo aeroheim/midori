@@ -11,24 +11,24 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/core": "^7.6.4",
-    "@babel/plugin-proposal-class-properties": "^7.5.5",
-    "@babel/plugin-proposal-object-rest-spread": "^7.6.2",
-    "@babel/preset-env": "^7.6.3",
+    "@babel/core": "^7.8.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.8.3",
+    "@babel/preset-env": "^7.8.4",
     "babel-eslint": "^10.0.3",
     "babel-loader": "^8.0.6",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-loader": "^2.2.1",
-    "eslint-plugin-import": "^2.18.2",
-    "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.8.2"
+    "eslint-plugin-import": "^2.20.1",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.2"
   },
   "dependencies": {
-    "@babel/plugin-transform-runtime": "^7.6.2",
-    "@babel/runtime": "^7.6.3",
-    "@tweenjs/tween.js": "^18.3.1",
+    "@babel/plugin-transform-runtime": "^7.8.3",
+    "@babel/runtime": "^7.8.4",
+    "@tweenjs/tween.js": "^18.5.0",
     "three": "^0.109.0",
     "three-orbit-controls": "^82.1.0"
   }
