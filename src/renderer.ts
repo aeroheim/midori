@@ -2,7 +2,7 @@ import { WebGLRenderer, Vector4, Vector3, Math as threeMath, Vector2 } from 'thr
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
-import BackgroundPass from './postprocessing/background-pass';
+import { BackgroundPass } from './background-pass';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
@@ -115,11 +115,11 @@ class Renderer {
 
     const prevBackground = this._backgroundPass.background;
     const nextBackground = new Background(texture, this._width, this._height);
-    nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 2 });
+    // nextBackground.effects.effect(EffectType.BLOOM, { radius: 1, passes: 2 });
     // nextBackground.effects.effect(EffectType.BLUR, { radius: 1, passes: 6 });
-    nextBackground.effects.effect(EffectType.VIGNETTE_BLUR, { size: 3, radius: 1.5, passes: 2 });
+    // nextBackground.effects.effect(EffectType.VIGNETTE_BLUR, { size: 3, radius: 1.5, passes: 2 });
     // nextBackground.effects.effect(EffectType.RGB_SHIFT, { amount: 0.005, angle: threeMath.degToRad(135) });
-    nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
+    // nextBackground.effects.effect(EffectType.MOTION_BLUR, { intensity: 1, samples: 32 });
     nextBackground.effects.effect(EffectType.VIGNETTE, { darkness: 1, offset: 1 });
     // nextBackground.effects.effect(EffectType.GLITCH, { amount: 0.8, seed: Math.random() });
     nextBackground.particles.generate([

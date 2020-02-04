@@ -25,4 +25,8 @@ class BackgroundPass extends Pass {
   }
 }
 
+export {
+  BackgroundPass,
+};
+
 export default BackgroundPass;
