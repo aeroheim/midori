@@ -2,7 +2,7 @@
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const BlurTransitionShader = {
+const BlurShader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
@@ -59,7 +59,7 @@ const BlurTransitionShader = {
 };
 
 export {
-  BlurTransitionShader,
+  BlurShader,
 };
 
-export default BlurTransitionShader;
+export default BlurShader;
