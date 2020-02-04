@@ -224,24 +224,50 @@ class BloomEffect extends GaussianBlurEffect {
   }
 }
 
-class GlitchEffect extends Effect {
-  _width;
-  _height;
+class GlitchEffect {
+  _resolution;
+  _glitchEffect;
+  _blurEffect;
+  _blurBuffer;
 
   constructor(width, height, uniforms = {}) {
-    super(GlitchShader, uniforms);
-    this.setSize(width, height);
+    this._resolution = new Vector2(width, height);
+    this._glitchEffect = new TransitionEffect(GlitchShader, uniforms);
+    this._blurEffect = new GaussianBlurEffect(width, height, { radius: 3 });
+    this._blurEffect.passes = 2;
+    this._blurBuffer = new WebGLRenderTarget(width, height);
   }
 
   setSize(width, height) {
-    this._width = width;
-    this._height = height;
-    this.updateUniforms({ resolution: new Vector2(this._width, this._height) });
+    this._resolution.set(width, height);
+    this._blurEffect.setSize(width, height);
+    this._blurBuffer.setSize(width, height);
+  }
+
+  getUniforms() {
+    return this._glitchEffect.getUniforms();
+  }
+
+  updateUniforms(uniforms = {}) {
+    this._glitchEffect.updateUniforms(uniforms);
   }
 
   clearUniforms() {
-    super.clearUniforms();
-    this.updateUniforms({ resolution: new Vector2(this._width, this._height) });
+    this._glitchEffect.clearUniforms();
+  }
+
+  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+    this._blurEffect.render(renderer, this._blurBuffer, readBuffer);
+    this._glitchEffect.render(renderer, writeBuffer, readBuffer, this._blurBuffer, {
+      ...uniforms,
+      resolution: this._resolution,
+    });
+  }
+
+  dispose() {
+    this._glitchEffect.dispose();
+    this._blurEffect.dispose();
+    this._blurBuffer.dispose();
   }
 }
 

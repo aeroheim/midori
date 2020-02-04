@@ -125,11 +125,14 @@ class EffectPass extends Pass {
           break;
         }
         case EffectType.GLITCH: {
+          const { amount = 1, seed = Math.random() } = config;
+          effect.updateUniforms({ amount, seed });
           break;
         }
       }
     }
   }
+
   /**
    * Removes a previously set effect. Returns true if the effect was removed, otherwise false.
    * @param {EffectType} type - the type of the effect.
