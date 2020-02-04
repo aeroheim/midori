@@ -2,6 +2,7 @@
   "name": "midori",
   "version": "0.5.0",
   "description": "Animated image backgrounds",
+  "license": "MIT",
   "keywords": [
     "background",
     "image",
@@ -12,18 +13,21 @@
     "canvas",
     "javascript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aeroheim/midori.git"
+  },
   "homepage": "https://github.com/aeroheim/midori",
   "bugs": "https://github.com/aeroheim/midori/issues",
-  "license": "MIT",
-  "main": "index.js",
-  "scripts": {
-    "start": "webpack-dev-server --content-base src/",
-    "lint": "eslint **/*.js"
-  },
   "author": {
     "name": "Benjamin Pang",
     "email": "bp7936@gmail.com",
     "url": "https://aeroheim.moe/"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack-dev-server --content-base src/",
+    "lint": "eslint **/*.js"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
