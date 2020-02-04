@@ -130,97 +130,109 @@ class GaussianBlurEffect extends Effect {
   }
 }
 
-class VignetteBlurEffect extends GaussianBlurEffect {
+class VignetteBlurEffect {
+  _blurEffect;
   _blendEffect;
   _blendBuffer;
 
   constructor(width, height) {
-    super(width, height);
+    this._blurEffect = new GaussianBlurEffect(width, height);
     this._blendEffect = new TransitionEffect(VignetteBlendShader);
     this._blendBuffer = new WebGLRenderTarget(width, height);
   }
 
+  get passes() {
+    return this._blurEffect.passes;
+  }
+
+  set passes(value) {
+    this._blurEffect.passes = value;
+  }
+
   setSize(width, height) {
-    super.setSize(width, height);
+    this._blurEffect.setSize(width, height);
     this._blendBuffer.setSize(width, height);
   }
 
   getUniforms() {
     const { opacity, size } = this._blendEffect.getUniforms();
-    return { ...super.getUniforms(), opacity, size };
+    return { ...this._blurEffect.getUniforms(), opacity, size };
   }
 
   updateUniforms(uniforms = {}) {
-    const { opacity, size, ...blurUniforms } = uniforms;
-    super.updateUniforms(blurUniforms);
-    if (opacity !== undefined) {
-      this._blendEffect.updateUniforms({ opacity });
-    }
-    if (size !== undefined) {
-      this._blendEffect.updateUniforms({ size });
-    }
+    const blendUniforms = this._blendEffect.getUniforms();
+    const { opacity = blendUniforms.opacity, size = blendUniforms.size, ...blurUniforms } = uniforms;
+    this._blurEffect.updateUniforms(blurUniforms);
+    this._blendEffect.updateUniforms({ opacity, size });
   }
 
   clearUniforms() {
-    super.clearUniforms();
+    this._blurEffect.clearUniforms();
     this._blendEffect.clearUniforms();
   }
 
   render(renderer, writeBuffer, readBuffer, uniforms = {}) {
-    super.render(renderer, this._blendBuffer, readBuffer, uniforms);
+    this._blurEffect.render(renderer, this._blendBuffer, readBuffer, uniforms);
     this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
   }
 
   dispose() {
+    this._blurEffect.dispose();
     this._blendEffect.dispose();
     this._blendBuffer.dispose();
-    super.dispose();
   }
 }
 
-class BloomEffect extends GaussianBlurEffect {
+class BloomEffect {
+  _blurEffect;
   _blendEffect;
   _blendBuffer;
 
   constructor(width, height) {
-    super(width, height);
+    this._blurEffect = new GaussianBlurEffect(width, height);
     this._blendEffect = new TransitionEffect(BlendShader, { mixRatio: 0.5 });
     this._blendBuffer = new WebGLRenderTarget(width, height);
   }
 
+  get passes() {
+    return this._blurEffect.passes;
+  }
+
+  set passes(value) {
+    this._blurEffect.passes = value;
+  }
+
   setSize(width, height) {
-    super.setSize(width, height);
+    this._blurEffect.setSize(width, height);
     this._blendBuffer.setSize(width, height);
   }
 
   getUniforms() {
     const { opacity } = this._blendEffect.getUniforms();
-    return { ...super.getUniforms(), opacity };
+    return { ...this._blurEffect.getUniforms(), opacity };
   }
 
   updateUniforms(uniforms = {}) {
-    const { opacity, ...blurUniforms } = uniforms;
-    super.updateUniforms(blurUniforms);
-    if (opacity !== undefined) {
-      this._blendEffect.updateUniforms({ opacity });
-    }
+    const blendUniforms = this._blendEffect.getUniforms();
+    const { opacity = blendUniforms.opacity, ...blurUniforms } = uniforms;
+    this._blurEffect.updateUniforms(blurUniforms);
+    this._blendEffect.updateUniforms({ opacity });
   }
 
   clearUniforms() {
-    super.clearUniforms();
+    this._blurEffect.clearUniforms();
     this._blendEffect.clearUniforms();
     this._blendEffect.updateUniforms({ mixRatio: 0.5 });
   }
 
   render(renderer, writeBuffer, readBuffer, uniforms = {}) {
-    super.render(renderer, this._blendBuffer, readBuffer, uniforms);
+    this._blurEffect.render(renderer, this._blendBuffer, readBuffer, uniforms);
     this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
   }
 
   dispose() {
     this._blendEffect.dispose();
     this._blendBuffer.dispose();
-    super.dispose();
   }
 }
 
