@@ -1,4 +1,4 @@
-import { WebGLRenderer, Vector4, Vector3, Math as threeMath, Vector2 } from 'three';
+import { WebGLRenderer, Vector4, Vector3, Math as MathUtils, Vector2, Texture, TextureLoader, ClampToEdgeWrapping, LinearFilter } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
@@ -7,6 +7,32 @@ import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
 import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
 import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
+
+/**
+ * Loads an image as a texture.
+ * @async
+ * @param {string} path - path to the image file.
+ * @return {Promise} - texture on success, error on failure.
+ */
+async function loadImage(path: string): Promise<Texture> {
+  return new Promise((resolve, reject) => {
+    new TextureLoader().load(path, (texture) => {
+      // image should never wrap
+      texture.wrapS = ClampToEdgeWrapping;
+      texture.wrapT = ClampToEdgeWrapping;
+
+      // image should be able to be UV mapped directly
+      texture.minFilter = LinearFilter;
+
+      // image should never repeat
+      texture.repeat.set(1, 1);
+
+      resolve(texture);
+    },
+    () => ({}),
+    errorEvent => reject(errorEvent.error));
+  });
+}
 
 // TODO: properly dispose of three.js objects
 class Renderer {
@@ -62,7 +88,7 @@ class Renderer {
       duration: 2,
       easing: TWEEN.Easing.Cubic.InOut,
     });
-    camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+    camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
       duration: 2,
       easing: TWEEN.Easing.Cubic.InOut,
     });
@@ -78,7 +104,7 @@ class Renderer {
         type: TransitionType.WIPE,
         config: {
           gradient: 0.5,
-          angle: threeMath.degToRad(15),
+          angle: MathUtils.degToRad(15),
           duration: 1.5,
           easing: TWEEN.Easing.Quintic.InOut,
         },
@@ -150,11 +176,11 @@ class Renderer {
       },
 
     ]);
-    nextBackground.particles.move('small', new Vector2(0.5, threeMath.degToRad(25)), { duration: 5, loop: true });
+    nextBackground.particles.move('small', new Vector2(0.5, MathUtils.degToRad(25)), { duration: 5, loop: true });
     nextBackground.particles.sway('small', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
-    nextBackground.particles.move('medium', new Vector2(0.3, threeMath.degToRad(45)), { duration: 5, loop: true });
+    nextBackground.particles.move('medium', new Vector2(0.3, MathUtils.degToRad(45)), { duration: 5, loop: true });
     nextBackground.particles.sway('medium', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
-    nextBackground.particles.move('large', new Vector2(0.4, threeMath.degToRad(35)), { duration: 5, loop: true });
+    nextBackground.particles.move('large', new Vector2(0.4, MathUtils.degToRad(35)), { duration: 5, loop: true });
     nextBackground.particles.sway('large', new Vector2(0.025, 0.025), { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
@@ -166,7 +192,7 @@ class Renderer {
           duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
-        prevBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+        prevBackground.camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
           duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
@@ -177,12 +203,12 @@ class Renderer {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });
-        nextBackground.camera.sway(new Vector4(0.1, 0.1, 0.02, threeMath.degToRad(1)), {
+        nextBackground.camera.sway(new Vector4(0.1, 0.1, 0.02, MathUtils.degToRad(1)), {
           duration: 1.5,
           easing: TWEEN.Easing.Quadratic.InOut,
           loop: true,
         });
-        nextBackground.camera.rotate(threeMath.degToRad(-5 + Math.random() * 10), {
+        nextBackground.camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });
@@ -196,6 +222,7 @@ class Renderer {
 }
 
 export {
+  loadImage,
   Renderer,
 };
 

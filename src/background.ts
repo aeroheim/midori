@@ -1,96 +1,105 @@
-import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, TextureLoader, ClampToEdgeWrapping, LinearFilter, DepthTexture } from 'three';
+import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, DepthTexture, Texture, WebGLRenderer } from 'three';
 import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-camera';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
 import { Particles } from './particles';
 
-/**
- * Loads an image as a texture.
- * @async
- * @param {string} path - path to the image file.
- * @return {Promise} - texture on success, error on failure.
- */
-async function loadImageAsTexture(path) {
-  return new Promise((resolve, reject) => {
-    new TextureLoader().load(path, (texture) => {
-      // image should never wrap
-      texture.wrapS = ClampToEdgeWrapping;
-      texture.wrapT = ClampToEdgeWrapping;
-
-      // image should be able to be UV mapped directly
-      texture.minFilter = LinearFilter;
-
-      // image should never repeat
-      texture.repeat.set(1, 1);
-
-      resolve(texture);
-    },
-    () => {},
-    errorEvent => reject(errorEvent.error));
-  });
-}
-
 class Background {
-  _buffer;
-  _camera;
-  _scene;
-  _plane;
-  _particles;
-  _effects;
+  private _buffer: WebGLRenderTarget;
+  private _camera: BackgroundCamera;
+  private _scene: Scene;
+  private _plane: Mesh;
+  private _particles: Particles;
+  private _effects: EffectPass;
 
-  constructor(texture, width, height) {
+  /**
+   * Constructs a background.
+   * @param {Texture} texture
+   * @param {number} width
+   * @param {number} height
+   */
+  constructor(texture: Texture, width: number, height: number) {
+    // primary buffer - store depth texture for use in motion blur
     this._buffer = new WebGLRenderTarget(width, height);
     this._buffer.depthTexture = new DepthTexture(width, height);
 
+    // plane using texture - dimensions are in world units
     const textureAspectRatio = texture && texture.image
       ? texture.image.width / texture.image.height
       : 1;
-
-    this._scene = new Scene();
+    const planeWidth = 1;
+    const planeHeight = 1/ textureAspectRatio;
     this._plane = new Mesh(
-      new PlaneGeometry(1, 1 / textureAspectRatio),
+      new PlaneGeometry(planeWidth, planeHeight),
       new MeshBasicMaterial({ map: texture }),
     );
+
+    // camera - look at plane
     this._camera = new BackgroundCamera(this._plane, width, height);
 
-    // Use slightly larger boundaries for the particles to avoid sudden particle pop-ins.
+    // particles - use slightly larger boundaries to avoid sudden particle pop-ins
     this._particles = new Particles(
-      this._plane.geometry.parameters.width * 1.1,
-      this._plane.geometry.parameters.height * 1.1,
+      planeWidth * 1.1,
+      planeHeight * 1.1,
       getMaxFullScreenDepthForPlane(this._plane, this._camera.camera, 0)
     );
 
-    this._scene.add(this._particles.object);
-    this._scene.add(this._plane);
-
+    // effects - set properties required for motion blur
     this._effects = new EffectPass(width, height);
     this._effects.effect(EffectType.MOTION_BLUR, {
       camera: this._camera.camera,
       depthBuffer: this._buffer.depthTexture,
       intensity: 0,
     });
+
+    // scene - throw everything together
+    this._scene = new Scene();
+    this._scene.add(this._particles.object);
+    this._scene.add(this._plane);
   }
 
-  get camera() {
+  /**
+   * Returns the background's camera.
+   * @returns BackgroundCamera
+   */
+  get camera(): BackgroundCamera {
     return this._camera;
   }
 
-  get particles() {
+  /**
+   * Returns the background's particles.
+   * @returns Particles
+   */
+  get particles(): Particles {
     return this._particles;
   }
 
-  get effects() {
+  /**
+   * Returns the background's effects.
+   * @returns EffectPass
+   */
+  get effects(): EffectPass {
     return this._effects;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the background.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._camera.setSize(width, height);
     this._buffer.setSize(width, height);
     this._buffer.depthTexture.image.width = width;
     this._buffer.depthTexture.image.height = height;
   }
 
-  render(renderer, writeBuffer = null) {
+  /**
+   * Renders the background.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer=null - the buffer to render to, or null to render directly to screen.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget = null) {
     this._camera.update();
     this._particles.update();
 
@@ -107,14 +116,17 @@ class Background {
     }
   }
 
-  // TODO: call this as necessary
+  /**
+   * Disposes this object.
+   * This should ALWAYS be called when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._buffer.dispose();
     this._buffer.texture.dispose();
     this._buffer.depthTexture.dispose();
     this._plane.geometry.dispose();
-    this._plane.material.dispose();
-    this._plane.material.map.dispose();
+    (this._plane.material as MeshBasicMaterial).dispose();
+    (this._plane.material as MeshBasicMaterial).map.dispose();
     this._scene.dispose();
     this._effects.dispose();
     this._particles.dispose();
@@ -122,7 +134,6 @@ class Background {
 }
 
 export {
-  loadImageAsTexture,
   Background,
 };
 

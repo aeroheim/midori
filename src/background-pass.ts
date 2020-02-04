@@ -1,26 +1,50 @@
+import { WebGLRenderer, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
+import { Background } from './background';
 
 class BackgroundPass extends Pass {
-  _background;
+  private _background: Background;
 
-  constructor(background) {
+  /**
+   * Constructs a BackgroundPass.
+   * @param {Background} background
+   */
+  constructor(background: Background) {
     super();
     this._background = background;
   }
 
-  setBackground(background) {
+  /**
+   * Sets the current background.
+   * @param {Background} background
+   */
+  setBackground(background: Background) {
     this._background = background;
   }
 
-  get background() {
+  /**
+   * Returns the current background.
+   * @returns Background
+   */
+  get background(): Background {
     return this._background;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the current background.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._background.setSize(width, height);
   }
 
-  render(renderer, writeBuffer /* readBuffer, deltaTime, maskActive */) {
+  /**
+   * Renders the current background.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer=null - the buffer to render to, or null to render directly to screen.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget) {
     this._background.render(renderer, this.renderToScreen ? null : writeBuffer);
   }
 }

@@ -9,6 +9,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "env": {
+    "es6": true,
     "browser": true,
     "node": true
   },
@@ -33,6 +34,7 @@
     "no-param-reassign": "off",
     "no-use-before-define": "off",
     "no-console": "off",
-    "linebreak-style": "off"
+    "linebreak-style": "off",
+    "@typescript-eslint/explicit-function-return-type": "off"
   }
 }
