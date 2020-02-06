@@ -4,13 +4,18 @@ import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
 import { Particles } from './particles';
 
+export interface PlaneMesh extends Mesh {
+  geometry: PlaneGeometry;
+  material: MeshBasicMaterial;
+}
+
 class Background {
-  private _buffer: WebGLRenderTarget;
-  private _camera: BackgroundCamera;
-  private _scene: Scene;
-  private _plane: Mesh;
-  private _particles: Particles;
-  private _effects: EffectPass;
+  private readonly _buffer: WebGLRenderTarget;
+  private readonly _plane: PlaneMesh;
+  private readonly _scene: Scene;
+  readonly camera: BackgroundCamera;
+  readonly particles: Particles;
+  readonly effects: EffectPass;
 
   /**
    * Constructs a background.
@@ -32,54 +37,30 @@ class Background {
     this._plane = new Mesh(
       new PlaneGeometry(planeWidth, planeHeight),
       new MeshBasicMaterial({ map: texture }),
-    );
+    ) as PlaneMesh;
 
     // camera - look at plane
-    this._camera = new BackgroundCamera(this._plane, width, height);
+    this.camera = new BackgroundCamera(this._plane, width, height);
 
     // particles - use slightly larger boundaries to avoid sudden particle pop-ins
-    this._particles = new Particles(
+    this.particles = new Particles(
       planeWidth * 1.1,
       planeHeight * 1.1,
-      getMaxFullScreenDepthForPlane(this._plane, this._camera.camera, 0)
+      getMaxFullScreenDepthForPlane(this._plane, this.camera.camera, 0)
     );
 
     // effects - set properties required for motion blur
-    this._effects = new EffectPass(width, height);
-    this._effects.effect(EffectType.MOTION_BLUR, {
-      camera: this._camera.camera,
+    this.effects = new EffectPass(width, height);
+    this.effects.effect(EffectType.MOTION_BLUR, {
+      camera: this.camera.camera,
       depthBuffer: this._buffer.depthTexture,
       intensity: 0,
     });
 
     // scene - throw everything together
     this._scene = new Scene();
-    this._scene.add(this._particles.object);
+    this._scene.add(this.particles.object);
     this._scene.add(this._plane);
-  }
-
-  /**
-   * Returns the background's camera.
-   * @returns BackgroundCamera
-   */
-  get camera(): BackgroundCamera {
-    return this._camera;
-  }
-
-  /**
-   * Returns the background's particles.
-   * @returns Particles
-   */
-  get particles(): Particles {
-    return this._particles;
-  }
-
-  /**
-   * Returns the background's effects.
-   * @returns EffectPass
-   */
-  get effects(): EffectPass {
-    return this._effects;
   }
 
   /**
@@ -88,7 +69,7 @@ class Background {
    * @param {number} height
    */
   setSize(width: number, height: number) {
-    this._camera.setSize(width, height);
+    this.camera.setSize(width, height);
     this._buffer.setSize(width, height);
     this._buffer.depthTexture.image.width = width;
     this._buffer.depthTexture.image.height = height;
@@ -100,36 +81,35 @@ class Background {
    * @param {WebGLRenderTarget} writeBuffer=null - the buffer to render to, or null to render directly to screen.
    */
   render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget = null) {
-    this._camera.update();
-    this._particles.update();
+    this.camera.update();
+    this.particles.update();
 
     // render to internal buffer to update depth texture
     renderer.setRenderTarget(this._buffer);
-    renderer.render(this._scene, this._camera.camera);
+    renderer.render(this._scene, this.camera.camera);
 
     // render to the given write buffer
-    if (this._effects.hasEffects()) {
-      this._effects.render(renderer, writeBuffer, this._buffer);
+    if (this.effects.hasEffects()) {
+      this.effects.render(renderer, writeBuffer, this._buffer);
     } else {
       renderer.setRenderTarget(writeBuffer);
-      renderer.render(this._scene, this._camera.camera);
+      renderer.render(this._scene, this.camera.camera);
     }
   }
 
   /**
-   * Disposes this object.
-   * This should ALWAYS be called when this object is no longer needed, otherwise leaks may occur.
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
   dispose() {
     this._buffer.dispose();
     this._buffer.texture.dispose();
     this._buffer.depthTexture.dispose();
     this._plane.geometry.dispose();
-    (this._plane.material as MeshBasicMaterial).dispose();
-    (this._plane.material as MeshBasicMaterial).map.dispose();
+    this._plane.material.dispose();
     this._scene.dispose();
-    this._effects.dispose();
-    this._particles.dispose();
+    this.camera.dispose();
+    this.effects.dispose();
+    this.particles.dispose();
   }
 }
 
