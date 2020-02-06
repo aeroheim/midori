@@ -1,59 +1,43 @@
 
-import { PerspectiveCamera, Vector4, Math as threeMath } from 'three';
+import { PerspectiveCamera, Vector4, Math as MathUtils } from 'three';
 import TWEEN from '@tweenjs/tween.js';
+import { PlaneMesh } from './background';
+import { BaseTransitionConfig } from './transition';
+
+/**
+ * Returns the visible height at the given depth in world units.
+ * @param {number} absoluteZ - the depth in absolute world units.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @returns number
+ */
+function getVisibleHeightAtDepth(absoluteZ: number, camera: PerspectiveCamera): number {
+  // fov is vertical fov in radians
+  return 2 * Math.tan(MathUtils.degToRad(camera.fov) / 2) * absoluteZ;
+}
 
 /**
  * Returns the visible width at the given depth in world units.
- * @param {Number} absoluteZ - the depth in absolute world units.
- * @param {three.Camera} camera - a three.js camera.
+ * @param {number} absoluteZ - the depth in absolute world units.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @returns number
  */
-function getVisibleWidthAtDepth(absoluteZ, camera) {
+function getVisibleWidthAtDepth(absoluteZ: number, camera: PerspectiveCamera): number {
   return getVisibleHeightAtDepth(absoluteZ, camera) * camera.aspect;
 }
 
 /**
- * Returns the visible height at the given depth in world units.
- * @param {Number} absoluteZ - the depth in absolute world units.
- * @param {three.Camera} camera - a three.js camera.
- */
-function getVisibleHeightAtDepth(absoluteZ, camera) {
-  // fov is vertical fov in radians
-  return 2 * Math.tan(threeMath.degToRad(camera.fov) / 2) * absoluteZ;
-}
-
-/**
- * Returns the maximum depth for a plane such that it is still fullscreen.
- * @param {three.Object3D} plane - a three.js plane.
- * @param {three.Camera} camera - a three.js camera.
- * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
- */
-function getMaxFullScreenDepthForPlane(plane, camera, rotateZ) {
-  // When the camera is rotated, we treat the object as if it were rotated instead and
-  // use the width/height of the maximal inner bounded box that fits within the object.
-  // This ensures that the maximum depth calculated will always allow for the object to be
-  // fullscreen even if rotated.
-  // NOTE: if there is no rotation (i.e 0 degs) then the object's width and height will be used as normal.
-  const { width: rectWidth, height: rectHeight } = plane.geometry.parameters;
-  const { width, height } = getInnerBoundedBoxForRect(rectWidth, rectHeight, rotateZ);
-
-  const verticalFovConstant = 2 * Math.tan(threeMath.degToRad(camera.fov) / 2);
-  const maxDepthForWidth = width / (verticalFovConstant * camera.aspect);
-  const maxDepthForHeight = height / verticalFovConstant;
-
-  // NOTE: this depth assumes the camera is centered on the object.
-  return Math.min(maxDepthForWidth, maxDepthForHeight) + plane.position.z;
-}
-/**
  * Adapted from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders/16778797#16778797.
  *
  * Given a rectangle of size w x h that has been rotated by 'angle' (in
- * radians), computes the width and height of the largest possible
+ * radians), computes and returns the width and height of the largest possible
  * axis-aligned rectangle (maximal area) within the rotated rectangle.
- * @param {Number} width - the width of the rectangle.
- * @param {Number} height - the height of the rectangle.
- * @param {Number} angleInRadians - the angle to rotate in radians.
+ * 
+ * @param {number} width - the width of the rectangle.
+ * @param {number} height - the height of the rectangle.
+ * @param {number} angleInRadians - the angle to rotate in radians.
+ * @returns Object - { width: number; height: number }
  */
-function getInnerBoundedBoxForRect(width, height, angleInRadians = 0) {
+function getInnerBoundedBoxForRect(width: number, height: number, angleInRadians = 0): { width: number; height: number } {
   const widthIsLonger = width >= height;
   const longSide = widthIsLonger ? width : height;
   const shortSide = widthIsLonger ? height : width;
@@ -61,7 +45,7 @@ function getInnerBoundedBoxForRect(width, height, angleInRadians = 0) {
   const cosAngle = Math.abs(Math.cos(angleInRadians));
 
   // since the solutions for angle, -angle and 180-angle are all the same,
-  // if suffices to look at the first quadrant and the absolute values of sin,cos:
+  // it suffices to look at the first quadrant and the absolute values of sin,cos:
   if ((shortSide <= 2 * sinAngle * cosAngle * longSide) || (Math.abs(sinAngle - cosAngle) < 1e-10)) {
     // half constrained case: two crop corners touch the longer side,
     // the other two corners are on the mid-line parallel to the longer line
@@ -81,13 +65,38 @@ function getInnerBoundedBoxForRect(width, height, angleInRadians = 0) {
 }
 
 /**
- * Returns the visible width and height at the given depth in world units.
- * @param {three.Object3D} plane - a three.js plane.
- * @param {three.Camera} camera - a three.js camera.
- * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
- * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * Returns the maximum depth for a plane such that it is still fullscreen.
+ * @param {PlaneMesh} plane - a three.js plane mesh.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @returns number
  */
-function getViewBox(plane, camera, relativeZ, rotateZ) {
+function getMaxFullScreenDepthForPlane(plane: PlaneMesh, camera: PerspectiveCamera, rotateZ: number): number {
+  // When the camera is rotated, we treat the object as if it were rotated instead and
+  // use the width/height of the maximal inner bounded box that fits within the object.
+  // This ensures that the maximum depth calculated will always allow for the object to be
+  // fullscreen even if rotated.
+  // NOTE: if there is no rotation (i.e 0 degs) then the object's width and height will be used as normal.
+  const { width: rectWidth, height: rectHeight } = plane.geometry.parameters;
+  const { width, height } = getInnerBoundedBoxForRect(rectWidth, rectHeight, rotateZ);
+
+  const verticalFovConstant = 2 * Math.tan(MathUtils.degToRad(camera.fov) / 2);
+  const maxDepthForWidth = width / (verticalFovConstant * camera.aspect);
+  const maxDepthForHeight = height / verticalFovConstant;
+
+  // NOTE: this depth assumes the camera is centered on the object.
+  return Math.min(maxDepthForWidth, maxDepthForHeight) + plane.position.z;
+}
+
+/**
+ * Returns the visible width and height at the given depth in world units.
+ * @param {PlaneMesh} plane - a three.js plane mesh.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @param {number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @returns Object - { width: number; height: number }
+ */
+function getViewBox(plane: PlaneMesh, camera: PerspectiveCamera, relativeZ: number, rotateZ: number): { width: number; height: number } {
   const maxDepth = getMaxFullScreenDepthForPlane(plane, camera, rotateZ);
   const absoluteDepth = relativeZ * maxDepth;
   return {
@@ -98,12 +107,13 @@ function getViewBox(plane, camera, relativeZ, rotateZ) {
 
 /**
  * Returns the available x and y distance a camera can be panned at the given depth in world units.
- * @param {three.Object3D} plane - a three.js plane.
- * @param {three.Camera} camera - a three.js camera.
- * @param {Number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
- * @param {Number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @param {PlaneMesh} plane - a three.js plane mesh.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @param {number} relativeZ - value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
+ * @param {number} rotateZ - the z-axis rotation angle of the camera in radians.
+ * @returns Object - { width: number, height: number }
  */
-function getAvailablePanDistance(plane, camera, relativeZ, rotateZ) {
+function getAvailablePanDistance(plane: PlaneMesh, camera: PerspectiveCamera, relativeZ: number, rotateZ: number) {
   const { width: rectWidth, height: rectHeight } = plane.geometry.parameters;
   const { width, height } = getInnerBoundedBoxForRect(rectWidth, rectHeight, rotateZ);
   const viewBox = getViewBox(plane, camera, relativeZ, rotateZ);
@@ -115,12 +125,13 @@ function getAvailablePanDistance(plane, camera, relativeZ, rotateZ) {
 
 /**
  * Converts a relative vector to an absolute vector for a given plane and camera.
- * @param {three.Object3D} plane - a three.js plane.
- * @param {three.Camera} camera - a three.js camera.
- * @param {three.Vector4} relativePosition - a vector that represents the relative camera position to convert from.
+ * @param {PlaneMesh} plane - a three.js plane mesh.
+ * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+ * @param {Vector4} relativePosition - a vector that represents the relative camera position to convert from.
  * The rotation component of the vector MUST be in units of radians.
+ * @returns Vector4
  */
-function toAbsolutePosition(plane, camera, relativePosition) {
+function toAbsolutePosition(plane: PlaneMesh, camera: PerspectiveCamera, relativePosition: Vector4): Vector4 {
   const { x, y, z, w: zr } = relativePosition;
 
   const panDistance = getAvailablePanDistance(plane, camera, z, zr);
@@ -139,101 +150,103 @@ function toAbsolutePosition(plane, camera, relativePosition) {
   );
 }
 
-/**
- * Converts an absolute vector to a relative vector for a given object and camera.
- * @param {three.Object3D} plane - a three.js plane.
- * @param {three.Camera} camera - a three.js camera.
- * @param {three.Vector4} absolutePosition - a vector that represents the absolute camera position to convert from.
- * The rotation component of the vector MUST be in units of radians.
- */
-/*
-function toRelativePosition(plane, camera, absolutePosition) {
-  const { x, y, z, w: zr } = absolutePosition;
-
-  const relativeZ = z / getMaxFullScreenDepthForPlane(plane, camera, zr);
-  const panDistance = getAvailablePanDistance(plane, camera, relativeZ, zr);
-  const relativeX = (x / panDistance.width) + ((panDistance.width / 2) / panDistance.width);
-  const relativeY = panDistance.height === 0 ? 0 : Math.abs((y / panDistance.height) - ((panDistance.height / 2) / panDistance.height));
-
-  // TODO: make this support conversions from rotated absolute positions
-  return new Vector4(relativeX, relativeY, relativeZ, zr);
+export interface CameraPosition {
+  x?: number;
+  y?: number;
+  z?: number;
 }
-*/
+
+export interface CameraPositionWithRotation extends CameraPosition {
+  zr?: number;
+}
+
+export type CameraOffset = CameraPositionWithRotation;
+export type SwayTransitionConfig = BaseTransitionConfig;
+export type MoveTransitionConfig = Omit<BaseTransitionConfig, 'loop'>;
 
 class BackgroundCamera {
-  _plane;
-  _camera;
+  private _plane: PlaneMesh;
+  public readonly camera: PerspectiveCamera;
 
-  // NOTE: all Vector4 instances in this class are of the following format:
-  // x - the x-axis component of the vector
-  // y - the y-axis component of the vector
-  // z - the z-axis component of the vector
-  // w - the z-axis rotation component of the vector (also aliased as zr)
-  _position = new Vector4(0, 0, 1, 0); // the current relative position of the camera
-  _positionTransition = new TWEEN.Tween();
-  _rotationTransition = new TWEEN.Tween();
+  // the relative position of the camera
+  // NOTE: the w component is used as the z-axis rotation component of the vector (also aliased as zr)
+  private readonly _position: Vector4 = new Vector4(0, 0, 1, 0);
+  private readonly _positionWithOffset: Vector4 = this._position.clone();
+  private _positionTransition: TWEEN.Tween = new TWEEN.Tween();
+  private _rotationTransition: TWEEN.Tween = new TWEEN.Tween();
 
-  _swayOffset = new Vector4(0, 0, 0, 0); // the current relative vector offset to sway away from the camera
-  _swayTransition = new TWEEN.Tween();
+  // the relative offset against the position
+  private readonly _swayOffset = new Vector4(0, 0, 0, 0);
+  private _swayTransition: TWEEN.Tween = new TWEEN.Tween();
 
   /**
-   * @param {three.Mesh} plane - a three.js plane representing the background.
+   * Constructs a BackgroundCamera using a Background's plane.
+   * @param {PlaneMesh} plane - a three.js plane mesh representing the background.
    * @param {Number} width - the width of the camera.
    * @param {Number} height - the height of the camera.
-   * @param {Number} fov=35 - the field of view of the camera.
    */
-  constructor(plane, width, height, fov = 35) {
+  constructor(plane: PlaneMesh, width: number, height: number) {
     this._plane = plane;
-    this._camera = new PerspectiveCamera(fov, width / height);
-  }
-
-  get camera() {
-    return this._camera;
-  }
-
-  get position() {
-    const { x: absoluteX, y: absoluteY, z: absoluteZ } = this._camera.position;
-    const rotationZ = this._camera.rotation.z;
-    // NOTE: the relative camera position is the unmodified position and does NOT include offsets from swaying.
-    return {
-      // TODO: consider returning existing vectors to avoid extra object allocations
-      absolute: new Vector4(absoluteX, absoluteY, absoluteZ, rotationZ),
-      relative: this._position.clone(),
-    };
+    this.camera = new PerspectiveCamera(35, width / height);
   }
 
   /**
-   * @param {Number} width - the width of the camera.
-   * @param {Number} height - the height of the camera.
+   * Returns the current position of the camera.
+   * @returns CameraPositionWithRotation
    */
-  setSize(width, height) {
-    this._camera.aspect = width / height;
-    this._camera.updateProjectionMatrix();
+  get position(): CameraPositionWithRotation {
+    // NOTE: the relative camera position is the base position and does NOT include offsets (e.g sway).
+    const { x, y, z, w: zr } = this._position;
+    return { x, y, z, zr };
   }
 
   /**
-   * Sways the camera around its current position.
-   * @param {three.Vector4} relativeDistance - the relative distances allowed on each axis for swaying.
-   * The x/y distances should be set based off a z-value of 1 and will be scaled down appropriately based on the camera's current z position.
-   * The rotation component of the vector MUST be in units of radians.
-   * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.loop=false - sway repeatedly in a loop.
-   * @param {Number} transition.duration=0 - the duration of the sway in seconds.
-   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * Sets the size of the camera.
+   * @param {number} width
+   * @param {number} height
    */
-  sway(relativeDistance, transition = {}) {
+  setSize(width: number, height: number) {
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+  }
+
+  /**
+   * Sways the camera around its position.
+   * @param {CameraOffset | boolean} offset - the offset to sway on each axis in relative units from 0 to 1.
+   * The rotation offset (zr) must be specified in units of degrees.
+   * The x/y offsets should be set based off a z of 1 and will be scaled down appropriately based on the camera's current z position.
+   * If a boolean is passed in instead then the sway will either continue or stop based on the value.
+   * @param {SwayTransitionConfig} transition - optional configuration for a transition.
+   */
+  sway(offset: CameraOffset | boolean, transition: SwayTransitionConfig = {}) {
+    if (typeof offset === 'boolean') {
+      if (!offset) {
+        this._swayTransition.stop();
+      }
+      return;
+    }
+
     this._swayTransition.stop();
     const {
       loop = false,
       duration = 0,
+      delay = 0,
       easing = TWEEN.Easing.Linear.None,
+      onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
       onStop = () => ({}),
     } = transition;
 
-    const { x, y, z, w: zr } = relativeDistance;
+    const { x = 0, y = 0, z = 0, zr = 0 } = offset;
+    const zrInRadians = MathUtils.degToRad(zr);
+
+    // Relative distances result in shorter sways at high z-values (zoomed-out) and larger sways at low z-values (zoomed-in),
+    // so dampen x/y sway based on the camera's current z position.
+    const zDampen = this._position.z / getMaxFullScreenDepthForPlane(this._plane, this.camera, this.camera.rotation.z);
+
+    onInit();
     this._swayTransition = new TWEEN.Tween({
       offsetX: this._swayOffset.x,
       offsetY: this._swayOffset.y,
@@ -241,10 +254,10 @@ class BackgroundCamera {
       offsetZR: this._swayOffset.w,
     })
       .to({
-        offsetX: -x + Math.random() * x,
-        offsetY: -y + Math.random() * y,
+        offsetX: -x + Math.random() * x * zDampen,
+        offsetY: -y + Math.random() * y * zDampen,
         offsetZ: -z + Math.random() * z,
-        offsetZR: -zr + Math.random() * zr,
+        offsetZR: -zrInRadians + Math.random() * zrInRadians,
       }, duration * 1000)
       .easing(easing)
       .onStart(onStart)
@@ -254,35 +267,46 @@ class BackgroundCamera {
       })
       .onComplete(() => {
         if (loop) {
-          this.sway(relativeDistance, transition);
+          this.sway(offset, transition);
         }
         onComplete();
       })
       .onStop(onStop)
+      .delay(delay * 1000)
       .start();
   }
 
   /**
    * Rotates the camera on its z-axis.
-   * @param {Number} angle - the angle to rotate in radians.
-   * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.duration=0 - the duration of the rotation in seconds.
-   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * @param {number | boolean} angle - the angle to rotate in degrees.
+   * If a boolean is passed in instead then the rotation will either continue or stop based on the value.
+   * @param {MoveTransitionConfig} transition - optional configuration for a transition.
    */
-  rotate(angle, transition = {}) {
+  rotate(angle: number | boolean, transition: MoveTransitionConfig = {}) {
+    if (typeof angle === 'boolean') {
+      if (!angle) {
+        this._rotationTransition.stop();
+      }
+      return;
+    }
+
+    this._rotationTransition.stop();
     const {
       duration = 0,
+      delay = 0,
       easing = TWEEN.Easing.Linear.None,
+      onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
       onStop = () => ({}),
     } = transition;
+    const angleInRadians = MathUtils.degToRad(angle);
 
-    this._rotationTransition.stop();
-    if (duration > 0) {
+    onInit();
+    if (duration > 0 || delay > 0) {
       this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
-        .to({ zr: angle }, duration * 1000)
+        .to({ zr: angleInRadians }, duration * 1000)
         .easing(easing)
         .onStart(onStart)
         .onUpdate(({ zr }) => {
@@ -291,36 +315,44 @@ class BackgroundCamera {
         })
         .onComplete(onComplete)
         .onStop(onStop)
+        .delay(delay * 1000)
         .start();
     } else {
-      this._position.set(this._position.x, this._position.y, this._position.z, angle);
+      this._position.set(this._position.x, this._position.y, this._position.z, angleInRadians);
     }
   }
 
   /**
    * Moves the camera to a relative position on the background.
-   * @param {three.Vector3} relativePosition - the relative position to move the camera towards.
-   * The x component is a value between 0 and 1 that represents the x position based on the z component.
-   * The y component is a value between 0 and 1 that represents the y position based on the z component.
-   * The z component is a value between 0 (max zoom-in) and 1 (max zoom-out) that represents the z position.
-   * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.duration=0 - the duration of the move in seconds.
-   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * @param {CameraPosition | boolean} position - the position to move towards on each axis in relative units from 0 to 1.
+   * If a boolean is passed in instead then the move will either continue or stop based on the value.
+   * @param {MoveTransitionConfig} transition - optional configuration for a transition.
    */
-  move(relativePosition, transition = {}) {
-    const { x, y, z } = relativePosition;
+  move(position: CameraPosition | boolean, transition: MoveTransitionConfig = {}) {
+    if (typeof position === 'boolean') {
+      if (!position) {
+        this._positionTransition.stop();
+      }
+      return;
+    }
+
+    this._positionTransition.stop();
+    const { x: currentX, y: currentY, z: currentZ } = this._position;
+    const { x = currentX, y = currentY, z = currentZ } = position;
     const {
       duration = 0,
+      delay = 0,
       easing = TWEEN.Easing.Linear.None,
+      onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
       onStop = () => ({}),
     } = transition;
 
-    this._positionTransition.stop();
+    onInit();
     if (duration > 0) {
-      this._positionTransition = new TWEEN.Tween({ x: this._position.x, y: this._position.y, z: this._position.z })
+      this._positionTransition = new TWEEN.Tween({ x: currentX, y: currentY, z: currentZ })
         .to({ x, y, z }, duration * 1000)
         .easing(easing)
         .onStart(onStart)
@@ -330,6 +362,7 @@ class BackgroundCamera {
         })
         .onComplete(onComplete)
         .onStop(onStop)
+        .delay(delay * 1000)
         .start();
     } else {
       this._position.set(x, y, z, this._position.w);
@@ -340,21 +373,32 @@ class BackgroundCamera {
    * Updates the camera position. Should be called on every render frame.
    */
   update() {
+    // Ensure that the position is always valid despite sway.
+    // Moving the camera in-between ongoing sway cycles does not always guarantee the validity of the position, so coercion is required.
+    this._positionWithOffset.set(
+      Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
+      Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
+      Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
+      this._position.w + this._swayOffset.w,
+    );
+  
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
       this._plane,
-      this._camera,
-      new Vector4(
-        // Ensure that the position is always valid despite sway.
-        // Moving the camera in-between ongoing sway cycles does not always guarantee the validity of the position, so coercion is required.
-        Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
-        Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
-        Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
-        this._position.w + this._swayOffset.w,
-      ),
+      this.camera,
+      this._positionWithOffset,
     );
 
-    this._camera.position.set(absoluteX, absoluteY, absoluteDepth);
-    this._camera.rotation.z = this._position.w + this._swayOffset.w;
+    this.camera.position.set(absoluteX, absoluteY, absoluteDepth);
+    this.camera.rotation.z = this._position.w + this._swayOffset.w;
+  }
+
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
+  dispose() {
+    this.sway(false);
+    this.move(false);
+    this.rotate(false);
   }
 }
 

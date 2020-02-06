@@ -84,7 +84,7 @@ class Renderer {
   // TODO: for testing purposes
   test() {
     const { camera } = this._backgroundPass.background;
-    camera.move(new Vector4(Math.random(), Math.random(), (Math.random() * 0.5) + 0.5), {
+    camera.move({ x: Math.random(), y: Math.random(), z: 0.5 + Math.random() * 0.5 }, {
       duration: 2,
       easing: TWEEN.Easing.Cubic.InOut,
     });
@@ -188,27 +188,28 @@ class Renderer {
       ...config,
       delay: 1.25,
       onInit: () => {
-        prevBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.3 + Math.random() * 0.7), {
+        prevBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7 }, {
           duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
-        prevBackground.camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
+        prevBackground.camera.rotate(-5 + Math.random() * 10, {
           duration: 2.5,
           easing: TWEEN.Easing.Quartic.In,
         });
       },
       onStart: () => {
         this._backgroundPass.setBackground(nextBackground);
-        nextBackground.camera.move(new Vector3(Math.random(), Math.random(), 0.7 + Math.random() * 0.3), {
+
+        nextBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.7 + Math.random() * 0.3 }, {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });
-        nextBackground.camera.sway(new Vector4(0.1, 0.1, 0.02, MathUtils.degToRad(1)), {
+        nextBackground.camera.sway({ y: 0.1, z: 0.02, zr: 1 }, {
           duration: 1.5,
           easing: TWEEN.Easing.Quadratic.InOut,
           loop: true,
         });
-        nextBackground.camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
+        nextBackground.camera.rotate(-5 + Math.random() * 10, {
           duration: 2,
           easing: TWEEN.Easing.Quartic.Out,
         });

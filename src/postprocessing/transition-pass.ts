@@ -123,6 +123,10 @@ class TransitionPass extends Pass {
       // disable this pass after a transition finishes.
       this.enabled = false;
 
+      if (this._prevBackground) {
+        this._prevBackground.dispose();
+      }
+
       // cache the new background to be used for the next transition.
       this._prevBackground = nextBackground || new Background(null, this._width, this._height);
     };
