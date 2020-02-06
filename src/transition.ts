@@ -56,8 +56,7 @@ const Easings = {
   },
 }
 
-export interface BaseTransitionConfig {
-  loop?: boolean;
+export interface TransitionConfig {
   duration?: number;
   delay?: number;
   easing?: (k: number) => number;
@@ -67,6 +66,16 @@ export interface BaseTransitionConfig {
   onComplete?: () => void;
   onStop?: () => void;
 }
+
+export interface LoopableTransitionConfig extends TransitionConfig {
+  loop?: boolean;
+}
+
+export interface BlendTransitionConfig extends TransitionConfig {};
+export interface WipeTransitionConfig extends TransitionConfig {};
+export interface SlideTransitionConfig extends TransitionConfig {};
+export interface BlurTransitionConfig extends TransitionConfig {};
+export interface GlitchTransitionConfig extends TransitionConfig {};
 
 export {
   Easings

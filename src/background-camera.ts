@@ -2,7 +2,7 @@
 import { PerspectiveCamera, Vector4, Math as MathUtils } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import { PlaneMesh } from './background';
-import { BaseTransitionConfig } from './transition';
+import { TransitionConfig, LoopableTransitionConfig } from './transition';
 
 /**
  * Returns the visible height at the given depth in world units.
@@ -161,8 +161,6 @@ export interface CameraPositionWithRotation extends CameraPosition {
 }
 
 export type CameraOffset = CameraPositionWithRotation;
-export type SwayTransitionConfig = BaseTransitionConfig;
-export type MoveTransitionConfig = Omit<BaseTransitionConfig, 'loop'>;
 
 class BackgroundCamera {
   private _plane: PlaneMesh;
@@ -216,9 +214,9 @@ class BackgroundCamera {
    * The rotation offset (zr) must be specified in units of degrees.
    * The x/y offsets should be set based off a z of 1 and will be scaled down appropriately based on the camera's current z position.
    * If a boolean is passed in instead then the sway will either continue or stop based on the value.
-   * @param {SwayTransitionConfig} transition - optional configuration for a transition.
+   * @param {LoopableTransitionConfig} transition - optional configuration for a transition.
    */
-  sway(offset: CameraOffset | boolean, transition: SwayTransitionConfig = {}) {
+  sway(offset: CameraOffset | boolean, transition: LoopableTransitionConfig = {}) {
     if (typeof offset === 'boolean') {
       if (!offset) {
         this._swayTransition.stop();
@@ -280,9 +278,9 @@ class BackgroundCamera {
    * Rotates the camera on its z-axis.
    * @param {number | boolean} angle - the angle to rotate in degrees.
    * If a boolean is passed in instead then the rotation will either continue or stop based on the value.
-   * @param {MoveTransitionConfig} transition - optional configuration for a transition.
+   * @param {TransitionConfig} transition - optional configuration for a transition.
    */
-  rotate(angle: number | boolean, transition: MoveTransitionConfig = {}) {
+  rotate(angle: number | boolean, transition: TransitionConfig = {}) {
     if (typeof angle === 'boolean') {
       if (!angle) {
         this._rotationTransition.stop();
@@ -326,9 +324,9 @@ class BackgroundCamera {
    * Moves the camera to a relative position on the background.
    * @param {CameraPosition | boolean} position - the position to move towards on each axis in relative units from 0 to 1.
    * If a boolean is passed in instead then the move will either continue or stop based on the value.
-   * @param {MoveTransitionConfig} transition - optional configuration for a transition.
+   * @param {TransitionConfig} transition - optional configuration for a transition.
    */
-  move(position: CameraPosition | boolean, transition: MoveTransitionConfig = {}) {
+  move(position: CameraPosition | boolean, transition: TransitionConfig = {}) {
     if (typeof position === 'boolean') {
       if (!position) {
         this._positionTransition.stop();

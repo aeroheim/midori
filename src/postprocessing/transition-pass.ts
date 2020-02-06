@@ -8,27 +8,43 @@ import { BlurShader } from './shaders/transition/blur-shader';
 import { GlitchShader } from './shaders/transition/glitch-shader';
 import { Background } from '../background';
 import { TransitionEffect } from './effect';
+import { TransitionConfig, BlendTransitionConfig, BlurTransitionConfig, WipeTransitionConfig, SlideTransitionConfig, GlitchTransitionConfig } from '../transition';
+
+export enum Transition {
+  None,
+  Blend,
+  Blur,
+  Wipe,
+  Slide,
+  Glitch,
+}
 
 const TransitionType = Object.freeze({
   NONE: 'none',
   BLEND: 'blend',
+  BLUR: 'blur',
   WIPE: 'wipe',
   SLIDE: 'slide',
-  BLUR: 'blur',
   GLITCH: 'glitch',
 });
 
 class TransitionPass extends Pass {
-  _width;
-  _height;
+  private _width: number;
+  private _height: number;
 
-  _prevBackground; // the prev background to transition away from
-  _buffer; // a buffer to render the prev background during transitions
+  private _prevBackground: Background; // the prev background to transition away from
+  private _buffer: WebGLRenderTarget; // a buffer to render the prev background during transitions
 
-  _transition = new TWEEN.Tween();
-  _transitionEffect;
+  private _transition: TWEEN.Tween = new TWEEN.Tween();
+  private _transitionEffect: TransitionEffect;
 
-  constructor(background, width, height) {
+  /**
+   * Constructs a TransitionPass.
+   * @param {Background | null} background
+   * @param {number} width
+   * @param {number} height
+   */
+  constructor(background: Background | null, width: number, height: number) {
     super();
     this._width = width;
     this._height = height;
@@ -39,21 +55,30 @@ class TransitionPass extends Pass {
     this.enabled = false;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the TransitionPass.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._width = width;
     this._height = height;
     this._prevBackground.setSize(width, height);
     this._buffer.setSize(width, height);
   }
 
-  isTransitioning() {
+  /**
+   * Returns whether a transition is currently occurring.
+   * @returns boolean
+   */
+  isTransitioning(): boolean {
     return this._transition.isPlaying();
   }
 
   /**
    * Renders a transition effect over the screen.
    * @param {TransitionType} type - the type of the transition.
-   * @param {Background} nextBackground - the background to transition to.
+   * @param {Background} background - the background to transition to.
    * @param {Object} config - configuration for the transition.
    * @param {Object} config.from={} - the starting transition values to start the transition from.
    * @param {Object} config.to={} - the ending transition values to finish the transition at.
@@ -67,7 +92,12 @@ class TransitionPass extends Pass {
    * @param {Function} config.onStop=()=>({}) - an optional callback when the transition stops or pauses.
    * @param {any} config... - any additional configuration specific to the transition type.
    */
-  transition(type, nextBackground, config = {}) {
+  transition(type: Transition.Blend, background: Background, config: BlendTransitionConfig);
+  transition(type: Transition.Blur, background: Background, config: BlurTransitionConfig);
+  transition(type: Transition.Wipe, background: Background, config: WipeTransitionConfig);
+  transition(type: Transition.Slide, background: Background, config: SlideTransitionConfig);
+  transition(type: Transition.Glitch, background: Background, config: GlitchTransitionConfig);
+  transition(type: Transition, background: Background, config: TransitionConfig = {}) {
     const {
       from,
       to,
@@ -79,7 +109,7 @@ class TransitionPass extends Pass {
       onUpdate,
       onComplete,
       onStop,
-    } = this._getTransitionConfig(type, nextBackground, config);
+    } = this._getTransitionConfig(type, background, config);
 
     this._transition.stop();
     onInit();
