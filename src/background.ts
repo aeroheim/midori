@@ -78,7 +78,7 @@ class Background {
   /**
    * Renders the background.
    * @param {WebGLRenderer} renderer - the renderer to use.
-   * @param {WebGLRenderTarget} writeBuffer=null - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
    */
   render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget = null) {
     this.camera.update();

@@ -199,6 +199,30 @@ class BackgroundCamera {
   }
 
   /**
+   * Returns whether the camera is currently moving.
+   * @returns boolean
+   */
+  isMoving(): boolean {
+    return this._positionTransition.isPlaying();
+  }
+
+  /**
+   * Returns whether the camera is currently rotating.
+   * @returns boolean
+   */
+  isRotating(): boolean {
+    return this._rotationTransition.isPlaying();
+  }
+
+  /**
+   * Returns whether the camera is currently swaying.
+   * @returns boolean
+   */
+  isSwaying(): boolean {
+    return this._swayTransition.isPlaying();
+  }
+
+  /**
    * Sets the size of the camera.
    * @param {number} width
    * @param {number} height
