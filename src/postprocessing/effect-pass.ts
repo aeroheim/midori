@@ -50,25 +50,25 @@ class EffectPass extends Pass {
   _getOrCreateEffect(type, config = {}) {
     if (!(type in this._effects)) {
       switch (type) {
-        case EffectType.BLUR:
+        case EffectType.Blur:
           this._effects[type] = new GaussianBlurEffect(this._width, this._height);
           break;
-        case EffectType.BLOOM:
+        case EffectType.Bloom:
           this._effects[type] = new BloomEffect(this._width, this._height);
           break;
-        case EffectType.RGB_SHIFT:
+        case EffectType.RgbShift:
           this._effects[type] = new Effect(RGBShiftShader);
           break;
-        case EffectType.VIGNETTE:
+        case EffectType.Vignette:
           this._effects[type] = new Effect(VignetteShader);
           break;
-        case EffectType.VIGNETTE_BLUR:
+        case EffectType.VignetteBlur:
           this._effects[type] = new VignetteBlurEffect(this._width, this._height);
           break;
-        case EffectType.MOTION_BLUR:
+        case EffectType.VignetteBlur:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
-        case EffectType.GLITCH:
+        case EffectType.Glitch:
           this._effects[type] = new GlitchEffect(this._width, this._height);
           break;
       }
@@ -89,42 +89,42 @@ class EffectPass extends Pass {
       this.enabled = true;
 
       switch (type) {
-        case EffectType.BLOOM: {
+        case EffectType.Bloom: {
           const { opacity = 1, radius = 1, passes = effect.passes } = config;
           effect.passes = passes;
           effect.updateUniforms({ opacity, radius });
           break;
         };
-        case EffectType.BLUR: {
+        case EffectType.Blur: {
           const { radius = 1, passes = effect.passes } = config;
           effect.passes = passes;
           effect.updateUniforms({ radius });
           break;
         }
-        case EffectType.RGB_SHIFT: {
+        case EffectType.RgbShift: {
           const { amount = 0.005, angle = 0 } = config;
           effect.updateUniforms({ amount, angle });
           break;
         }
-        case EffectType.VIGNETTE: {
+        case EffectType.Vignette: {
           const { offset = 1, darkness = 1 } = config;
           effect.updateUniforms({ offset, darkness });
           break;
         }
-        case EffectType.VIGNETTE_BLUR: {
+        case EffectType.VignetteBlur: {
           const { opacity = 1, size = 1, radius = 1, passes = effect.passes } = config;
           effect.passes = passes;
           effect.updateUniforms({ opacity, radius, size });
           break;
         }
-        case EffectType.MOTION_BLUR: {
+        case EffectType.MotionBlur: {
           const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples = 32 } = config;
           effect.camera = camera;
           effect.depthBuffer = depthBuffer;
           effect.updateUniforms({ intensity, samples });
           break;
         }
-        case EffectType.GLITCH: {
+        case EffectType.Glitch: {
           const { amount = 1, seed = Math.random() } = config;
           effect.updateUniforms({ amount, seed });
           break;

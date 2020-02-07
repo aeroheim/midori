@@ -1,42 +1,72 @@
-import { WebGLRenderTarget, Vector2 } from 'three';
+import { WebGLRenderTarget, Vector2, Shader, ShaderMaterial, WebGLRenderer, PerspectiveCamera, DepthTexture } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { MotionBlurShader } from './shaders/effect/motion-blur-shader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 import { VignetteBlendShader } from './shaders/effect/vignette-blend-shader';
 import { GlitchShader } from './shaders/transition/glitch-shader';
-import { ShaderUtils } from './shaders/shader-utils';
+import { ShaderUtils, Uniforms } from './shaders/shader-utils';
 
-const EffectType = Object.freeze({
-  BLUR: 'blur',
-  BLOOM: 'bloom',
-  RGB_SHIFT: 'rgbShift',
-  VIGNETTE: 'vignette',
-  VIGNETTE_BLUR: 'vignetteBlur',
-  MOTION_BLUR: 'motionBlur',
-  GLITCH: 'glitch',
-});
+export enum EffectType {
+  Blur,
+  Bloom,
+  RgbShift,
+  Vignette,
+  VignetteBlur,
+  MotionBlur,
+  Glitch,
+}
+
+interface BaseEffect {
+  getUniforms(): Uniforms;
+  updateUniforms(uniforms: Uniforms);
+  clearUniforms();
+  dispose();
+}
 
 class Effect {
-  _quad = new Pass.FullScreenQuad();
+  protected _quad: Pass.FullScreenQuad = new Pass.FullScreenQuad();
 
-  constructor(shader, uniforms = {}) {
+  /**
+   * Contructs an effect.
+   * @param {Shader} shader - a shader definition.
+   * @param {Uniforms} uniforms - uniforms for the shader.
+   */
+  constructor(shader: Shader, uniforms: Uniforms = {}) {
     this._quad.material = ShaderUtils.createShaderMaterial(shader, uniforms);
   }
 
-  getUniforms() {
-    return ShaderUtils.getUniforms(this._quad.material);
+  /**
+   * Returns the current uniforms for an effect.
+   * @returns Uniforms
+   */
+  getUniforms(): Uniforms {
+    return ShaderUtils.getUniforms(this._quad.material as ShaderMaterial);
   }
 
-  updateUniforms(uniforms = {}) {
-    ShaderUtils.updateUniforms(this._quad.material, uniforms);
+  /**
+   * Updates the specified uniforms for an effect.
+   * @param {Uniforms} uniforms
+   */
+  updateUniforms(uniforms: Uniforms = {}) {
+    ShaderUtils.updateUniforms(this._quad.material as ShaderMaterial, uniforms);
   }
 
+  /**
+   * Resets the uniforms for an effect back to their default values.
+   */
   clearUniforms() {
-    ShaderUtils.clearUniforms(this._quad.material);
+    ShaderUtils.clearUniforms(this._quad.material as ShaderMaterial);
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniforms values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     renderer.setRenderTarget(writeBuffer);
     this.updateUniforms({
       ...uniforms,
@@ -45,13 +75,24 @@ class Effect {
     this._quad.render(renderer);
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._quad.material.dispose();
   }
 }
 
 class TransitionEffect extends Effect {
-  render(renderer, writeBuffer, fromBuffer, toBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} fromBuffer - the buffer to transition from.
+   * @param {WebGLRenderTarget} toBuffer - the buffer to transition to.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, fromBuffer: WebGLRenderTarget, toBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     renderer.setRenderTarget(writeBuffer);
     this.updateUniforms({
       ...uniforms,
@@ -63,24 +104,37 @@ class TransitionEffect extends Effect {
 }
 
 class MotionBlurEffect extends Effect {
-  camera;
-  depthBuffer;
+  camera: PerspectiveCamera;
+  depthTexture: DepthTexture;
 
-  constructor(camera, depthBuffer, uniforms = {}) {
+  /**
+   * Constructs a MotionBlurEffect.
+   * @param {PerspectiveCamera} camera - a three.js PerspectiveCamera.
+   * @param {DepthTexture} depthTexture - a three.js DepthTexture.
+   * @param {Uniforms} uniforms - uniforms for the shader.
+   */
+  constructor(camera: PerspectiveCamera, depthTexture: DepthTexture, uniforms: Uniforms = {}) {
     super(MotionBlurShader, uniforms);
 
     this.camera = camera;
-    this.depthBuffer = depthBuffer;
+    this.depthTexture = depthTexture;
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     const { clipToWorldMatrix, prevWorldToClipMatrix } = this.getUniforms();
 
     // the clip to world space matrix is calculated using the inverse projection-view matrix
     // NOTE: camera.matrixWorld is the inverse view matrix of the camera (instead of matrixWorldInverse)
     super.render(renderer, writeBuffer, readBuffer, {
       ...uniforms,
-      tDepth: this.depthBuffer,
+      tDepth: this.depthTexture,
       clipToWorldMatrix: clipToWorldMatrix.copy(this.camera.projectionMatrixInverse).multiply(this.camera.matrixWorld),
     });
 
@@ -90,26 +144,45 @@ class MotionBlurEffect extends Effect {
 }
 
 class GaussianBlurEffect extends Effect {
-  _width;
-  _height;
-  _buffer;
+  private _width: number;
+  private _height: number;
+  private _buffer: WebGLRenderTarget;
 
-  passes = 1;
+  // the number of blur passes to perform - more passes are expensive but result in stronger blurs and less artifacts.
+  passes: number = 1;
 
-  constructor(width, height, uniforms = {}) {
+  /**
+   * Constructs a GaussianBlurEffect.
+   * @param {number} width
+   * @param {number} height
+   * @param {Uniforms} uniforms - uniforms for the shader.
+   */
+  constructor(width: number, height: number, uniforms: Uniforms = {}) {
     super(GaussianBlurShader, uniforms);
     this._width = width;
     this._height = height;
     this._buffer = new WebGLRenderTarget(width, height);
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the effect.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._width = width;
     this._height = height;
     this._buffer.setSize(width, height);
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     for (let i = 0; i < this.passes; ++i) {
       super.render(renderer, this._buffer, i === 0 ? readBuffer : writeBuffer, {
         ...uniforms,
@@ -124,6 +197,9 @@ class GaussianBlurEffect extends Effect {
     }
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._buffer.dispose();
     super.dispose();
@@ -131,30 +207,47 @@ class GaussianBlurEffect extends Effect {
 }
 
 class VignetteBlurEffect {
-  _blurEffect;
-  _blendEffect;
-  _blendBuffer;
+  private _blurEffect: GaussianBlurEffect;
+  private _blendEffect: TransitionEffect;
+  private _blendBuffer: WebGLRenderTarget;
 
-  constructor(width, height) {
+  /**
+   * Constructs a VignetteBlurEffect.
+   * @param {number} width
+   * @param {number} height
+   */
+  constructor(width: number, height: number) {
     this._blurEffect = new GaussianBlurEffect(width, height);
     this._blendEffect = new TransitionEffect(VignetteBlendShader);
     this._blendBuffer = new WebGLRenderTarget(width, height);
   }
 
-  get passes() {
+  /**
+   * The number of blur passes to perform. More passes are expensive but result in stronger blurs and less artifacts.
+   * @returns number
+   */
+  get passes(): number {
     return this._blurEffect.passes;
   }
 
-  set passes(value) {
+  /**
+   * @param {number} value
+   */
+  set passes(value: number) {
     this._blurEffect.passes = value;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the effect.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._blurEffect.setSize(width, height);
     this._blendBuffer.setSize(width, height);
   }
 
-  getUniforms() {
+  getUniforms(): Uniforms {
     const { opacity, size } = this._blendEffect.getUniforms();
     return { ...this._blurEffect.getUniforms(), opacity, size };
   }
@@ -284,7 +377,6 @@ class GlitchEffect {
 }
 
 export {
-  EffectType,
   Effect,
   TransitionEffect,
   MotionBlurEffect,
