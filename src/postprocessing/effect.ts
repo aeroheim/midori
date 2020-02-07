@@ -17,14 +17,15 @@ export enum EffectType {
   Glitch,
 }
 
-interface BaseEffect {
+export interface IEffect {
+  render(...args: any[]);
   getUniforms(): Uniforms;
   updateUniforms(uniforms: Uniforms);
   clearUniforms();
   dispose();
 }
 
-class Effect {
+class Effect implements IEffect {
   protected _quad: Pass.FullScreenQuad = new Pass.FullScreenQuad();
 
   /**
@@ -37,7 +38,7 @@ class Effect {
   }
 
   /**
-   * Returns the current uniforms for an effect.
+   * Returns the current uniforms for the effect.
    * @returns Uniforms
    */
   getUniforms(): Uniforms {
@@ -45,7 +46,7 @@ class Effect {
   }
 
   /**
-   * Updates the specified uniforms for an effect.
+   * Updates the specified uniforms for the effect.
    * @param {Uniforms} uniforms
    */
   updateUniforms(uniforms: Uniforms = {}) {
@@ -53,7 +54,7 @@ class Effect {
   }
 
   /**
-   * Resets the uniforms for an effect back to their default values.
+   * Resets the uniforms for the effect back to its default values.
    */
   clearUniforms() {
     ShaderUtils.clearUniforms(this._quad.material as ShaderMaterial);
@@ -149,7 +150,7 @@ class GaussianBlurEffect extends Effect {
   private _buffer: WebGLRenderTarget;
 
   // the number of blur passes to perform - more passes are expensive but result in stronger blurs and less artifacts.
-  passes: number = 1;
+  passes = 1;
 
   /**
    * Constructs a GaussianBlurEffect.
@@ -206,7 +207,7 @@ class GaussianBlurEffect extends Effect {
   }
 }
 
-class VignetteBlurEffect {
+class VignetteBlurEffect implements IEffect {
   private _blurEffect: GaussianBlurEffect;
   private _blendEffect: TransitionEffect;
   private _blendBuffer: WebGLRenderTarget;
@@ -215,11 +216,13 @@ class VignetteBlurEffect {
    * Constructs a VignetteBlurEffect.
    * @param {number} width
    * @param {number} height
+   * @param {Uniforms} uniforms - uniforms for the shader.
    */
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, uniforms: Uniforms = {}) {
     this._blurEffect = new GaussianBlurEffect(width, height);
     this._blendEffect = new TransitionEffect(VignetteBlendShader);
     this._blendBuffer = new WebGLRenderTarget(width, height);
+    this.updateUniforms(uniforms);
   }
 
   /**
@@ -247,28 +250,49 @@ class VignetteBlurEffect {
     this._blendBuffer.setSize(width, height);
   }
 
+  /**
+   * Returns the current uniforms for the effect.
+   * @returns Uniforms
+   */
   getUniforms(): Uniforms {
     const { opacity, size } = this._blendEffect.getUniforms();
     return { ...this._blurEffect.getUniforms(), opacity, size };
   }
 
-  updateUniforms(uniforms = {}) {
+  /**
+   * Updates the specified uniforms for the effect.
+   * @param {Uniforms} uniforms
+   */
+  updateUniforms(uniforms: Uniforms = {}) {
     const blendUniforms = this._blendEffect.getUniforms();
     const { opacity = blendUniforms.opacity, size = blendUniforms.size, ...blurUniforms } = uniforms;
     this._blurEffect.updateUniforms(blurUniforms);
     this._blendEffect.updateUniforms({ opacity, size });
   }
 
+  /**
+   * Resets the uniforms for the effect back to its default values.
+   */
   clearUniforms() {
     this._blurEffect.clearUniforms();
     this._blendEffect.clearUniforms();
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     this._blurEffect.render(renderer, this._blendBuffer, readBuffer, uniforms);
     this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._blurEffect.dispose();
     this._blendEffect.dispose();
@@ -276,92 +300,162 @@ class VignetteBlurEffect {
   }
 }
 
-class BloomEffect {
-  _blurEffect;
-  _blendEffect;
-  _blendBuffer;
+class BloomEffect implements IEffect {
+  private _blurEffect: GaussianBlurEffect;
+  private _blendEffect: TransitionEffect;
+  private _blendBuffer: WebGLRenderTarget;
 
-  constructor(width, height) {
+  /**
+   * Constructs a BloomEffect.
+   * @param {number} width
+   * @param {number} height
+   * @param {Uniforms} uniforms - uniforms for the shader.
+   */
+  constructor(width: number, height: number, uniforms: Uniforms = {}) {
     this._blurEffect = new GaussianBlurEffect(width, height);
     this._blendEffect = new TransitionEffect(BlendShader, { mixRatio: 0.5 });
     this._blendBuffer = new WebGLRenderTarget(width, height);
+    this.updateUniforms(uniforms);
   }
 
+  /**
+   * The number of blur passes to perform. More passes are expensive but result in stronger blurs and less artifacts.
+   * @returns number
+   */
   get passes() {
     return this._blurEffect.passes;
   }
 
-  set passes(value) {
+  /**
+   * @param {number} value
+   */
+  set passes(value: number) {
     this._blurEffect.passes = value;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the effect.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._blurEffect.setSize(width, height);
     this._blendBuffer.setSize(width, height);
   }
 
-  getUniforms() {
+  /**
+   * Returns the current uniforms for the effect.
+   * @returns Uniforms
+   */
+  getUniforms(): Uniforms {
     const { opacity } = this._blendEffect.getUniforms();
     return { ...this._blurEffect.getUniforms(), opacity };
   }
 
-  updateUniforms(uniforms = {}) {
+  /**
+   * Updates the specified uniforms for the effect.
+   * @param {Uniforms} uniforms
+   */
+  updateUniforms(uniforms: Uniforms = {}) {
     const blendUniforms = this._blendEffect.getUniforms();
     const { opacity = blendUniforms.opacity, ...blurUniforms } = uniforms;
     this._blurEffect.updateUniforms(blurUniforms);
     this._blendEffect.updateUniforms({ opacity });
   }
 
+  /**
+   * Resets the uniforms for the effect back to its default values.
+   */
   clearUniforms() {
     this._blurEffect.clearUniforms();
     this._blendEffect.clearUniforms();
     this._blendEffect.updateUniforms({ mixRatio: 0.5 });
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     this._blurEffect.render(renderer, this._blendBuffer, readBuffer, uniforms);
     this._blendEffect.render(renderer, writeBuffer, readBuffer, this._blendBuffer);
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._blendEffect.dispose();
     this._blendBuffer.dispose();
   }
 }
 
-class GlitchEffect {
-  _resolution;
-  _glitchEffect;
-  _blurEffect;
-  _blurBuffer;
+class GlitchEffect implements IEffect {
+  private _resolution: Vector2;
+  private _glitchEffect: TransitionEffect;
+  private _blurEffect: GaussianBlurEffect;
+  private _blurBuffer: WebGLRenderTarget;
 
-  constructor(width, height, uniforms = {}) {
+  /**
+   * Constructs a GlitchEffect.
+   * @param {number} width
+   * @param {number} height
+   * @param {Uniforms} uniforms - uniforms for the shader.
+   */
+  constructor(width: number, height: number, uniforms: Uniforms = {}) {
     this._resolution = new Vector2(width, height);
-    this._glitchEffect = new TransitionEffect(GlitchShader, uniforms);
+    this._glitchEffect = new TransitionEffect(GlitchShader);
     this._blurEffect = new GaussianBlurEffect(width, height, { radius: 3 });
     this._blurEffect.passes = 2;
     this._blurBuffer = new WebGLRenderTarget(width, height);
+    this.updateUniforms(uniforms);
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size for the effect.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._resolution.set(width, height);
     this._blurEffect.setSize(width, height);
     this._blurBuffer.setSize(width, height);
   }
 
-  getUniforms() {
+  /**
+   * Returns the current uniforms for the effect.
+   * @returns Uniforms
+   */
+  getUniforms(): Uniforms {
     return this._glitchEffect.getUniforms();
   }
 
-  updateUniforms(uniforms = {}) {
+  /**
+   * Updates the specified uniforms for the effect.
+   * @param {Uniforms} uniforms
+   */
+  updateUniforms(uniforms: Uniforms = {}) {
     this._glitchEffect.updateUniforms(uniforms);
   }
 
+  /**
+   * Resets the uniforms for the effect back to its default values.
+   */
   clearUniforms() {
     this._glitchEffect.clearUniforms();
   }
 
-  render(renderer, writeBuffer, readBuffer, uniforms = {}) {
+  /**
+   * Renders the effect.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   * @param {Uniforms} uniforms - uniform values to update before rendering.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, uniforms: Uniforms = {}) {
     this._blurEffect.render(renderer, this._blurBuffer, readBuffer);
     this._glitchEffect.render(renderer, writeBuffer, readBuffer, this._blurBuffer, {
       ...uniforms,
@@ -369,6 +463,9 @@ class GlitchEffect {
     });
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._glitchEffect.dispose();
     this._blurEffect.dispose();

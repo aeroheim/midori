@@ -38,6 +38,7 @@
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "off",
     "no-dupe-class-members": "off",
-    "@typescript-eslint/no-dupe-class-members": ["error"]
+    "@typescript-eslint/no-dupe-class-members": ["error"],
+    "@typescript-eslint/interface-name-prefix": "off"
   }
 }
