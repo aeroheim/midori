@@ -3,21 +3,6 @@ import { ShaderMaterial, UniformsUtils, Shader } from 'three';
 export type Uniforms = {[uniform: string]: any};
 
 /**
- * Returns a new ShaderMaterial given a shader definition and uniforms.
- * @param {Shader} shader - a shader definition.
- * @param {Uniforms} uniforms - uniforms for the shader.
- */
-function createShaderMaterial(shader: Shader, uniforms: Uniforms = {}): ShaderMaterial {
-  const material = new ShaderMaterial({
-    uniforms: UniformsUtils.clone(shader.uniforms),
-    vertexShader: shader.vertexShader,
-    fragmentShader: shader.fragmentShader,
-  });
-  updateUniforms(material, uniforms);
-  return material;
-}
-
-/**
  * Returns the values of the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  */
@@ -51,11 +36,26 @@ function clearUniforms(shader: ShaderMaterial) {
   shader.uniforms = UniformsUtils.clone(shader.uniforms);
 }
 
+/**
+ * Returns a new ShaderMaterial given a shader definition and uniforms.
+ * @param {Shader} shader - a shader definition.
+ * @param {Uniforms} uniforms - uniforms for the shader.
+ */
+function createShaderMaterial(shader: Shader, uniforms: Uniforms = {}): ShaderMaterial {
+  const material = new ShaderMaterial({
+    uniforms: UniformsUtils.clone(shader.uniforms),
+    vertexShader: shader.vertexShader,
+    fragmentShader: shader.fragmentShader,
+  });
+  updateUniforms(material, uniforms);
+  return material;
+}
+
 const ShaderUtils = {
-  createShaderMaterial,
   getUniforms,
   updateUniforms,
   clearUniforms,
+  createShaderMaterial,
 };
 
 export {
