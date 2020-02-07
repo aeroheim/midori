@@ -1,20 +1,18 @@
-import { ShaderMaterial, UniformsUtils } from 'three';
+import { ShaderMaterial, UniformsUtils, Shader } from 'three';
+
+export type Uniforms = {[uniform: string]: any};
 
 /**
  * Returns a new ShaderMaterial given a shader definition and uniforms.
- * @param {Object} shader - an object defining a shader.
- * @param {Object} shader.uniforms - a map that defines the uniforms of the given shader
- * @param {string} shader.vertexShader - a string that defines the vertex shader program
- * @param {string} shader.fragmentShader - a string that defines the fragment shader program
- * @param {Object} uniforms - a map that defines the values of the uniforms to be used
+ * @param {Shader} shader - a shader definition.
+ * @param {Uniforms} uniforms - uniforms for the shader.
  */
-function createShaderMaterial(shader, uniforms = {}) {
+function createShaderMaterial(shader: Shader, uniforms: Uniforms = {}): ShaderMaterial {
   const material = new ShaderMaterial({
     uniforms: UniformsUtils.clone(shader.uniforms),
     vertexShader: shader.vertexShader,
     fragmentShader: shader.fragmentShader,
   });
-
   updateUniforms(material, uniforms);
   return material;
 }
@@ -23,21 +21,20 @@ function createShaderMaterial(shader, uniforms = {}) {
  * Returns the values of the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  */
-function getUniforms(shader) {
-  const uniforms = {};
+function getUniforms(shader: ShaderMaterial): Uniforms {
+  const uniforms: Uniforms = {};
   for (const uniform in shader.uniforms) {
     uniforms[uniform] = shader.uniforms[uniform].value;
   }
-
   return uniforms;
 }
 
 /**
  * Updates the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
- * @param {Object} uniforms - a map that defines the values of the uniforms to be used
+ * @param {Uniforms} uniforms - a map that defines the values of the uniforms to be used
  */
-function updateUniforms(shader, uniforms = {}) {
+function updateUniforms(shader: ShaderMaterial, uniforms: Uniforms = {}) {
   for (const uniform in uniforms) {
     if (!shader.uniforms[uniform]) {
       throw new Error(`Uniform "${uniform}" does not exist on shader "${shader.name}"`);
@@ -50,11 +47,9 @@ function updateUniforms(shader, uniforms = {}) {
  * Resets the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  */
-function clearUniforms(shader) {
+function clearUniforms(shader: ShaderMaterial) {
   shader.uniforms = UniformsUtils.clone(shader.uniforms);
 }
-
-
 
 const ShaderUtils = {
   createShaderMaterial,
