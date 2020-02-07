@@ -51,7 +51,7 @@ class Background {
 
     // effects - set properties required for motion blur
     this.effects = new EffectPass(width, height);
-    this.effects.effect(EffectType.MOTION_BLUR, {
+    this.effects.set(EffectType.MotionBlur, {
       camera: this.camera.camera,
       depthBuffer: this._buffer.depthTexture,
       intensity: 0,

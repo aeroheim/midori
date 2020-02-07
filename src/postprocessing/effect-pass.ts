@@ -3,19 +3,26 @@ import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect } from './effect';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect } from './effect';
+
+type EffectMap = {[effect in EffectType]?: IEffect};
 
 class EffectPass extends Pass {
-  _width;
-  _height;
+  private _width: number;
+  private _height: number;
 
-  _readBuffer;
-  _writeBuffer;
-  _copyShader = new Effect(CopyShader);
+  private _readBuffer: WebGLRenderTarget;
+  private _writeBuffer: WebGLRenderTarget;
+  private _copyShader: Effect = new Effect(CopyShader);
 
-  _effects = {};
+  private _effects: EffectMap = {};
 
-  constructor(width, height) {
+  /**
+   * Constructs an EffectPass.
+   * @param {number} width
+   * @param {number} height
+   */
+  constructor(width: number, height: number) {
     super();
     this._width = width;
     this._height = height;
@@ -26,7 +33,12 @@ class EffectPass extends Pass {
     this.enabled = false;
   }
 
-  setSize(width, height) {
+  /**
+   * Sets the size of the EffectPass.
+   * @param {number} width
+   * @param {number} height
+   */
+  setSize(width: number, height: number) {
     this._width = width;
     this._height = height;
     this._readBuffer.setSize(width, height);
@@ -39,15 +51,23 @@ class EffectPass extends Pass {
     }
   }
 
-  get effects() {
+  /**
+   * Returns the currently set effects.
+   * @returns EffectMap
+   */
+  get effects(): EffectMap {
     return { ...this._effects };
   }
 
-  hasEffects() {
+  /**
+   * Returns whether any effects are currently set.
+   * @returns boolean
+   */
+  hasEffects(): boolean {
     return Object.getOwnPropertyNames(this._effects).length !== 0;
   }
 
-  _getOrCreateEffect(type, config = {}) {
+  private _getOrCreateEffect(type: EffectType, config = {}) {
     if (!(type in this._effects)) {
       switch (type) {
         case EffectType.Blur:
@@ -65,7 +85,7 @@ class EffectPass extends Pass {
         case EffectType.VignetteBlur:
           this._effects[type] = new VignetteBlurEffect(this._width, this._height);
           break;
-        case EffectType.VignetteBlur:
+        case EffectType.MotionBlur:
           this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
           break;
         case EffectType.Glitch:
@@ -82,7 +102,7 @@ class EffectPass extends Pass {
    * @param {EffectType} type - the effect to set.
    * @param {Object} config - configuration specific to the effect specified.
    */
-  effect(type, config = {}) {
+  set(type, config = {}) {
     const effect = this._getOrCreateEffect(type, config);
     if (effect) {
       // enable this pass when there is at least one effect.
@@ -137,7 +157,7 @@ class EffectPass extends Pass {
    * Removes a previously set effect. Returns true if the effect was removed, otherwise false.
    * @param {EffectType} type - the type of the effect.
    */
-  removeEffect(type) {
+  remove(type) {
     if (type in this._effects) {
       this._effects[type].dispose();
       delete this._effects[type];
@@ -148,6 +168,14 @@ class EffectPass extends Pass {
     }
 
     return false;
+  }
+
+  removeAll() {
+    for (const type in this._effects) {
+      this._effects[type].dispose();
+      delete this._effects[type];
+    }
+    this.enabled = false;
   }
 
   _swapBuffers() {

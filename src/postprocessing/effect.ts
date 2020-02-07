@@ -19,6 +19,7 @@ export enum EffectType {
 
 export interface IEffect {
   render(...args: any[]);
+  setSize?(width: number, height: number);
   getUniforms(): Uniforms;
   updateUniforms(uniforms: Uniforms);
   clearUniforms();
