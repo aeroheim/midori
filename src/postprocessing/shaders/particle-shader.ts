@@ -1,8 +1,10 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const ParticleShader = {
+const ParticleShader: Shader = {
   uniforms: {},
 
   vertexShader: `

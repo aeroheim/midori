@@ -1,3 +1,5 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
@@ -81,7 +83,7 @@ float snoise(vec2 v) {
 
 `;
 
-const GlitchShader = {
+const GlitchShader: Shader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },

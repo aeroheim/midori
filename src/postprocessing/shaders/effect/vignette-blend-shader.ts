@@ -1,8 +1,10 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const VignetteBlendShader = {
+const VignetteBlendShader: Shader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
