@@ -5,7 +5,7 @@ import { Background } from './background';
 import { BackgroundPass } from './background-pass';
 import { EffectPass } from './postprocessing/effect-pass';
 import { EffectType } from './postprocessing/effect';
-import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
+import { TransitionPass, Transition } from './postprocessing/transition-pass';
 import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
 
 /**
@@ -101,7 +101,7 @@ class Renderer {
   setBackground(texture) {
     const transitions = [
       {
-        type: TransitionType.WIPE,
+        type: Transition.Wipe,
         config: {
           gradient: 0.5,
           angle: MathUtils.degToRad(15),
@@ -110,7 +110,7 @@ class Renderer {
         },
       },
       {
-        type: TransitionType.BLUR,
+        type: Transition.Blur,
         config: {
           duration: 1,
           intensity: 1.5,
@@ -118,7 +118,7 @@ class Renderer {
         },
       },
       {
-        type: TransitionType.SLIDE,
+        type: Transition.Slide,
         config: {
           direction: SlideDirection[Object.keys(SlideDirection)[Math.floor(Math.random() * Object.keys(SlideDirection).length)]],
           slides: 2,
@@ -128,7 +128,7 @@ class Renderer {
         },
       },
       {
-        type: TransitionType.GLITCH,
+        type: Transition.Glitch,
         config: {
           seed: Math.random(),
           from: { amount: 0.0 },

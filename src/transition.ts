@@ -1,4 +1,5 @@
 import TWEEN from '@tweenjs/tween.js';
+import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
 
 const Easings = {
   Linear: {
@@ -72,10 +73,28 @@ export interface LoopableTransitionConfig extends TransitionConfig {
 }
 
 export interface BlendTransitionConfig extends TransitionConfig {};
-export interface WipeTransitionConfig extends TransitionConfig {};
-export interface SlideTransitionConfig extends TransitionConfig {};
-export interface BlurTransitionConfig extends TransitionConfig {};
-export interface GlitchTransitionConfig extends TransitionConfig {};
+
+export interface WipeTransitionConfig extends TransitionConfig {
+  gradient?: number;
+  angle?: number;
+}
+
+export interface SlideTransitionConfig extends TransitionConfig {
+  gradient?: number;
+  slides?: number;
+  intensity?: number;
+  samples?: number;
+  direction?: SlideDirection;
+}
+
+export interface BlurTransitionConfig extends TransitionConfig {
+  intensity?: number;
+  samples?: number;
+}
+
+export interface GlitchTransitionConfig extends TransitionConfig {
+  seed?: number;
+}
 
 export {
   Easings
