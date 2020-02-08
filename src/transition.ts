@@ -72,7 +72,7 @@ export interface LoopableTransitionConfig extends TransitionConfig {
   loop?: boolean;
 }
 
-export interface BlendTransitionConfig extends TransitionConfig {};
+export interface BlendTransitionConfig extends TransitionConfig {}
 
 export interface WipeTransitionConfig extends TransitionConfig {
   gradient?: number;

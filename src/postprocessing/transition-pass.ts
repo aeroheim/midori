@@ -297,6 +297,16 @@ class TransitionPass extends Pass {
       this._transitionEffect.render(renderer, this.renderToScreen ? null : writeBuffer, this._buffer, readBuffer);
     }
   }
+
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
+  dispose() {
+    this._transition.stop();
+    this._prevBackground.dispose();
+    this._buffer.dispose();
+    this._transitionEffect.dispose();
+  }
 }
 
 export {

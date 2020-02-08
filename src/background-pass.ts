@@ -42,10 +42,17 @@ class BackgroundPass extends Pass {
   /**
    * Renders the current background.
    * @param {WebGLRenderer} renderer - the renderer to use.
-   * @param {WebGLRenderTarget} writeBuffer=null - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
    */
   render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget) {
     this._background.render(renderer, this.renderToScreen ? null : writeBuffer);
+  }
+
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
+  dispose() {
+    this._background.dispose();
   }
 }
 
