@@ -1,9 +1,50 @@
-import { WebGLRenderTarget } from 'three';
+import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
-import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
-import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect } from './effect';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from './effect';
+
+export type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig 
+| VignetteEffectConfig | VignetteBlurEffectConfig | MotionBlurEffectConfig | GlitchEffectConfig;
+
+export interface BlurEffectConfig {
+  radius?: number;
+  passes?: number;
+}
+
+export interface BloomEffectConfig {
+  opacity?: number;
+  radius?: number;
+  passes?: number;
+}
+
+export interface RgbShiftEffectConfig {
+  amount?: number;
+  angle?: number;
+}
+
+export interface VignetteEffectConfig {
+  offset?: number;
+  darkness?: number;
+}
+
+export interface VignetteBlurEffectConfig {
+  opacity?: number;
+  size?: number;
+  radius?: number;
+  passes?: number;
+}
+
+export interface MotionBlurEffectConfig {
+  camera?: PerspectiveCamera;
+  depthTexture?: DepthTexture;
+  intensity?: number;
+  samples?: number;
+}
+
+export interface GlitchEffectConfig {
+  amount?: number;
+  seed?: number;
+}
 
 type EffectMap = {[effect in EffectType]?: IEffect};
 
@@ -67,7 +108,21 @@ class EffectPass extends Pass {
     return Object.getOwnPropertyNames(this._effects).length !== 0;
   }
 
-  private _getOrCreateEffect(type: EffectType, config = {}) {
+  /**
+   * Returns the current effect for the specified type.
+   * If no effect is currently set for the type, creates a new effect for the type and returns it.
+   * @param {EffectType} type
+   * @param {EffectConfig} config
+   * @returns IEffect
+   */
+  private _getEffect(type: EffectType.Blur, config: BlurEffectConfig)
+  private _getEffect(type: EffectType.Bloom, config: BloomEffectConfig)
+  private _getEffect(type: EffectType.RgbShift, config: RgbShiftEffectConfig)
+  private _getEffect(type: EffectType.Vignette, config: VignetteEffectConfig)
+  private _getEffect(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig)
+  private _getEffect(type: EffectType.MotionBlur, config: MotionBlurEffectConfig)
+  private _getEffect(type: EffectType.Glitch, config: GlitchEffectConfig)
+  private _getEffect(type: EffectType, config: EffectConfig = {}): IEffect {
     if (!(type in this._effects)) {
       switch (type) {
         case EffectType.Blur:
@@ -77,16 +132,16 @@ class EffectPass extends Pass {
           this._effects[type] = new BloomEffect(this._width, this._height);
           break;
         case EffectType.RgbShift:
-          this._effects[type] = new Effect(RGBShiftShader);
+          this._effects[type] = new RGBShiftEffect();
           break;
         case EffectType.Vignette:
-          this._effects[type] = new Effect(VignetteShader);
+          this._effects[type] = new VignetteEffect();
           break;
         case EffectType.VignetteBlur:
           this._effects[type] = new VignetteBlurEffect(this._width, this._height);
           break;
         case EffectType.MotionBlur:
-          this._effects[type] = new MotionBlurEffect(config.camera, config.depthBuffer);
+          this._effects[type] = new MotionBlurEffect((config as MotionBlurEffectConfig).camera, (config as MotionBlurEffectConfig).depthTexture);
           break;
         case EffectType.Glitch:
           this._effects[type] = new GlitchEffect(this._width, this._height);
@@ -98,54 +153,61 @@ class EffectPass extends Pass {
   }
 
   /**
-   * Sets an effect.
+   * Sets an effect. If an effect is already set, overrides the currently set effect.
    * @param {EffectType} type - the effect to set.
    * @param {Object} config - configuration specific to the effect specified.
    */
-  set(type, config = {}) {
-    const effect = this._getOrCreateEffect(type, config);
+  set(type: EffectType.Blur, config: BlurEffectConfig)
+  set(type: EffectType.Bloom, config: BloomEffectConfig)
+  set(type: EffectType.RgbShift, config: RgbShiftEffectConfig)
+  set(type: EffectType.Vignette, config: VignetteEffectConfig)
+  set(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig)
+  set(type: EffectType.MotionBlur, config: MotionBlurEffectConfig)
+  set(type: EffectType.Glitch, config: GlitchEffectConfig)
+  set(type: EffectType, config: EffectConfig = {}) {
+    const effect = this._getEffect(type as any, config as any);
     if (effect) {
       // enable this pass when there is at least one effect.
       this.enabled = true;
 
       switch (type) {
-        case EffectType.Bloom: {
-          const { opacity = 1, radius = 1, passes = effect.passes } = config;
-          effect.passes = passes;
-          effect.updateUniforms({ opacity, radius });
-          break;
-        };
         case EffectType.Blur: {
-          const { radius = 1, passes = effect.passes } = config;
+          const { radius = 1, passes = effect.passes } = config as BlurEffectConfig;
           effect.passes = passes;
           effect.updateUniforms({ radius });
           break;
         }
+        case EffectType.Bloom: {
+          const { opacity = 1, radius = 1, passes = effect.passes } = config as BloomEffectConfig;
+          effect.passes = passes;
+          effect.updateUniforms({ opacity, radius });
+          break;
+        }
         case EffectType.RgbShift: {
-          const { amount = 0.005, angle = 0 } = config;
+          const { amount = 0.005, angle = 0 } = config as RgbShiftEffectConfig;
           effect.updateUniforms({ amount, angle });
           break;
         }
         case EffectType.Vignette: {
-          const { offset = 1, darkness = 1 } = config;
+          const { offset = 1, darkness = 1 } = config as VignetteEffectConfig;
           effect.updateUniforms({ offset, darkness });
           break;
         }
         case EffectType.VignetteBlur: {
-          const { opacity = 1, size = 1, radius = 1, passes = effect.passes } = config;
+          const { opacity = 1, size = 1, radius = 1, passes = effect.passes } = config as VignetteBlurEffectConfig;
           effect.passes = passes;
           effect.updateUniforms({ opacity, radius, size });
           break;
         }
         case EffectType.MotionBlur: {
-          const { camera = effect.camera, depthBuffer = effect.depthBuffer, intensity = 1, samples = 32 } = config;
+          const { camera = effect.camera, depthTexture = effect.depthTexture, intensity = 1, samples = 32 } = config as MotionBlurEffectConfig;
           effect.camera = camera;
-          effect.depthBuffer = depthBuffer;
+          effect.depthTexture = depthTexture;
           effect.updateUniforms({ intensity, samples });
           break;
         }
         case EffectType.Glitch: {
-          const { amount = 1, seed = Math.random() } = config;
+          const { amount = 1, seed = Math.random() } = config as GlitchEffectConfig;
           effect.updateUniforms({ amount, seed });
           break;
         }
@@ -154,10 +216,11 @@ class EffectPass extends Pass {
   }
 
   /**
-   * Removes a previously set effect. Returns true if the effect was removed, otherwise false.
+   * Removes a set effect. Returns true if the effect was removed, otherwise false.
    * @param {EffectType} type - the type of the effect.
+   * @returns boolean
    */
-  remove(type) {
+  remove(type: EffectType): boolean {
     if (type in this._effects) {
       this._effects[type].dispose();
       delete this._effects[type];
@@ -170,6 +233,9 @@ class EffectPass extends Pass {
     return false;
   }
 
+  /**
+   * Removes all set effects.
+   */
   removeAll() {
     for (const type in this._effects) {
       this._effects[type].dispose();
@@ -178,13 +244,22 @@ class EffectPass extends Pass {
     this.enabled = false;
   }
 
-  _swapBuffers() {
+  /**
+   * Swaps the internal read and write buffers. Should be called each time after rendering an effect.
+   */
+  private _swapBuffers() {
     const tmp = this._readBuffer;
     this._readBuffer = this._writeBuffer;
     this._writeBuffer = tmp;
   }
 
-  render(renderer, writeBuffer, readBuffer /* deltaTime, maskActive */) {
+  /**
+   * Renders the effects.
+   * @param {WebGLRenderer} renderer - the renderer to use.
+   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget} readBuffer - the buffer to read from.
+   */
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget) {
     this._copyShader.render(renderer, this._readBuffer, readBuffer);
     for (const effect of Object.values(this._effects)) {
       effect.render(renderer, this._writeBuffer, this._readBuffer);
@@ -193,7 +268,9 @@ class EffectPass extends Pass {
     this._copyShader.render(renderer, this.renderToScreen ? null : writeBuffer, this._readBuffer);
   }
 
-  // TODO: call this as necessary
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._copyShader.dispose();
     this._readBuffer.dispose();

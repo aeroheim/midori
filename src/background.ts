@@ -53,7 +53,7 @@ class Background {
     this.effects = new EffectPass(width, height);
     this.effects.set(EffectType.MotionBlur, {
       camera: this.camera.camera,
-      depthBuffer: this._buffer.depthTexture,
+      depthTexture: this._buffer.depthTexture,
       intensity: 0,
     });
 
