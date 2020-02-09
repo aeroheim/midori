@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer } from 'three';
+import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer, Math as MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from './effect';
@@ -7,42 +7,59 @@ export type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffect
 | VignetteEffectConfig | VignetteBlurEffectConfig | MotionBlurEffectConfig | GlitchEffectConfig;
 
 export interface BlurEffectConfig {
+  // the size of the blur.
   radius?: number;
+  // the number of blur passes - more passes result in stronger blurs and less artifacts at the cost of performance.
   passes?: number;
 }
 
 export interface BloomEffectConfig {
+  // the overall brightness of the bloom.
   opacity?: number;
+  // the size of the bloom.
   radius?: number;
+  // the number of bloom passes - more passes result in stronger blooms and less artifacts at the cost of performance.
   passes?: number;
 }
 
 export interface RgbShiftEffectConfig {
+  // the distance of the shift.
   amount?: number;
+  // the angle of the shift in degrees.
   angle?: number;
 }
 
 export interface VignetteEffectConfig {
+  // the size of the vignette.
   offset?: number;
+  // the intensity of the vignette.
   darkness?: number;
 }
 
 export interface VignetteBlurEffectConfig {
-  opacity?: number;
+  // the size of the vignette.
   size?: number;
+  // the size of the blur.
   radius?: number;
+  // the number of blur passes - more passes result in stronger blurs and less artifacts at the cost of performance.
   passes?: number;
 }
 
 export interface MotionBlurEffectConfig {
+  // a three.js camera as the perspective for the blurring.
   camera?: PerspectiveCamera;
+  // a three.js depth texture containing depth information for blurring calculations.
   depthTexture?: DepthTexture;
+  // the intensity of the blur.
   intensity?: number;
+  // the number of samples for the blur - more samples result in better quality at the cost of performance.
   samples?: number;
 }
 
 export interface GlitchEffectConfig {
+  // the intensity of the glitch.
   amount?: number;
+  // a random seed from 0 to 1 used to generate glitches.
   seed?: number;
 }
 
@@ -185,7 +202,7 @@ class EffectPass extends Pass {
         }
         case EffectType.RgbShift: {
           const { amount = 0.005, angle = 0 } = config as RgbShiftEffectConfig;
-          effect.updateUniforms({ amount, angle });
+          effect.updateUniforms({ amount, angle: MathUtils.degToRad(angle) });
           break;
         }
         case EffectType.Vignette: {
@@ -194,9 +211,9 @@ class EffectPass extends Pass {
           break;
         }
         case EffectType.VignetteBlur: {
-          const { opacity = 1, size = 1, radius = 1, passes = effect.passes } = config as VignetteBlurEffectConfig;
+          const { size = 1, radius = 1, passes = effect.passes } = config as VignetteBlurEffectConfig;
           effect.passes = passes;
-          effect.updateUniforms({ opacity, radius, size });
+          effect.updateUniforms({ radius, size });
           break;
         }
         case EffectType.MotionBlur: {

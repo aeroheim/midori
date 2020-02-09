@@ -9,7 +9,6 @@ const VignetteBlendShader: Shader = {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
     size: { value: 1.0 },
-    opacity: { value: 1.0 },
   },
 
   vertexShader: `
@@ -28,7 +27,6 @@ const VignetteBlendShader: Shader = {
     uniform sampler2D tDiffuse1;
     uniform sampler2D tDiffuse2;
     uniform float size;
-    uniform float opacity;
     varying vec2 vUv;
 
     void main() {

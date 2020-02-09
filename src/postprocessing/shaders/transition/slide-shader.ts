@@ -21,8 +21,6 @@ const SlideShader: Shader = {
     amount: { value: 0.0 },
     // the amount value of the previous frame - used to calculate the velocity for the blur
     prevAmount: { value: 0.0 },
-    // an value from 0 to 1 indicating the size of the blend gradient
-    gradient: { value: 0.0 },
     // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
     // the direction to slide to

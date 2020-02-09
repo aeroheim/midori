@@ -2,7 +2,7 @@ import TWEEN from '@tweenjs/tween.js';
 import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
-import { WipeShader } from './shaders/transition/wipe-shader';
+import { WipeShader, WipeDirection } from './shaders/transition/wipe-shader';
 import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
 import { BlurShader } from './shaders/transition/blur-shader';
 import { GlitchShader } from './shaders/transition/glitch-shader';
@@ -206,13 +206,14 @@ class TransitionPass extends Pass {
       }
       case TransitionType.Wipe: {
         const { onStart, onUpdate } = baseTransitionConfig;
-        const { gradient = 0, angle = 0 } = additionalConfig as WipeTransitionConfig;
+        const { gradient = 0, angle = 0, direction = WipeDirection.Right } = additionalConfig as WipeTransitionConfig;
         return {
           ...baseTransitionConfig,
           onStart: () => {
             this._setTransitionEffect(WipeShader, {
               gradient,
               angle,
+              direction,
               aspect: this._width / this._height,
             });
             onStart();
@@ -226,12 +227,11 @@ class TransitionPass extends Pass {
       }
       case TransitionType.Slide: {
         const { onStart, onUpdate } = baseTransitionConfig;
-        const { gradient = 0, slides = 1, intensity = 1, samples = 32, direction = SlideDirection.Right } = additionalConfig as SlideTransitionConfig;
+        const { slides = 1, intensity = 1, samples = 32, direction = SlideDirection.Right } = additionalConfig as SlideTransitionConfig;
         return {
           ...baseTransitionConfig,
           onStart: () => {
             this._setTransitionEffect(SlideShader, {
-              gradient,
               slides,
               intensity,
               samples,

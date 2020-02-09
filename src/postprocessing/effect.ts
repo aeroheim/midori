@@ -371,8 +371,8 @@ class VignetteBlurEffect implements IEffect {
    * @returns Uniforms
    */
   getUniforms(): Uniforms {
-    const { opacity, size } = this._blendEffect.getUniforms();
-    return { ...this._blurEffect.getUniforms(), opacity, size };
+    const { size } = this._blendEffect.getUniforms();
+    return { ...this._blurEffect.getUniforms(), size };
   }
 
   /**
@@ -381,9 +381,9 @@ class VignetteBlurEffect implements IEffect {
    */
   updateUniforms(uniforms: Uniforms = {}) {
     const blendUniforms = this._blendEffect.getUniforms();
-    const { opacity = blendUniforms.opacity, size = blendUniforms.size, ...blurUniforms } = uniforms;
+    const { size = blendUniforms.size, ...blurUniforms } = uniforms;
     this._blurEffect.updateUniforms(blurUniforms);
-    this._blendEffect.updateUniforms({ opacity, size });
+    this._blendEffect.updateUniforms({ size });
   }
 
   /**
