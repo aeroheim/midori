@@ -1,19 +1,71 @@
-import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2 } from 'three';
+import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2, ShaderMaterial, MathUtils, BufferAttribute } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import { ParticleShader } from './postprocessing/shaders/particle-shader';
 import { ShaderUtils } from './postprocessing/shaders/shader-utils';
+import { LoopableTransitionConfig } from './transition';
+
+export interface ParticleMoveOffset {
+  // the distance of the offset.
+  distance: number;
+  // the angle of the offset in degrees.
+  angle: number;
+}
+
+export interface ParticleSwayOffset {
+  // the x distance to sway.
+  x: number;
+  // the y distance to sway.
+  y: number;
+}
+
+export type ParticleGroupConfigs = {[name: string]: ParticleGroupConfig};
+export interface ParticleGroupConfig {
+  // the name of the particle group.
+  name: string;
+  // the number of particles to generate.
+  amount: number;
+  // the minimum size of the particles in world units. Defaults to 0.
+  minSize?: number;
+  // the maximum size of the particles in world units. Defaults to 0.
+  maxSize?: number;
+  // the minimum fade gradient of the particles in relative units (0 to 1). Defaults to 0.
+  minGradient?: number;
+  // the maximum fade gradient of the particles in relative units (0 to 1). Defaults to 1.
+  maxGradient?: number;
+  // the minimum opacity of the particles. Defaults to 0.
+  minOpacity?: number;
+  // the maximum opacity of the particles. Defaults to 1.
+  maxOpacity?: number;
+  // optional color of the particles. Defaults to 0xffffff.
+  color?: number;
+}
+
+type ParticleGroupMap = {[name: string]: ParticleGroup};
+interface ParticleGroup extends ParticleGroupConfig {
+  index: number;
+  swayOffset: Vector2;
+  positionTransition: TWEEN.Tween;
+  swayTransition: TWEEN.Tween;
+}
+
 
 class Particles {
-  _width;
-  _height;
-  _maxDepth;
+  private _width: number;
+  private _height: number;
+  private _maxDepth: number;
 
   // groups also store the transitions related to the attributes and offsets
-  _groups = {};
-  _particles;
-  _positions = [];
+  private _groups: ParticleGroupMap = {};
+  private _particles: Points;
+  private _positions: number[] = [];
 
-  constructor(width, height, maxDepth) {
+  /**
+   * Constructs a Particles object.
+   * @param {number} width
+   * @param {number} height
+   * @param {number} maxDepth - the maximum depth of the particles in world units.
+   */
+  constructor(width: number, height: number, maxDepth: number) {
     this._width = width;
     this._height = height;
     this._maxDepth = maxDepth;
@@ -32,26 +84,48 @@ class Particles {
   }
 
   /**
-   * Generates particles based on a given set of configurations.
-   * @param {Object || Array} config - a particle group configuration or array of particle group configurations.
-   * @param {String} config.name - the name of the particle group.
-   * @param {Number} config.amount - the number of particles to generate.
-   * @param {Number} config.minSize=0 - the minimum size of the particles in world units.
-   * @param {Number} config.maxSize=0 - the maximum size of the particles in world units.
-   * @param {Number} config.minGradient=0 - the minimum fade gradient of the particles in relative units (0 to 1). Defaults to 0.
-   * @param {Number} config.maxGradient=1 - the maximum fade gradient of the particles in relative units (0 to 1). Defaults to 1.
-   * @param {Number} config.minOpacity=1 - the minimum opacity of the particles. Defaults to 0.
-   * @param {Number} config.maxOpacity=1 - the maximum opacity of the particles. Defaults to 1.
-   * @param {Three.Color} config.color=0xffffff - optional color of the particles. Defaults to 0xffffff.
+   * Returns the configurations for the currently set particle groups.
+   * @returns ParticleGroupDefinitionMap
    */
-  generate(configs) {
+  getConfigs(): ParticleGroupConfigs {
+    const configs: ParticleGroupConfigs = {};
+    for (const [name, group] of Object.entries(this._groups)) {
+      const { index, swayOffset, positionTransition, swayTransition, ...configProps } = group;
+      configs[name] = configProps;
+    }
+    return configs;
+  }
+
+  /**
+   * Returns whether a group of particles is currently moving.
+   * @param {string} name - the name of the particle group.
+   * @returns boolean
+   */
+  isMoving(name: string): boolean {
+    return this._groups[name]?.positionTransition.isPlaying() ?? false;
+  }
+
+  /**
+   * Returns whether a group of particles is currently swaying.
+   * @param {string} name - the name of the particle group.
+   * @returns boolean
+   */
+  isSwaying(name: string): boolean {
+    return this._groups[name]?.swayTransition.isPlaying() ?? false;
+  }
+
+  /**
+   * Generates particles based on a given set of configurations.
+   * @param {ParticleGroupConfig | ParticleGroupConfig[]} config - a single or array of particle group configurations.
+   */
+  generate(configs: ParticleGroupConfig | ParticleGroupConfig[]) {
     configs = Array.isArray(configs) ? configs : [configs];
 
     // cleanup previous configs and objects
     this._positions = [];
     this._groups = {};
     this._particles.geometry.dispose();
-    this._particles.material.dispose();
+    (this._particles.material as ShaderMaterial).dispose();
 
     let index = 0;
     for (const config of configs) {
@@ -64,7 +138,7 @@ class Particles {
         maxGradient = 1,
         minOpacity = 0,
         maxOpacity = 1,
-        color = new Color(0xffffff),
+        color = 0xffffff,
       } = config;
 
       // Generate points with attributes
@@ -88,6 +162,8 @@ class Particles {
         maxOpacity,
         color,
         swayOffset: new Vector2(0, 0),
+        positionTransition: new TWEEN.Tween(),
+        swayTransition: new TWEEN.Tween(),
       };
 
       index += amount;
@@ -109,10 +185,11 @@ class Particles {
 
   /**
    * Calculates a new position based off an existing position and optional offset. Will wrap around boundaries.
-   * @param {three.Vector2} position - the current position.
-   * @param {three.Vector2} offset - the offset from the current position.
+   * @param {Vector2} position - the current position.
+   * @param {Vector2} offset - the offset from the current position.
+   * @returns Vector2
    */
-  _getNewPosition(position, offset) {
+  private _getNewPosition(position: Vector2, offset: Vector2): Vector2 {
     let { x: offsetX, y: offsetY } = offset || new Vector2(0, 0);
     offsetX %= this._width;
     offsetY %= this._height;
@@ -136,17 +213,17 @@ class Particles {
         : halfHeight - ((Math.abs(position.y + offsetY) - halfHeight) % this._height);
     }
 
-    return { x, y };
+    return new Vector2(x, y);
   }
 
   /**
    * Updates the internal positions for particles. This does NOT update the attributes of the BufferGeometry.
-   * @param {Number} index - the index to start at.
-   * @param {Number} amount - the number of particles.
-   * @param {Array} positions - an array containing the position values to use.
-   * @param {three.Vector2} offset - an optional offset to apply to all new position values.
+   * @param {number} index - the index to start at.
+   * @param {number} amount - the number of particles.
+   * @param {number[]} positions - an array containing the position values to use.
+   * @param {Vector2} offset - an optional offset to apply to all new position values.
    */
-  _updatePositions(index, amount, positions, offset) {
+  private _updatePositions(index: number, amount: number, positions: number[], offset: Vector2) {
     // Each vertex position is a set of 3 values, so index and amount are adjusted accordingly when iterating.
     for (let i = index; i < index + amount; ++i) {
       const { x, y } = this._getNewPosition(new Vector2(positions[i * 3], positions[i * 3 + 1]), offset);
@@ -156,17 +233,22 @@ class Particles {
   }
 
   /**
-   * Moves a group of particles.
-   * @param {String} name - the name of the group to move.
-   * @param {three.Vector2} offset - the distance and angle in radians to move.
-   * @param {Object} transition={} - an optional transition configuration.
-   * @param {Number} transition.loop=true - move repeatedly in a loop.
-   * @param {Number} transition.duration=0 - the duration of the sway in seconds.
-   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * Moves a group of particles. Cancels any in-progress moves.
+   * @param {string} name - the name of the group to move.
+   * @param {ParticleMoveOffset | boolean} offset - the distance and angle in radians to move.
+   * If a boolean is passed in instead then the move will either continue or stop based on the value.
+   * @param {LoopableTransitionConfig} transition - an optional transition configuration.
    */
-  move(name, offset, transition) {
+  move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig) {
     const group = this._groups[name];
     const { index, amount } = group;
+
+    if (typeof offset === 'boolean') {
+      if (!offset && group.positionTransition) {
+        group.positionTransition.stop();
+      }
+      return;
+    }
 
     // Stop ongoing position transition for group.
     if (group.positionTransition) {
@@ -183,9 +265,9 @@ class Particles {
       onStop = () => ({}),
     } = transition;
 
-    const { x: distance, y: angle } = offset;
-    const offsetX = distance * Math.cos(angle);
-    const offsetY = distance * Math.sin(angle);
+    const { distance, angle } = offset;
+    const offsetX = distance * Math.cos(MathUtils.degToRad(angle));
+    const offsetY = distance * Math.sin(MathUtils.degToRad(angle));
     if (duration > 0) {
       // Each vertex position is a set of 3 values, so adjust index and amount accordingly.
       const startPositions = this._positions.slice();
@@ -207,22 +289,27 @@ class Particles {
         .onStop(onStop)
         .start();
     } else {
-      this._updatePositions(index, amount, this._positions, offset);
+      this._updatePositions(index, amount, this._positions, new Vector2(offsetX, offsetY));
     }
   }
 
   /**
-   * Sways a group of particles around their current positions.
-   * @param {String} name - the name of the group to sway.
-   * @param {three.Vector2} distance - the distances in world units allowed on each axis for swaying.
-   * @param {Object} transition - optional configuration for a transition.
-   * @param {Number} transition.loop=false - sway repeatedly in a loop.
-   * @param {Number} transition.duration=0 - the duration of the sway in seconds.
-   * @param {TWEEN.Easing} transition.easing=TWEEN.Easing.Linear.None - the easing function to use.
+   * Sways a group of particles around their current positions. Cancels any in-progress sways.
+   * @param {string} name - the name of the group to sway.
+   * @param {ParticleSwayOffset | boolean} offset - the distances in world units allowed on each axis for swaying.
+   * If a boolean is passed in instead then the sway will either continue or stop based on the value.
+   * @param {LoopableTransitionConfig} transition - optional configuration for a transition.
    */
-  sway(name, distance, transition = {}) {
+  sway(name: string, offset: ParticleSwayOffset | boolean, transition: LoopableTransitionConfig = {}) {
     const group = this._groups[name];
     const { swayOffset } = group;
+
+    if (typeof offset === 'boolean') {
+      if (!offset && group.swayTransition) {
+        group.swayTransition.stop();
+      }
+      return;
+    }
 
     // Stop ongoing sway transition for group.
     if (group.swayTransition) {
@@ -239,7 +326,7 @@ class Particles {
       onStop = () => ({}),
     } = transition;
 
-    const { x, y } = distance;
+    const { x, y } = offset;
     group.swayTransition = new TWEEN.Tween({
       offsetX: swayOffset.x,
       offsetY: swayOffset.y,
@@ -256,7 +343,7 @@ class Particles {
       })
       .onComplete(() => {
         if (loop) {
-          this.sway(name, distance, transition);
+          this.sway(name, offset, transition);
         }
         onComplete();
       })
@@ -266,27 +353,29 @@ class Particles {
 
   /**
    * Generates a new random averaged value based off a given value and its range.
-   * @param {Number} value - the value to use.
-   * @param {Number} minValue - the minimum value for the given value.
-   * @param {Number} maxValue - the maximum value for the given value.
+   * @param {number} value - the value to use.
+   * @param {number} minValue - the minimum value for the given value.
+   * @param {number} maxValue - the maximum value for the given value.
+   * @returns number
    */
-  _generateNewRandomAveragedValue(value, minValue, maxValue) {
+  private _generateNewRandomAveragedValue(value: number, minValue: number, maxValue: number): number {
     const offset = (maxValue - minValue) / 2;
     const newValue = Math.max(Math.min(value + (-offset + Math.random() * offset * 2), maxValue), minValue);
     return Math.max(Math.min((value + newValue) / 2, maxValue), minValue);
   }
 
   /**
-   * Updates the positions of particles. Should be called on every render frame.
+   * Updates the positions of the particles. Should be called on every render frame.
    */
   update() {
+    const attributes = (this._particles.geometry as BufferGeometry).attributes;
     const {
-      position: { array: bufferPositions },
-      size: { array: bufferSizes },
-      gradient: { array: bufferGradients },
-      opacity: { array: bufferOpacities },
-      color: { array: bufferColors },
-    } = this._particles.geometry.attributes;
+      position: positions,
+      size: sizes,
+      gradient: gradients,
+      opacity: opacities,
+      color: colors,
+    } = attributes;
 
     for (const group of Object.values(this._groups)) {
       const {
@@ -298,42 +387,44 @@ class Particles {
         maxGradient,
         minOpacity,
         maxOpacity,
+        color,
         swayOffset,
       } = group;
       for (let i = index; i < index + amount; ++i) {
         // Apply offset to current position (excluding z).
         const position = this._getNewPosition(new Vector2(this._positions[i * 3], this._positions[i * 3 + 1]), swayOffset);
+        const rgb = new Color(color);
 
-        bufferPositions[i * 3] = position.x;
-        bufferPositions[i * 3 + 1] = position.y;
-        bufferPositions[i * 3 + 2] = this._positions[i * 3 + 2];
-        bufferColors[i * 3] = group.color.r;
-        bufferColors[i * 3 + 1] = group.color.g;
-        bufferColors[i * 3 + 2] = group.color.b;
-        bufferSizes[i] = this._generateNewRandomAveragedValue(bufferSizes[i], minSize, maxSize);
-        bufferGradients[i] = this._generateNewRandomAveragedValue(bufferGradients[i], minGradient, maxGradient);
-        bufferOpacities[i] = this._generateNewRandomAveragedValue(bufferOpacities[i], minOpacity, maxOpacity);
+        positions.setXYZ(i, position.x, position.y, this._positions[i * 3 + 2]);
+        colors.setXYZ(i, rgb.r, rgb.g, rgb.b);
+        sizes.setX(i, this._generateNewRandomAveragedValue(sizes.getX(i), minSize, maxSize));
+        gradients.setX(i, this._generateNewRandomAveragedValue(gradients.getX(i), minGradient, maxGradient));
+        opacities.setX(i, this._generateNewRandomAveragedValue(opacities.getX(i), minOpacity, maxOpacity));
       }
     }
 
-    this._particles.geometry.attributes.position.needsUpdate = true;
-    this._particles.geometry.attributes.size.needsUpdate = true;
-    this._particles.geometry.attributes.gradient.needsUpdate = true;
-    this._particles.geometry.attributes.opacity.needsUpdate = true;
-    this._particles.geometry.attributes.color.needsUpdate = true;
+    (attributes.position as BufferAttribute).needsUpdate = true;
+    (attributes.size as BufferAttribute).needsUpdate = true;
+    (attributes.gradient as BufferAttribute).needsUpdate = true;
+    (attributes.opacity as BufferAttribute).needsUpdate = true;
+    (attributes.color as BufferAttribute).needsUpdate = true;
   }
 
   /**
    * Returns a three.js object containing the particles.
    * To use the particles, add this object into a three.js scene.
+   * @returns Points
    */
-  get object() {
+  get object(): Points {
     return this._particles;
   }
 
+  /**
+   * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
+   */
   dispose() {
     this._particles.geometry.dispose();
-    this._particles.material.dispose();
+    (this._particles.material as ShaderMaterial).dispose();
   }
 }
 
