@@ -39,6 +39,7 @@
     "@typescript-eslint/no-explicit-any": "off",
     "no-dupe-class-members": "off",
     "@typescript-eslint/no-dupe-class-members": ["error"],
-    "@typescript-eslint/interface-name-prefix": "off"
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/no-empty-interface": "off",
   }
 }
