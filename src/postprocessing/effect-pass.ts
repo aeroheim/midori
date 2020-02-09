@@ -1,4 +1,4 @@
-import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer, Math as MathUtils } from 'three';
+import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from './effect';
@@ -170,7 +170,7 @@ class EffectPass extends Pass {
   }
 
   /**
-   * Sets an effect. If an effect is already set, overrides the currently set effect.
+   * Sets an effect. If an effect is already set, updates the currently set effect.
    * @param {EffectType} type - the effect to set.
    * @param {Object} config - configuration specific to the effect specified.
    */

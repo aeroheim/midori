@@ -1,5 +1,5 @@
 
-import { PerspectiveCamera, Vector4, Math as MathUtils } from 'three';
+import { PerspectiveCamera, Vector4, MathUtils } from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import { PlaneMesh } from './background';
 import { TransitionConfig, LoopableTransitionConfig } from './transition';
@@ -233,7 +233,7 @@ class BackgroundCamera {
   }
 
   /**
-   * Sways the camera around its position.
+   * Sways the camera around its position. Cancels any in-progress sways.
    * @param {CameraOffset | boolean} offset - the offset to sway on each axis in relative units from 0 to 1.
    * The rotation offset (zr) must be specified in units of degrees.
    * The x/y offsets should be set based off a z of 1 and will be scaled down appropriately based on the camera's current z position.
@@ -299,7 +299,7 @@ class BackgroundCamera {
   }
 
   /**
-   * Rotates the camera on its z-axis.
+   * Rotates the camera on its z-axis. Cancels any in-progress rotations.
    * @param {number | boolean} angle - the angle to rotate in degrees.
    * If a boolean is passed in instead then the rotation will either continue or stop based on the value.
    * @param {TransitionConfig} transition - optional configuration for a transition.
@@ -345,7 +345,7 @@ class BackgroundCamera {
   }
 
   /**
-   * Moves the camera to a relative position on the background.
+   * Moves the camera to a relative position on the background. Cancels any in-progress moves.
    * @param {CameraPosition | boolean} position - the position to move towards on each axis in relative units from 0 to 1.
    * If a boolean is passed in instead then the move will either continue or stop based on the value.
    * @param {TransitionConfig} transition - optional configuration for a transition.
