@@ -89,9 +89,9 @@ class Particles {
    */
   getConfigs(): ParticleGroupConfigs {
     const configs: ParticleGroupConfigs = {};
-    for (const [name, group] of Object.entries(this._groups)) {
-      const { index, swayOffset, positionTransition, swayTransition, ...configProps } = group;
-      configs[name] = configProps;
+    for (const group of Object.values(this._groups)) {
+      const { name, amount, minSize, maxSize, minGradient, maxGradient, minOpacity, maxOpacity, color } = group;
+      configs[name] = { name, amount, minSize, maxSize, minGradient, maxGradient, minOpacity, maxOpacity, color };
     }
     return configs;
   }
@@ -368,7 +368,7 @@ class Particles {
    * Updates the positions of the particles. Should be called on every render frame.
    */
   update() {
-    const attributes = (this._particles.geometry as BufferGeometry).attributes;
+    const { attributes } = (this._particles.geometry as BufferGeometry);
     const {
       position: positions,
       size: sizes,
