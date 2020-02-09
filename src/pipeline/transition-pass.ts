@@ -2,14 +2,14 @@ import TWEEN from '@tweenjs/tween.js';
 import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
-import { WipeShader, WipeDirection } from './shaders/transition/wipe-shader';
-import { SlideShader, SlideDirection } from './shaders/transition/slide-shader';
-import { BlurShader } from './shaders/transition/blur-shader';
-import { GlitchShader } from './shaders/transition/glitch-shader';
+import { WipeShader, WipeDirection } from '../postprocessing/shaders/transition/wipe-shader';
+import { SlideShader, SlideDirection } from '../postprocessing/shaders/transition/slide-shader';
+import { BlurShader } from '../postprocessing/shaders/transition/blur-shader';
+import { GlitchShader } from '../postprocessing/shaders/transition/glitch-shader';
 import { Background } from '../background';
-import { TransitionEffect } from './effect';
+import { TransitionEffect } from '../postprocessing/effect';
 import { TransitionConfig, BlendTransitionConfig, BlurTransitionConfig, WipeTransitionConfig, SlideTransitionConfig, GlitchTransitionConfig } from '../transition';
-import { Uniforms } from './shaders/shader-utils';
+import { Uniforms } from '../postprocessing/shaders/shader-utils';
 
 export enum TransitionType {
   None,

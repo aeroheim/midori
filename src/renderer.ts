@@ -2,10 +2,10 @@ import { WebGLRenderer, MathUtils, Vector2, Texture, TextureLoader, ClampToEdgeW
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
-import { BackgroundPass } from './background-pass';
-import { EffectPass } from './postprocessing/effect-pass';
+import { BackgroundPass } from './pipeline/background-pass';
+import { EffectPass } from './pipeline/effect-pass';
 import { EffectType } from './postprocessing/effect';
-import { TransitionPass, TransitionType } from './postprocessing/transition-pass';
+import { TransitionPass, TransitionType } from './pipeline/transition-pass';
 import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
 import { WipeDirection } from './postprocessing/shaders/transition/wipe-shader';
 

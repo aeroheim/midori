@@ -1,6 +1,6 @@
 import { WebGLRenderer, WebGLRenderTarget } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
-import { Background } from './background';
+import { Background } from '../background';
 
 class BackgroundPass extends Pass {
   private _background: Background;
