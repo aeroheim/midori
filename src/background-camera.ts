@@ -169,7 +169,7 @@ class BackgroundCamera {
   // the relative position of the camera
   // NOTE: the w component is used as the z-axis rotation component of the vector (also aliased as zr)
   private readonly _position: Vector4 = new Vector4(0, 0, 1, 0);
-  private readonly _positionWithOffset: Vector4 = this._position.clone();
+  private readonly _positionWithOffset: Vector4 = this._position.clone(); // cached for re-use per render frame
   private _positionTransition: TWEEN.Tween = new TWEEN.Tween();
   private _rotationTransition: TWEEN.Tween = new TWEEN.Tween();
 
