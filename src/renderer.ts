@@ -4,10 +4,10 @@ import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
 import { BackgroundPass } from './pipeline/background-pass';
 import { EffectPass } from './pipeline/effect-pass';
-import { EffectType } from './postprocessing/effect';
+import { EffectType } from './effects/effect';
 import { TransitionPass, TransitionType } from './pipeline/transition-pass';
-import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
-import { WipeDirection } from './postprocessing/shaders/transition/wipe-shader';
+import { SlideDirection } from './effects/shaders/transition/slide-shader';
+import { WipeDirection } from './effects/shaders/transition/wipe-shader';
 
 /**
  * Loads an image as a texture.

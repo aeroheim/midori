@@ -1,7 +1,8 @@
 import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../postprocessing/effect';
+import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect,
+  VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../effects/effect';
 
 export type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig 
 | VignetteEffectConfig | VignetteBlurEffectConfig | MotionBlurEffectConfig | GlitchEffectConfig;

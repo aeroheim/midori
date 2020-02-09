@@ -1,6 +1,6 @@
 import TWEEN from '@tweenjs/tween.js';
-import { SlideDirection } from './postprocessing/shaders/transition/slide-shader';
-import { WipeDirection } from './postprocessing/shaders/transition/wipe-shader';
+import { SlideDirection } from './effects/shaders/transition/slide-shader';
+import { WipeDirection } from './effects/shaders/transition/wipe-shader';
 
 const Easings = {
   Linear: {
@@ -80,40 +80,6 @@ export interface TransitionConfig {
 export interface LoopableTransitionConfig extends TransitionConfig {
   // whether to loop the transition repeatedly or not.
   loop?: boolean;
-}
-
-export interface BlendTransitionConfig extends TransitionConfig {}
-
-export interface WipeTransitionConfig extends TransitionConfig {
-  // the size of the fade when wiping.
-  gradient?: number;
-  // the angle of the wipe in degrees.
-  angle?: number;
-  // the direction of the wipe.
-  direction?: WipeDirection;
-}
-
-export interface SlideTransitionConfig extends TransitionConfig {
-  // the number of slides to perform.
-  slides?: number;
-  // the intensity of the blur during slides.
-  intensity?: number;
-  // the number of samples for the blur - more samples result in better quality at the cost of performance.
-  samples?: number;
-  // the direction of the slide.
-  direction?: SlideDirection;
-}
-
-export interface BlurTransitionConfig extends TransitionConfig {
-  // the intensity of the blur.
-  intensity?: number;
-  // the number of samples for the blur - more samples result in better quality at the cost of performance.
-  samples?: number;
-}
-
-export interface GlitchTransitionConfig extends TransitionConfig {
-  // a random seed from 0 to 1 used to generate glitches.
-  seed?: number;
 }
 
 export {

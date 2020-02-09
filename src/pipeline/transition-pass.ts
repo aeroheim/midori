@@ -2,14 +2,14 @@ import TWEEN from '@tweenjs/tween.js';
 import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
-import { WipeShader, WipeDirection } from '../postprocessing/shaders/transition/wipe-shader';
-import { SlideShader, SlideDirection } from '../postprocessing/shaders/transition/slide-shader';
-import { BlurShader } from '../postprocessing/shaders/transition/blur-shader';
-import { GlitchShader } from '../postprocessing/shaders/transition/glitch-shader';
+import { WipeShader, WipeDirection } from '../effects/shaders/transition/wipe-shader';
+import { SlideShader, SlideDirection } from '../effects/shaders/transition/slide-shader';
+import { BlurShader } from '../effects/shaders/transition/blur-shader';
+import { GlitchShader } from '../effects/shaders/transition/glitch-shader';
 import { Background } from '../background';
-import { TransitionEffect } from '../postprocessing/effect';
-import { TransitionConfig, BlendTransitionConfig, BlurTransitionConfig, WipeTransitionConfig, SlideTransitionConfig, GlitchTransitionConfig } from '../transition';
-import { Uniforms } from '../postprocessing/shaders/shader-utils';
+import { TransitionEffect } from '../effects/effect';
+import { TransitionConfig } from '../transition';
+import { Uniforms } from '../effects/shaders/shader-utils';
 
 export enum TransitionType {
   None,
@@ -18,6 +18,40 @@ export enum TransitionType {
   Wipe,
   Slide,
   Glitch,
+}
+
+export interface BlendTransitionConfig extends TransitionConfig {}
+
+export interface WipeTransitionConfig extends TransitionConfig {
+  // the size of the fade when wiping.
+  gradient?: number;
+  // the angle of the wipe in degrees.
+  angle?: number;
+  // the direction of the wipe.
+  direction?: WipeDirection;
+}
+
+export interface SlideTransitionConfig extends TransitionConfig {
+  // the number of slides to perform.
+  slides?: number;
+  // the intensity of the blur during slides.
+  intensity?: number;
+  // the number of samples for the blur - more samples result in better quality at the cost of performance.
+  samples?: number;
+  // the direction of the slide.
+  direction?: SlideDirection;
+}
+
+export interface BlurTransitionConfig extends TransitionConfig {
+  // the intensity of the blur.
+  intensity?: number;
+  // the number of samples for the blur - more samples result in better quality at the cost of performance.
+  samples?: number;
+}
+
+export interface GlitchTransitionConfig extends TransitionConfig {
+  // a random seed from 0 to 1 used to generate glitches.
+  seed?: number;
 }
 
 class TransitionPass extends Pass {

@@ -1,7 +1,7 @@
 import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, DepthTexture, Texture, WebGLRenderer } from 'three';
 import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-camera';
 import { EffectPass } from './pipeline/effect-pass';
-import { Particles } from './particles';
+import { Particles } from './effects/particles';
 
 export interface PlaneMesh extends Mesh {
   geometry: PlaneGeometry;

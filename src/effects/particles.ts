@@ -1,8 +1,8 @@
 import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2, ShaderMaterial, MathUtils, BufferAttribute } from 'three';
 import TWEEN from '@tweenjs/tween.js';
-import { ParticleShader } from './postprocessing/shaders/particle-shader';
-import { ShaderUtils } from './postprocessing/shaders/shader-utils';
-import { LoopableTransitionConfig } from './transition';
+import { ParticleShader } from './shaders/particle-shader';
+import { ShaderUtils } from './shaders/shader-utils';
+import { LoopableTransitionConfig } from '../transition';
 
 export interface ParticleMoveOffset {
   // the distance of the offset.
