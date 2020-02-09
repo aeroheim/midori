@@ -1,4 +1,4 @@
-import { Matrix4 } from 'three';
+import { Matrix4, Shader } from 'three';
 
 /**
  * @author aeroheim / http://aeroheim.moe/
@@ -11,7 +11,7 @@ import { Matrix4 } from 'three';
  *
  */
 
-const MotionBlurShader = {
+const MotionBlurShader: Shader = {
   uniforms: {
     tDiffuse: { value: null },
     // a depth buffer of the frame to be blurred

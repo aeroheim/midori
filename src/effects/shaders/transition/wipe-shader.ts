@@ -1,15 +1,17 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const WipeDirection = Object.freeze({
-  LEFT: 0,
-  RIGHT: 1,
-  TOP: 2,
-  BOTTOM: 3,
-});
+export enum WipeDirection {
+  Left = 0,
+  Right = 1,
+  Top = 2,
+  Bottom = 3,
+}
 
-const WipeShader = {
+const WipeShader: Shader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
@@ -18,7 +20,7 @@ const WipeShader = {
     // a value from 0 to 1 indicating the size of the blend gradient
     gradient: { value: 0.0 },
     // the direction to wipe to
-    direction: { value: WipeDirection.RIGHT },
+    direction: { value: WipeDirection.Right },
     // the angle of the wipe
     angle: { value: 0.0 },
     // the aspect ratio of the texture. required using an angle
@@ -98,7 +100,6 @@ const WipeShader = {
 
 export {
   WipeShader,
-  WipeDirection,
 };
 
 export default WipeShader;

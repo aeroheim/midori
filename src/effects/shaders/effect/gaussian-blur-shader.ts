@@ -1,3 +1,5 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  *
@@ -14,7 +16,7 @@ const GaussianBlurDirection = Object.freeze({
   VERTICAL: [0.0, 1.0],
 });
 
-const GaussianBlurShader = {
+const GaussianBlurShader: Shader = {
   uniforms: {
     tDiffuse: { value: null },
     // the radius of the blur - determines the offset distance for each tap

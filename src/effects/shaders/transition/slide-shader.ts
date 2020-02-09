@@ -1,15 +1,17 @@
+import { Shader } from 'three';
+
 /**
  * @author aeroheim / http://aeroheim.moe/
  */
 
-const SlideDirection = Object.freeze({
-  LEFT: 0,
-  RIGHT: 1,
-  TOP: 2,
-  BOTTOM: 3,
-});
+export enum SlideDirection {
+  Left = 0,
+  Right = 1,
+  Top = 2,
+  Bottom = 3,
+}
 
-const SlideShader = {
+const SlideShader: Shader = {
   uniforms: {
     tDiffuse1: { value: null },
     tDiffuse2: { value: null },
@@ -19,12 +21,10 @@ const SlideShader = {
     amount: { value: 0.0 },
     // the amount value of the previous frame - used to calculate the velocity for the blur
     prevAmount: { value: 0.0 },
-    // an value from 0 to 1 indicating the size of the blend gradient
-    gradient: { value: 0.0 },
     // a positive value that affects the intensity of the blur
     intensity: { value: 1.0 },
     // the direction to slide to
-    direction: { value: SlideDirection.RIGHT },
+    direction: { value: SlideDirection.Right },
     // the number of samples to use (up to 128) - higher samples result in better quality at the cost of performance
     samples: { value: 32 },
   },
@@ -109,7 +109,6 @@ const SlideShader = {
 
 export {
   SlideShader,
-  SlideDirection,
 };
 
 export default SlideShader;

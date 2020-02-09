@@ -1,7 +1,15 @@
 {
-  "extends": "airbnb-base",
-  "parser": "babel-eslint",
+  "extends": [
+    "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
   "env": {
+    "es6": true,
     "browser": true,
     "node": true
   },
@@ -26,6 +34,12 @@
     "no-param-reassign": "off",
     "no-use-before-define": "off",
     "no-console": "off",
-    "linebreak-style": "off"
+    "linebreak-style": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "no-dupe-class-members": "off",
+    "@typescript-eslint/no-dupe-class-members": ["error"],
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/no-empty-interface": "off"
   }
 }

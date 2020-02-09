@@ -1,6 +1,5 @@
 import TWEEN from '@tweenjs/tween.js';
-import { Renderer } from './renderer';
-import { loadImageAsTexture } from './background';
+import { Renderer, loadImage } from './renderer';
 
 let renderer;
 
@@ -15,7 +14,7 @@ function render(time) {
 
 function init() {
   renderer = new Renderer(document.getElementById('container'));
-  loadImageAsTexture(`images/${image}.png`)
+  loadImage(`images/${image}.png`)
     .then((texture) => {
       renderer.setBackground(texture);
       render();
@@ -29,7 +28,7 @@ window.onkeyup = (e) => {
   if (e.key === 'ArrowLeft') {
     if (!renderer.isTransitioning()) {
       const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
-      loadImageAsTexture(`images/${newIndex}.png`)
+      loadImage(`images/${newIndex}.png`)
         .then((texture) => {
           requestAnimationFrame(() => {
             renderer.setBackground(texture);
@@ -40,7 +39,7 @@ window.onkeyup = (e) => {
     }
   } else if (e.key === 'ArrowRight') {
     if (!renderer.isTransitioning()) {
-      loadImageAsTexture(`images/${(image + 1) % imageCount}.png`)
+      loadImage(`images/${(image + 1) % imageCount}.png`)
         .then((texture) => {
           requestAnimationFrame(() => {
             renderer.setBackground(texture);
