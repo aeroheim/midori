@@ -1,7 +1,6 @@
 import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, DepthTexture, Texture, WebGLRenderer } from 'three';
 import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-camera';
 import { EffectPass } from './postprocessing/effect-pass';
-import { EffectType } from './postprocessing/effect';
 import { Particles } from './particles';
 
 export interface PlaneMesh extends Mesh {
@@ -50,12 +49,7 @@ class Background {
     );
 
     // effects - set properties required for motion blur
-    this.effects = new EffectPass(width, height);
-    this.effects.set(EffectType.MotionBlur, {
-      camera: this.camera.camera,
-      depthTexture: this._buffer.depthTexture,
-      intensity: 0,
-    });
+    this.effects = new EffectPass(width, height, { camera: this.camera.camera, depthTexture: this._buffer.depthTexture });
 
     // scene - throw everything together
     this._scene = new Scene();

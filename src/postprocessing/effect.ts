@@ -10,13 +10,13 @@ import { GlitchShader } from './shaders/transition/glitch-shader';
 import { ShaderUtils, Uniforms } from './shaders/shader-utils';
 
 export enum EffectType {
-  Blur,
-  Bloom,
-  RgbShift,
-  Vignette,
-  VignetteBlur,
-  MotionBlur,
-  Glitch,
+  Blur = 'Blur',
+  Bloom = 'Bloom',
+  RgbShift = 'RgbShift',
+  Vignette = 'Vignette',
+  VignetteBlur = 'VignetteBlur',
+  MotionBlur = 'MotionBlur',
+  Glitch = 'Glitch',
 }
 
 export interface IEffect {
