@@ -13,7 +13,7 @@ function render(time) {
 }
 
 function init() {
-  renderer = new Renderer(document.getElementById('container'));
+  renderer = new Renderer(document.getElementById('canvas') as HTMLCanvasElement);
   loadImage(`images/${image}.png`)
     .then((texture) => {
       renderer.setBackground(texture);
