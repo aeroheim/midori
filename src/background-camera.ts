@@ -151,12 +151,16 @@ function toAbsolutePosition(plane: PlaneMesh, camera: PerspectiveCamera, relativ
 }
 
 export interface CameraPosition {
+  // the x postion of the camera from 0 to 1, or the left to right-most position respectively.
   x?: number;
+  // the y position of the camera from 0 to 1, or the top to bottom-most position respectively.
   y?: number;
+  // the z position of the camera from 0 to 1, or the closest to farther position respectively.
   z?: number;
 }
 
 export interface CameraPositionWithRotation extends CameraPosition {
+  // the z-axis rotation of the camera in degrees.
   zr?: number;
 }
 
