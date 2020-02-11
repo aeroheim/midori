@@ -35,51 +35,59 @@ async function loadImage(path: string): Promise<Texture> {
   });
 }
 
+/* 
+  async getTexture(imagePath)
+
+  // automatically handle onresize events for canvas element
+  constructor(canvasElement)
+  isTransitioning()
+  render() - maybe? or could it be automatic?
+  // should have same way to copy settings from prev background (e.g particles, effects)
+  setBackground(texture, transition) - make sure to expose old background as well for advanced transitions
+  get particles()
+  get effects()
+  get camera()
+  dispose()
+*/
+
 // TODO: properly dispose of three.js objects
 class Renderer {
-  _domElement;
-  _width;
-  _height;
+  private _renderer: WebGLRenderer;
+  private _composer: EffectComposer;
+  private _backgroundPass: BackgroundPass;
+  private _transitionPass: TransitionPass;
 
-  _renderer;
-  _composer;
-  _backgroundPass;
-  _effectPass;
-  _transitionPass;
+  /**
+   * Constructs a renderer.
+   * @param {HTMLCanvasElement} canvas - the canvas element to use.
+   */
+  constructor(canvas: HTMLCanvasElement) {
+    const { clientWidth: width, clientHeight: height } = canvas;
 
-  constructor(domElement) {
-    this._domElement = domElement;
-    this._width = domElement.clientWidth;
-    this._height = domElement.clientHeight;
+    // renderer
+    this._renderer = new WebGLRenderer({ canvas });
+    this._renderer.setSize(width, height, false);
 
-    // initialize renderer
-    this._renderer = new WebGLRenderer();
-    this._renderer.domElement.id = 'midori';
-    this._renderer.setSize(this._width, this._height);
-    this._domElement.appendChild(this._renderer.domElement);
-    this.onResize = this.onResize.bind(this);
-    window.onresize = this.onResize;
-
-    // rendering pipeline
-    this._backgroundPass = new BackgroundPass(new Background(null, this._width, this._height));
-    this._transitionPass = new TransitionPass(this._backgroundPass.background, this._width, this._height);
-    this._effectPass = new EffectPass(this._width, this._height);
-
+    // pipeline
     this._composer = new EffectComposer(this._renderer);
+    this._backgroundPass = new BackgroundPass(new Background(null, width, height));
+    this._transitionPass = new TransitionPass(this._backgroundPass.background, width, height);
     this._composer.addPass(this._backgroundPass);
     this._composer.addPass(this._transitionPass);
-    this._composer.addPass(this._effectPass);
   }
 
-  // TODO: define a setSize instead?
-  onResize() {
-    this._width = this._domElement.clientWidth;
-    this._height = this._domElement.clientHeight;
-    this._composer.setSize(this._width, this._height);
-    this._renderer.setSize(this._width, this._height);
-    this._backgroundPass.setSize(this._width, this._height);
-    this._transitionPass.setSize(this._width, this._height);
-    this._effectPass.setSize(this._width, this._height);
+  /**
+   * Resizes the canvas if necessary. Should be called on every render frame.
+   */
+  private _resizeCanvas() {
+    const { width, height, clientWidth, clientHeight } = this._renderer.domElement;
+
+    if (width !== clientWidth || height !== clientHeight) {
+      this._renderer.setSize(clientWidth, clientHeight, false);
+      this._composer.setSize(clientWidth, clientHeight);
+      this._backgroundPass.setSize(clientWidth, clientHeight);
+      this._transitionPass.setSize(clientWidth, clientHeight);
+    }
   }
 
   // TODO: for testing purposes
@@ -108,6 +116,7 @@ class Renderer {
           angle: MathUtils.degToRad(15),
           duration: 1.5,
           easing: TWEEN.Easing.Quintic.InOut,
+          direction: WipeDirection[Object.keys(WipeDirection)[Math.floor(Math.random() * Object.keys(WipeDirection).length)]],
         },
       },
       {
@@ -121,11 +130,11 @@ class Renderer {
       {
         type: TransitionType.Slide,
         config: {
-          direction: SlideDirection[Object.keys(SlideDirection)[Math.floor(Math.random() * Object.keys(SlideDirection).length)]],
           slides: 2,
           intensity: 5,
           duration: 1.5,
           easing: TWEEN.Easing.Quintic.InOut,
+          direction: SlideDirection[Object.keys(SlideDirection)[Math.floor(Math.random() * Object.keys(SlideDirection).length)]],
         },
       },
       {
@@ -140,8 +149,10 @@ class Renderer {
       }
     ];
 
+    const { clientWidth: width, clientHeight: height } = this._renderer.domElement;
+
     const prevBackground = this._backgroundPass.background;
-    const nextBackground = new Background(texture, this._width, this._height);
+    const nextBackground = new Background(texture, width, height);
     nextBackground.effects.set(EffectType.Bloom, { radius: 2, passes: 1 });
     // nextBackground.effects.set(EffectType.Blur, { radius: 1, passes: 6 });
     nextBackground.effects.set(EffectType.VignetteBlur, { size: 3, radius: 1.5, passes: 2 });
@@ -185,7 +196,7 @@ class Renderer {
     nextBackground.particles.sway('large', { x: 0.025, y: 0.025 }, { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
-    this._transitionPass.transition(type, nextBackground, {
+    this._transitionPass.transition(type as any, nextBackground, {
       ...config,
       delay: 1.25,
       onInit: () => {
@@ -219,6 +230,7 @@ class Renderer {
   }
 
   render() {
+    this._resizeCanvas();
     this._composer.render();
   }
 }
