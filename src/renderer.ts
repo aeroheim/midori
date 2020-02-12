@@ -8,12 +8,14 @@ import { EffectType } from './effects/effect';
 import { TransitionPass, TransitionType } from './pipeline/transition-pass';
 import { SlideDirection } from './effects/shaders/transition/slide-shader';
 import { WipeDirection } from './effects/shaders/transition/wipe-shader';
+import BackgroundCamera from './background-camera';
+import Particles from './effects/particles';
 
 /**
  * Loads an image as a texture.
  * @async
  * @param {string} path - path to the image file.
- * @return {Promise} - texture on success, error on failure.
+ * @return Promise<Texture> - texture on success, error on failure.
  */
 async function loadImage(path: string): Promise<Texture> {
   return new Promise((resolve, reject) => {
@@ -56,6 +58,7 @@ class Renderer {
   private _composer: EffectComposer;
   private _backgroundPass: BackgroundPass;
   private _transitionPass: TransitionPass;
+  private _effectPass: EffectPass;
 
   /**
    * Constructs a renderer.
@@ -72,8 +75,27 @@ class Renderer {
     this._composer = new EffectComposer(this._renderer);
     this._backgroundPass = new BackgroundPass(new Background(null, width, height));
     this._transitionPass = new TransitionPass(this._backgroundPass.background, width, height);
+    this._effectPass = new EffectPass(width, height);
     this._composer.addPass(this._backgroundPass);
     this._composer.addPass(this._transitionPass);
+    this._composer.addPass(this._effectPass);
+  }
+
+  /**
+   * Returns the global effects.
+   * Effects set on this will apply to all backgrounds.
+   * @returns EffectPass
+   */
+  get effects(): EffectPass {
+    return this._effectPass;
+  }
+
+  /**
+   * Returns the current background.
+   * @returns Background
+   */
+  get background(): Background {
+    return this._backgroundPass.background;
   }
 
   /**
@@ -81,33 +103,26 @@ class Renderer {
    */
   private _resizeCanvas() {
     const { width, height, clientWidth, clientHeight } = this._renderer.domElement;
-
     if (width !== clientWidth || height !== clientHeight) {
       this._renderer.setSize(clientWidth, clientHeight, false);
       this._composer.setSize(clientWidth, clientHeight);
       this._backgroundPass.setSize(clientWidth, clientHeight);
       this._transitionPass.setSize(clientWidth, clientHeight);
+      this._effectPass.setSize(clientWidth, clientHeight);
     }
   }
 
-  // TODO: for testing purposes
-  test() {
-    const { camera } = this._backgroundPass.background;
-    camera.move({ x: Math.random(), y: Math.random(), z: 0.5 + Math.random() * 0.5 }, {
-      duration: 2,
-      easing: TWEEN.Easing.Cubic.InOut,
-    });
-    camera.rotate(MathUtils.degToRad(-5 + Math.random() * 10), {
-      duration: 2,
-      easing: TWEEN.Easing.Cubic.InOut,
-    });
-  }
-
-  isTransitioning() {
+  /**
+   * Returns the background is currently transitioning.
+   * @returns boolean
+   */
+  isTransitioning(): boolean {
     return this._transitionPass.isTransitioning();
   }
 
-  setBackground(texture) {
+  // TODO: all callbacks should expose prev/next background
+  // config object - flags for copying effects, particles, camera
+  setBackground(texture: Texture) {
     const transitions = [
       {
         type: TransitionType.Wipe,
@@ -153,13 +168,15 @@ class Renderer {
 
     const prevBackground = this._backgroundPass.background;
     const nextBackground = new Background(texture, width, height);
-    nextBackground.effects.set(EffectType.Bloom, { radius: 2, passes: 1 });
+    this._effectPass.set(EffectType.Bloom, { radius: 2, passes: 1 });
     // nextBackground.effects.set(EffectType.Blur, { radius: 1, passes: 6 });
-    nextBackground.effects.set(EffectType.VignetteBlur, { size: 3, radius: 1.5, passes: 2 });
+    this._effectPass.set(EffectType.VignetteBlur, { size: 3, radius: 1.5, passes: 2 });
     // nextBackground.effects.set(EffectType.RgbShift, { amount: 0.005, angle: 135 });
-    nextBackground.effects.set(EffectType.MotionBlur, { intensity: 1, samples: 32 });
-    nextBackground.effects.set(EffectType.Vignette, { darkness: 1, offset: 1 });
+    this._effectPass.set(EffectType.Vignette, { darkness: 1, offset: 1 });
     // nextBackground.effects.set(EffectType.Glitch, { amount: 0.8, seed: Math.random() });
+
+    nextBackground.effects.set(EffectType.MotionBlur, { intensity: 1, samples: 32 });
+
     nextBackground.particles.generate([
       {
         name: 'small',
