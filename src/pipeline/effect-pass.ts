@@ -1,11 +1,11 @@
-import { WebGLRenderTarget, PerspectiveCamera, DepthTexture, WebGLRenderer, MathUtils } from 'three';
+import { WebGLRenderTarget, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
-import { EffectType, Effect, MotionBlurEffect, GaussianBlurEffect, BloomEffect,
-  VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../effects/effect';
+import { EffectType, Effect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect,
+  GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../effects/effect';
 
-export type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig 
-| VignetteEffectConfig | VignetteBlurEffectConfig | MotionBlurEffectConfig | GlitchEffectConfig;
+export type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig
+| VignetteEffectConfig | VignetteBlurEffectConfig | GlitchEffectConfig;
 
 export interface BlurEffectConfig {
   // the size of the blur.
@@ -46,25 +46,11 @@ export interface VignetteBlurEffectConfig {
   passes?: number;
 }
 
-export interface MotionBlurEffectConfig {
-  // the intensity of the blur.
-  intensity?: number;
-  // the number of samples for the blur - more samples result in better quality at the cost of performance.
-  samples?: number;
-}
-
 export interface GlitchEffectConfig {
   // the intensity of the glitch.
   amount?: number;
   // a random seed from 0 to 1 used to generate glitches.
   seed?: number;
-}
-
-export interface EffectPassConfig {
-  // a three.js camera - allows support for motion blur if specified.
-  camera?: PerspectiveCamera;
-  // a three.js depth texture containing depth information - allows support for motion blur if specified.
-  depthTexture?: DepthTexture;
 }
 
 export interface EffectConfigs {
@@ -73,7 +59,6 @@ export interface EffectConfigs {
   [EffectType.RgbShift]?: RgbShiftEffectConfig;
   [EffectType.Vignette]?: VignetteEffectConfig;
   [EffectType.VignetteBlur]?: VignetteBlurEffectConfig;
-  [EffectType.MotionBlur]?: MotionBlurEffectConfig;
   [EffectType.Glitch]?: GlitchEffectConfig;
 }
 
@@ -87,27 +72,19 @@ class EffectPass extends Pass {
   private _writeBuffer: WebGLRenderTarget;
   private _copyShader: Effect = new Effect(CopyShader);
 
-  private _effects: EffectMap = {};
-
-  // optional properties cached for motion blur support
-  private _camera?: PerspectiveCamera;
-  private _depthTexture?: DepthTexture;
+  protected _effects: EffectMap = {};
 
   /**
    * Constructs an EffectPass.
    * @param {number} width
    * @param {number} height
-   * @param {EffectPassConfig} config - optional additional configuration.
    */
-  constructor(width: number, height: number, config: EffectPassConfig = {}) {
+  constructor(width: number, height: number) {
     super();
     this._width = width;
     this._height = height;
     this._readBuffer = new WebGLRenderTarget(width, height);
     this._writeBuffer = new WebGLRenderTarget(width, height);
-
-    this._camera = config.camera;
-    this._depthTexture = config.depthTexture;
 
     // this pass only needs to render when there is at least one effect, so it should be disabled by default.
     this.enabled = false;
@@ -133,7 +110,7 @@ class EffectPass extends Pass {
 
   /**
    * Returns the configurations for the currently set effects.
-   * @returns ParticleGroupDefinitionMap
+   * @returns EffectConfigs
    */
   getConfigs(): EffectConfigs {
     const configs: EffectConfigs = {};
@@ -162,11 +139,6 @@ class EffectPass extends Pass {
         case EffectType.VignetteBlur: {
           const { size, radius } = effect.getUniforms();
           configs[type] = { size, radius, passes: (effect as VignetteBlurEffect).passes };
-          break;
-        }
-        case EffectType.MotionBlur: {
-          const { intensity, samples } = effect.getUniforms();
-          configs[type] = { intensity, samples };
           break;
         }
         case EffectType.Glitch: {
@@ -203,7 +175,7 @@ class EffectPass extends Pass {
    * @param {EffectConfig} config
    * @returns IEffect
    */
-  private _getEffect(type: EffectType): IEffect {
+  protected _getEffect(type: EffectType): IEffect {
     if (!(type in this._effects)) {
       switch (type) {
         case EffectType.Blur:
@@ -220,12 +192,6 @@ class EffectPass extends Pass {
           break;
         case EffectType.VignetteBlur:
           this._effects[type] = new VignetteBlurEffect(this._width, this._height);
-          break;
-        case EffectType.MotionBlur:
-          if (!this._camera || !this._depthTexture) {
-            throw "This EffectPass does not support motion blur.";
-          }
-          this._effects[type] = new MotionBlurEffect(this._camera, this._depthTexture);
           break;
         case EffectType.Glitch:
           this._effects[type] = new GlitchEffect(this._width, this._height);
@@ -246,7 +212,6 @@ class EffectPass extends Pass {
   set(type: EffectType.RgbShift, config: RgbShiftEffectConfig)
   set(type: EffectType.Vignette, config: VignetteEffectConfig)
   set(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig)
-  set(type: EffectType.MotionBlur, config: MotionBlurEffectConfig)
   set(type: EffectType.Glitch, config: GlitchEffectConfig)
   set(type: EffectType, config: EffectConfig = {}) {
     const effect = this._getEffect(type);
@@ -281,11 +246,6 @@ class EffectPass extends Pass {
           const { size = 1, radius = 1, passes = (effect as VignetteBlurEffect).passes } = config as VignetteBlurEffectConfig;
           (effect as VignetteBlurEffect).passes = passes;
           effect.updateUniforms({ radius, size });
-          break;
-        }
-        case EffectType.MotionBlur: {
-          const { intensity = 1, samples = 32 } = config as MotionBlurEffectConfig;
-          effect.updateUniforms({ intensity, samples });
           break;
         }
         case EffectType.Glitch: {
