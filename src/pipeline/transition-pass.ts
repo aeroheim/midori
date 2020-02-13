@@ -8,7 +8,7 @@ import { BlurShader } from '../effects/shaders/transition/blur-shader';
 import { GlitchShader } from '../effects/shaders/transition/glitch-shader';
 import { Background } from '../background';
 import { TransitionEffect } from '../effects/effect';
-import { TransitionConfig } from '../transition';
+import { BackgroundTransitionConfig } from '../transition';
 import { Uniforms } from '../effects/shaders/shader-utils';
 
 export enum TransitionType {
@@ -20,9 +20,9 @@ export enum TransitionType {
   Glitch,
 }
 
-export interface BlendTransitionConfig extends TransitionConfig {}
+export interface BlendTransitionConfig extends BackgroundTransitionConfig {}
 
-export interface WipeTransitionConfig extends TransitionConfig {
+export interface WipeTransitionConfig extends BackgroundTransitionConfig {
   // the size of the fade when wiping.
   gradient?: number;
   // the angle of the wipe in degrees.
@@ -31,7 +31,7 @@ export interface WipeTransitionConfig extends TransitionConfig {
   direction?: WipeDirection;
 }
 
-export interface SlideTransitionConfig extends TransitionConfig {
+export interface SlideTransitionConfig extends BackgroundTransitionConfig {
   // the number of slides to perform.
   slides?: number;
   // the intensity of the blur during slides.
@@ -42,14 +42,14 @@ export interface SlideTransitionConfig extends TransitionConfig {
   direction?: SlideDirection;
 }
 
-export interface BlurTransitionConfig extends TransitionConfig {
+export interface BlurTransitionConfig extends BackgroundTransitionConfig {
   // the intensity of the blur.
   intensity?: number;
   // the number of samples for the blur - more samples result in better quality at the cost of performance.
   samples?: number;
 }
 
-export interface GlitchTransitionConfig extends TransitionConfig {
+export interface GlitchTransitionConfig extends BackgroundTransitionConfig {
   // a random seed from 0 to 1 used to generate glitches.
   seed?: number;
 }
@@ -103,16 +103,17 @@ class TransitionPass extends Pass {
 
   /**
    * Renders a transition effect over the screen.
-   * @param {TransitionType} transition - the transition to use.
    * @param {Background} background - the background to transition to.
-   * @param {TransitionConfig} config - configuration for the transition.
+   * @param {TransitionType} transition - the transition to use.
+   * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  transition(transition: TransitionType.Blend, background: Background, config: BlendTransitionConfig);
-  transition(transition: TransitionType.Blur, background: Background, config: BlurTransitionConfig);
-  transition(transition: TransitionType.Wipe, background: Background, config: WipeTransitionConfig);
-  transition(transition: TransitionType.Slide, background: Background, config: SlideTransitionConfig);
-  transition(transition: TransitionType.Glitch, background: Background, config: GlitchTransitionConfig);
-  transition(transition: TransitionType, background: Background, config: TransitionConfig = {}) {
+  transition(background: Background, transition: TransitionType.None);
+  transition(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig);
+  transition(background: Background, transition: TransitionType.Blur, config: BlurTransitionConfig);
+  transition(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig);
+  transition(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig);
+  transition(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig);
+  transition(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}) {
     const {
       from,
       to,
@@ -124,7 +125,7 @@ class TransitionPass extends Pass {
       onUpdate,
       onComplete,
       onStop,
-    } = this._getTransitionConfig(transition as any, background, config);
+    } = this._getTransitionConfig(background, transition as any, config);
 
     this._transition.stop();
     onInit();
@@ -154,16 +155,17 @@ class TransitionPass extends Pass {
 
   /**
    * Returns a valid configuration for the specified transition type.
-   * @param {TransitionType} transition - the type of the transition.
    * @param {Background} background - the background to transition to.
-   * @param {TransitionConfig} config - configuration for the transition.
+   * @param {TransitionType} transition - the type of the transition.
+   * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  private _getTransitionConfig(transition: TransitionType.Blend, background: Background, config: BlendTransitionConfig)
-  private _getTransitionConfig(transition: TransitionType.Blur, background: Background, config: BlurTransitionConfig)
-  private _getTransitionConfig(transition: TransitionType.Wipe, background: Background, config: WipeTransitionConfig)
-  private _getTransitionConfig(transition: TransitionType.Slide, background: Background, config: SlideTransitionConfig)
-  private _getTransitionConfig(transition: TransitionType.Glitch, background: Background, config: GlitchTransitionConfig)
-  private _getTransitionConfig(transition: TransitionType, background: Background, config: TransitionConfig = {}): any {
+  private _getTransitionConfig(background: Background, transition: TransitionType.None)
+  private _getTransitionConfig(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig)
+  private _getTransitionConfig(background: Background, transition: TransitionType.Blur,config: BlurTransitionConfig)
+  private _getTransitionConfig(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig)
+  private _getTransitionConfig(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig)
+  private _getTransitionConfig(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig)
+  private _getTransitionConfig(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}): any {
     const onTransitionStart = () => {
       // enable this pass when a transition starts.
       this.enabled = true;
@@ -198,19 +200,19 @@ class TransitionPass extends Pass {
       easing,
       duration: duration * 1000,
       delay: delay * 1000,
-      onInit,
+      onInit: () => onInit(this._prevBackground, background),
       onStart: () => {
+        onStart(this._prevBackground, background);
         onTransitionStart();
-        onStart();
       },
-      onUpdate,
+      onUpdate: () => onUpdate(this._prevBackground, background),
       onComplete: () => {
+        onComplete(this._prevBackground, background);
         onTransitionEnd();
-        onComplete();
       },
       onStop: () => {
+        onStop(this._prevBackground, background);
         onTransitionEnd();
-        onStop();
       },
     };
 

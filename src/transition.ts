@@ -1,6 +1,5 @@
 import TWEEN from '@tweenjs/tween.js';
-import { SlideDirection } from './effects/shaders/transition/slide-shader';
-import { WipeDirection } from './effects/shaders/transition/wipe-shader';
+import Background from './background';
 
 const Easings = {
   Linear: {
@@ -66,20 +65,28 @@ export interface TransitionConfig {
   // an optional easing function for the transition.
   easing?: (k: number) => number;
   // an optional callback - invoked when the transition is registered, regardless of delay.
-  onInit?: () => void;
+  onInit?: (...args: any[]) => void;
   // an optional callback - invoked when the transition starts after the delay has elapsed.
-  onStart?: () => void;
+  onStart?: (...args: any[]) => void;
   // an optional callback - invoked for each frame that the transition runs.
-  onUpdate?: () => void;
+  onUpdate?: (...args: any[]) => void;
   // an optional callback - invoked when the transition has finished.
-  onComplete?: () => void;
+  onComplete?: (...args: any[]) => void;
   // an optional callback - invoked when the transition is interrupted or stopped.
-  onStop?: () => void;
+  onStop?: (...args: any[]) => void;
 }
 
 export interface LoopableTransitionConfig extends TransitionConfig {
   // whether to loop the transition repeatedly or not.
   loop?: boolean;
+}
+
+export interface BackgroundTransitionConfig extends TransitionConfig {
+  onInit?: (prevBackground?: Background, nextBackground?: Background) => void;
+  onStart?: (prevBackground?: Background, nextBackground?: Background) => void;
+  onUpdate?: (prevBackground?: Background, nextBackground?: Background) => void;
+  onComplete?: (prevBackground?: Background, nextBackground?: Background) => void;
+  onStop?: (prevBackground?: Background, nextBackground?: Background) => void;
 }
 
 export {

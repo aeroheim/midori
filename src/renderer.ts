@@ -5,11 +5,40 @@ import { Background } from './background';
 import { BackgroundPass } from './pipeline/background-pass';
 import { EffectPass } from './pipeline/effect-pass';
 import { EffectType } from './effects/effect';
-import { TransitionPass, TransitionType } from './pipeline/transition-pass';
+import { TransitionPass, TransitionType, BlendTransitionConfig, WipeTransitionConfig, SlideTransitionConfig, BlurTransitionConfig, GlitchTransitionConfig } from './pipeline/transition-pass';
 import { SlideDirection } from './effects/shaders/transition/slide-shader';
 import { WipeDirection } from './effects/shaders/transition/wipe-shader';
-import BackgroundCamera from './background-camera';
-import Particles from './effects/particles';
+import { BackgroundTransitionConfig } from './transition';
+
+export interface Transition {
+  type: TransitionType;
+  config: BackgroundTransitionConfig;
+}
+
+export interface BlendTransition extends Transition {
+  type: TransitionType.Blend;
+  config: BlendTransitionConfig;
+}
+
+export interface WipeTransition extends Transition {
+  type: TransitionType.Wipe;
+  config: WipeTransitionConfig;
+}
+
+export interface SlideTransition extends Transition {
+  type: TransitionType.Slide;
+  config: SlideTransitionConfig;
+}
+
+export interface BlurTransition extends Transition {
+  type: TransitionType.Blur;
+  config: BlurTransitionConfig;
+}
+
+export interface GlitchTransition extends Transition {
+  type: TransitionType.Glitch;
+  config: GlitchTransitionConfig;
+}
 
 /**
  * Loads an image as a texture.
@@ -120,9 +149,10 @@ class Renderer {
     return this._transitionPass.isTransitioning();
   }
 
+  // TODO: add to types TransitionType.None
   // TODO: all callbacks should expose prev/next background
   // config object - flags for copying effects, particles, camera
-  setBackground(texture: Texture) {
+  setBackground(texture: Texture, transition?: Transition) {
     const transitions = [
       {
         type: TransitionType.Wipe,
@@ -213,7 +243,7 @@ class Renderer {
     nextBackground.particles.sway('large', { x: 0.025, y: 0.025 }, { duration: 1.5, easing: TWEEN.Easing.Sinusoidal.InOut, loop: true });
 
     const { type, config } = transitions[Math.floor(Math.random() * transitions.length)];
-    this._transitionPass.transition(type as any, nextBackground, {
+    this._transitionPass.transition(nextBackground, type as any, {
       ...config,
       delay: 1.25,
       onInit: () => {
