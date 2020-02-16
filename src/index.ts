@@ -1,4 +1,3 @@
-import TWEEN from '@tweenjs/tween.js';
 import { Renderer, loadImage } from './renderer';
 
 let renderer;
@@ -6,18 +5,11 @@ let renderer;
 let image = 0;
 const imageCount = 3;
 
-function render(time) {
-  TWEEN.update(time);
-  renderer.render();
-  requestAnimationFrame(render); // TODO consider using renderer.setAnimationLoop() instead
-}
-
 function init() {
   renderer = new Renderer(document.getElementById('canvas') as HTMLCanvasElement);
   loadImage(`images/${image}.png`)
     .then((texture) => {
       renderer.setBackground(texture);
-      render();
     })
     .catch(e => console.log(e));
 }
