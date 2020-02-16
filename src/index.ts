@@ -1,4 +1,4 @@
-import { Renderer, loadImage } from './renderer';
+import { BackgroundRenderer, loadImage } from './background-renderer';
 
 let renderer;
 
@@ -6,7 +6,7 @@ let image = 0;
 const imageCount = 3;
 
 function init() {
-  renderer = new Renderer(document.getElementById('canvas') as HTMLCanvasElement);
+  renderer = new BackgroundRenderer(document.getElementById('canvas') as HTMLCanvasElement);
   loadImage(`images/${image}.png`)
     .then((texture) => {
       renderer.setBackground(texture);

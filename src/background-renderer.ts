@@ -60,7 +60,7 @@ async function loadImage(path: string): Promise<Texture> {
   });
 }
 
-class Renderer {
+class BackgroundRenderer {
   private _renderer: WebGLRenderer;
   private _composer: EffectComposer;
   private _backgroundPass: BackgroundPass;
@@ -181,7 +181,7 @@ class Renderer {
 
 export {
   loadImage,
-  Renderer,
+  BackgroundRenderer,
 };
 
-export default Renderer;
+export default BackgroundRenderer;
