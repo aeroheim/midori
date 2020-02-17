@@ -146,7 +146,6 @@ function setParticles(background) {
       minGradient: 1.0,
       maxGradient: 1.0,
     },
-
   ]);
   particles.move('small', { distance: 0.5, angle: 25 }, { duration: 5, loop: true });
   particles.sway('small', { x: 0.025, y: 0.025 }, { duration: 1.5, easing: Easings.Sinusoidal.InOut, loop: true });
@@ -158,11 +157,12 @@ function setParticles(background) {
 
 function setBackground(texture) {
   const { type, config } = getTransition();
+  const delay = 1.25;
   renderer.setBackground(texture, {
     type,
     config: {
       ...config,
-      delay: 1.25,
+      delay,
       onInit: (prevBackground, nextBackground) => {
         prevBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7 }, {
           duration: 2.5,
@@ -172,23 +172,23 @@ function setBackground(texture) {
           duration: 2.5,
           easing: Easings.Quartic.In,
         });
-      },
-      onStart: (prevBackground, nextBackground) => {
         nextBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.7 + Math.random() * 0.3 }, {
           duration: 2,
+          delay,
           easing: Easings.Quartic.Out,
         });
         nextBackground.camera.sway({ x: 0.1, y: 0.05, z: 0.02, zr: 1 }, {
           duration: 1.5,
+          delay,
           easing: Easings.Quadratic.InOut,
           loop: true,
         });
         nextBackground.camera.rotate(-5 + Math.random() * 10, {
           duration: 2,
+          delay,
           easing: Easings.Quartic.Out,
         });
       },
-      onStop: () => console.log('stopped'),
     }
   });
   setEffects(renderer.background);
