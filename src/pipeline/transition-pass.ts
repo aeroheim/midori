@@ -1,5 +1,5 @@
 import TWEEN from '@tweenjs/tween.js';
-import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer } from 'three';
+import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { WipeShader, WipeDirection } from '../effects/shaders/transition/wipe-shader';
@@ -248,7 +248,7 @@ class TransitionPass extends Pass {
           onStart: () => {
             this._setTransitionEffect(WipeShader, {
               gradient,
-              angle,
+              angle: MathUtils.degToRad(angle),
               direction,
               aspect: this._width / this._height,
             });
