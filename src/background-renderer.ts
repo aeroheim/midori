@@ -1,5 +1,6 @@
 import { WebGLRenderer, Texture, TextureLoader, ClampToEdgeWrapping, LinearFilter } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { WEBGL } from 'three/examples/jsm/WebGL';
 import TWEEN from '@tweenjs/tween.js';
 import { Background } from './background';
 import { BackgroundPass } from './pipeline/background-pass';
@@ -32,6 +33,14 @@ export interface BlurTransition extends BackgroundTransitionConfig {
 export interface GlitchTransition extends BackgroundTransitionConfig {
   type: TransitionType.Glitch;
   config: GlitchTransitionConfig;
+}
+
+/**
+ * Returns whether WebGL support is available.
+ * @returns boolean
+ */
+function isWebGLSupported(): boolean {
+  return WEBGL.isWebGLAvailable();
 }
 
 /**
@@ -180,6 +189,7 @@ class BackgroundRenderer {
 }
 
 export {
+  isWebGLSupported,
   loadImage,
   BackgroundRenderer,
 };
