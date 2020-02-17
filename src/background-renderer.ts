@@ -72,6 +72,7 @@ async function loadImage(path: string): Promise<Texture> {
 class BackgroundRenderer {
   private _renderer: WebGLRenderer;
   private _composer: EffectComposer;
+  private _background: Background;
   private _backgroundPass: BackgroundPass;
   private _transitionPass: TransitionPass;
   private _effectPass: EffectPass;
@@ -115,21 +116,7 @@ class BackgroundRenderer {
    * @returns Background
    */
   get background(): Background {
-    return this._backgroundPass.background;
-  }
-
-  /**
-   * Resizes the canvas if necessary. Should be called on every render frame.
-   */
-  private _resizeCanvas() {
-    const { width, height, clientWidth, clientHeight } = this._renderer.domElement;
-    if (width !== clientWidth || height !== clientHeight) {
-      this._renderer.setSize(clientWidth, clientHeight, false);
-      this._composer.setSize(clientWidth, clientHeight);
-      this._backgroundPass.setSize(clientWidth, clientHeight);
-      this._transitionPass.setSize(clientWidth, clientHeight);
-      this._effectPass.setSize(clientWidth, clientHeight);
-    }
+    return this._background;
   }
 
   /**
@@ -147,19 +134,33 @@ class BackgroundRenderer {
    */
   setBackground(texture: Texture, transition?: Transition) {
     const { clientWidth: width, clientHeight: height } = this._renderer.domElement;
-    const nextBackground = new Background(texture, width, height);
+    this._background = new Background(texture, width, height);
 
     if (transition) {
-      this._transitionPass.transition(nextBackground, transition.type as any, {
+      this._transitionPass.transition(this._background, transition.type as any, {
         ...transition.config,
-        onStart: () => {
+        onStart: (prevBackground, nextBackground) => {
           this._backgroundPass.setBackground(nextBackground);
-          transition.config?.onStart();
+          transition.config?.onStart(prevBackground, nextBackground);
         },
       });
     } else {
-      this._backgroundPass.setBackground(nextBackground);
-      this._transitionPass.transition(nextBackground, TransitionType.None);
+      this._backgroundPass.setBackground(this._background);
+      this._transitionPass.transition(this._background, TransitionType.None);
+    }
+  }
+
+  /**
+   * Resizes the canvas if necessary. Should be called on every render frame.
+   */
+  private _resizeCanvas() {
+    const { width, height, clientWidth, clientHeight } = this._renderer.domElement;
+    if (width !== clientWidth || height !== clientHeight) {
+      this._renderer.setSize(clientWidth, clientHeight, false);
+      this._composer.setSize(clientWidth, clientHeight);
+      this._backgroundPass.setSize(clientWidth, clientHeight);
+      this._transitionPass.setSize(clientWidth, clientHeight);
+      this._effectPass.setSize(clientWidth, clientHeight);
     }
   }
 
