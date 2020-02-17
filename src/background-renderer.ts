@@ -133,15 +133,16 @@ class BackgroundRenderer {
    * @param {Transition} transition - optional configuration for a transition.
    */
   setBackground(texture: Texture, transition?: Transition) {
+    const { type, config: { onStart = () => ({}), ...transitionConfig } } = transition;
     const { clientWidth: width, clientHeight: height } = this._renderer.domElement;
     this._background = new Background(texture, width, height);
 
     if (transition) {
-      this._transitionPass.transition(this._background, transition.type as any, {
-        ...transition.config,
+      this._transitionPass.transition(this._background, type as any, {
+        ...transitionConfig,
         onStart: (prevBackground, nextBackground) => {
           this._backgroundPass.setBackground(nextBackground);
-          transition.config?.onStart(prevBackground, nextBackground);
+          onStart(prevBackground, nextBackground);
         },
       });
     } else {
