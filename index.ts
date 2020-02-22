@@ -1,9 +1,9 @@
-import { BackgroundRenderer, loadImage, isWebGLSupported } from './background-renderer';
-import { Easings } from './transition';
-import { TransitionType } from './pipeline/transition-pass';
-import { WipeDirection } from './effects/shaders/transition/wipe-shader';
-import { SlideDirection } from './effects/shaders/transition/slide-shader';
-import { EffectType } from './effects/effect';
+import { BackgroundRenderer, loadImage, isWebGLSupported } from './src/background-renderer';
+import { TransitionType } from './src/pipeline/transition-pass';
+import { WipeDirection } from './src/effects/shaders/transition/wipe-shader';
+import { SlideDirection } from './src/effects/shaders/transition/slide-shader';
+import { EffectType } from './src/effects/effect';
+import { Easings } from './src/transition';
 
 let renderer;
 
@@ -12,7 +12,7 @@ const imageCount = 3;
 
 function init() {
   renderer = new BackgroundRenderer(document.getElementById('canvas') as HTMLCanvasElement);
-  loadImage(`images/${image}.png`)
+  loadImage(`./images/${image}.png`)
     .then((texture) => {
       setBackground(texture);
     })
@@ -25,7 +25,7 @@ window.onkeyup = (e) => {
   if (e.key === 'ArrowLeft') {
     if (!renderer.isTransitioning()) {
       const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
-      loadImage(`images/${newIndex}.png`)
+      loadImage(`./images/${newIndex}.png`)
         .then((texture) => {
           requestAnimationFrame(() => {
             setBackground(texture);
@@ -36,7 +36,7 @@ window.onkeyup = (e) => {
     }
   } else if (e.key === 'ArrowRight') {
     if (!renderer.isTransitioning()) {
-      loadImage(`images/${(image + 1) % imageCount}.png`)
+      loadImage(`./images/${(image + 1) % imageCount}.png`)
         .then((texture) => {
           requestAnimationFrame(() => {
             setBackground(texture);
@@ -179,7 +179,6 @@ function setBackground(texture) {
         });
         nextBackground.camera.sway({ x: 0.1, y: 0.05, z: 0.02, zr: 1 }, {
           duration: 1.5,
-          delay,
           easing: Easings.Quadratic.InOut,
           loop: true,
         });
