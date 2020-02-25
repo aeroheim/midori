@@ -1,5 +1,5 @@
 import TWEEN from '@tweenjs/tween.js';
-import Background from './background';
+import { Background } from './background';
 
 const Easings = {
   Linear: {
