@@ -45,11 +45,10 @@ function isWebGLSupported(): boolean {
 
 /**
  * Loads an image as a texture.
- * @async
  * @param {string} path - path to the image file.
  * @return Promise<Texture> - texture on success, error on failure.
  */
-async function loadImage(path: string): Promise<Texture> {
+function loadImage(path: string): Promise<Texture> {
   return new Promise((resolve, reject) => {
     new TextureLoader().load(path, (texture) => {
       // image should never wrap
