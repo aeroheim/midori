@@ -39,7 +39,7 @@ export default [
   },
   // docs
   {
-    input: 'docs/index.ts',
+    input: 'docs/index.js',
     output: {
       file: 'docs/dist/index.js',
       format: 'esm',

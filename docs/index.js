@@ -1,9 +1,4 @@
-import { BackgroundRenderer, loadImage, isWebGLSupported } from '../src/background-renderer';
-import { TransitionType } from '../src/pipeline/transition-pass';
-import { WipeDirection } from '../src/effects/shaders/transition/wipe-shader';
-import { SlideDirection } from '../src/effects/shaders/transition/slide-shader';
-import { EffectType } from '../src/effects/effect';
-import { Easings } from '../src/transition';
+import { BackgroundRenderer, loadImage, TransitionType, EffectType, Easings, WipeDirection, SlideDirection } from '../dist/midori';
 
 let renderer;
 
@@ -11,7 +6,7 @@ let image = 0;
 const imageCount = 3;
 
 function init() {
-  renderer = new BackgroundRenderer(document.getElementById('canvas') as HTMLCanvasElement);
+  renderer = new BackgroundRenderer(document.getElementById('canvas'));
   loadImage(`assets/${image}.jpg`)
     .then((texture) => {
       setBackground(texture);
