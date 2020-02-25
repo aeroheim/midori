@@ -24,10 +24,11 @@
     "email": "bp7936@gmail.com",
     "url": "https://aeroheim.moe/"
   },
-  "main": "midori.js",
+  "main": "./lib/midori.js",
+  "types": "./lib/midori.d.ts",
   "scripts": {
     "start": "webpack-dev-server",
-    "clean": "rimraf ./dist",
+    "clean": "rimraf ./lib",
     "build-dev": "npm run clean && webpack --mode=development",
     "build-prod": "npm run clean && webpack --mode=production",
     "lint": "eslint . --ext .js --ext .ts"
@@ -38,6 +39,7 @@
     "@babel/plugin-transform-runtime": "^7.8.3",
     "@babel/preset-env": "^7.8.4",
     "@babel/preset-typescript": "^7.8.3",
+    "@purtuga/esm-webpack-plugin": "^1.2.1",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
     "@yushijinhun/three-minifier-webpack": "^0.1.4",

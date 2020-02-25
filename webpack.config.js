@@ -1,19 +1,22 @@
 const path = require('path');
 const ThreeMinifierPlugin = require('@yushijinhun/three-minifier-webpack');
+const EsmWebpackPlugin = require('@purtuga/esm-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
-
 const threeMinifier = new ThreeMinifierPlugin();
+
 module.exports = (env, { mode = 'development' }) => ({
-  entry: 'index.ts',
+  entry: './src/midori.ts',
+  output: {
+    library: 'midori',
+    libraryTarget: 'var',
+    filename: 'midori.js',
+    path: path.resolve('lib'),
+  },
   plugins: [
     threeMinifier,
+    new EsmWebpackPlugin(),
     new CompressionPlugin(),
   ],
-  output: {
-    filename: 'midori.js',
-    path: path.resolve('dist'),
-    publicPath: '/',
-  },
   resolve: {
     plugins: [ threeMinifier.resolver ],
     extensions: ['.ts', '.js'],
@@ -29,7 +32,13 @@ module.exports = (env, { mode = 'development' }) => ({
             loader: 'babel-loader',
             options: {
               presets: [
-                '@babel/preset-env',
+                [
+                  '@babel/preset-env',
+                  {
+                    "targets": { "esmodules": true },
+                    "modules": false,
+                  }
+                ],
                 '@babel/preset-typescript',
               ],
               plugins: [
