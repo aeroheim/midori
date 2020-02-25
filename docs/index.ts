@@ -12,7 +12,7 @@ const imageCount = 3;
 
 function init() {
   renderer = new BackgroundRenderer(document.getElementById('canvas') as HTMLCanvasElement);
-  loadImage(`./docs/assets/${image}.jpg`)
+  loadImage(`assets/${image}.jpg`)
     .then((texture) => {
       setBackground(texture);
     })
@@ -25,7 +25,7 @@ window.onkeyup = (e) => {
   if (e.key === 'ArrowLeft') {
     if (!renderer.isTransitioning()) {
       const newIndex = (((image - 1) % imageCount) + imageCount) % imageCount;
-      loadImage(`./docs/assets/${newIndex}.jpg`)
+      loadImage(`assets/${newIndex}.jpg`)
         .then((texture) => {
           requestAnimationFrame(() => {
             setBackground(texture);
@@ -36,7 +36,7 @@ window.onkeyup = (e) => {
     }
   } else if (e.key === 'ArrowRight') {
     if (!renderer.isTransitioning()) {
-      loadImage(`./docs/assets/${(image + 1) % imageCount}.jpg`)
+      loadImage(`assets/${(image + 1) % imageCount}.jpg`)
         .then((texture) => {
           requestAnimationFrame(() => {
             setBackground(texture);
