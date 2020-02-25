@@ -6,6 +6,7 @@ import filesize from 'rollup-plugin-filesize';
 import { eslint } from 'rollup-plugin-eslint';
 import { terser } from 'rollup-plugin-terser';
 
+const production = process.env.BUILD === 'production';
 const extensions = ['.js', '.ts'];
 const plugins = [
   resolve({ extensions }),
@@ -32,7 +33,7 @@ export default [
     },
     plugins: [
       ...plugins,
-      terser(),
+      ...production ? [ terser() ] : [],
       filesize(),
     ],
   },
@@ -46,13 +47,7 @@ export default [
     },
     plugins: [
       ...plugins,
-      serve({
-        contentBase: 'docs',
-        port: 8080,
-      }),
-      livereload({
-        watch: 'docs/dist',
-      }),
+      ...!production ? [ serve({ contentBase: 'docs', port: 8080 }), livereload() ] : [],
     ],
   },
-]
+];

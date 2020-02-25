@@ -27,9 +27,9 @@
   "main": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "scripts": {
-    "start": "webpack-dev-server",
+    "dev": "npm run clean && rollup -c -w --environment BUILD:development",
+    "build": "npm run clean && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
-    "build": "npm run clean && rollup -c -w",
     "lint": "eslint . --ext .js --ext .ts"
   },
   "devDependencies": {
