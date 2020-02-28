@@ -119,7 +119,7 @@ class BackgroundRenderer {
   }
 
   /**
-   * Returns the background is currently transitioning.
+   * Returns whether the background is currently transitioning.
    * @returns boolean
    */
   isTransitioning(): boolean {
