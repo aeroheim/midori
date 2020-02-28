@@ -27,9 +27,10 @@
   "main": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "scripts": {
-    "dev": "npm run clean && rollup -c -w --environment BUILD:development",
-    "build": "npm run clean && rollup -c --environment BUILD:production",
+    "dev": "npm run clean && npm run types && rollup -c -w --environment BUILD:development",
+    "build": "npm run clean && npm run types && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
+    "types": "dts-bundle-generator --project tsconfig.types.json ./src/midori.ts -o ./dist/midori.d.ts --no-check",
     "lint": "eslint . --ext .js --ext .ts"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "@rollup/plugin-node-resolve": "^7.1.1",
     "@typescript-eslint/eslint-plugin": "^2.19.0",
     "@typescript-eslint/parser": "^2.19.0",
+    "dts-bundle-generator": "^3.3.1",
     "eslint": "^5.16.0",
     "eslint-plugin-import": "^2.20.1",
     "rimraf": "^3.0.2",
