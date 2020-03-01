@@ -66,6 +66,18 @@ span {
   border-left: 10px solid chartreuse;
 }
 
+.github-ref {
+  margin-left: 10px;
+
+  color: white;
+  text-decoration: none;
+}
+
+.github-icon {
+  width: 32px;
+  height: 32px;
+}
+
 .images-layout {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -75,6 +87,7 @@ span {
     "index nav";
 
   width: fit-content;
+  margin-top: 10px;
 }
 
 .index {
@@ -173,10 +186,10 @@ span {
 
 .select-item:hover {
   color: black;
-  background-color: rgba(255, 255, 255);
+  background-color: rgba(255, 255, 255, 0.5);
 }
 
 .select-item-active {
   color: black;
-  background-color: rgba(255, 255, 255);
+  background-color: rgba(255, 255, 255) !important;
 }
