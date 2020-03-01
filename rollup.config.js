@@ -33,7 +33,6 @@ export default [
     output: {
       file: 'dist/midori.js',
       format: 'esm',
-      sourcemap: 'true',
     },
     plugins: [
       ...plugins(),
@@ -47,7 +46,6 @@ export default [
     output: {
       file: 'docs/dist/index.js',
       format: 'esm',
-      sourcemap: 'true',
     },
     plugins: [
       // rollup quirk - react reads from process.env which rollup does not set
