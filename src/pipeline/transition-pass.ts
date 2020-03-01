@@ -12,12 +12,12 @@ import { BackgroundTransitionConfig } from '../transition';
 import { Uniforms } from '../effects/shaders/shader-utils';
 
 export enum TransitionType {
-  None,
-  Blend,
-  Blur,
-  Wipe,
-  Slide,
-  Glitch,
+  None = 'None',
+  Blend = 'Blend',
+  Blur = 'Blur',
+  Wipe = 'Wipe',
+  Slide = 'Slide',
+  Glitch = 'Glitch',
 }
 
 export interface BlendTransitionConfig extends BackgroundTransitionConfig {}

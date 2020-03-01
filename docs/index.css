@@ -1,19 +1,182 @@
-html, body
-{
+@import url('https://rsms.me/inter/inter.css');
+
+html, body {
   height: 100%;
   border: none;
+
+  font-family: 'Inter', sans-serif;
+  color: white;
 }
 
-body
-{
+body {
+  position: relative;
   margin: 0;
   padding: 0;
 }
 
-#canvas
-{
-  margin: 0;
-  padding: 0;
+span {
+  font-weight: 200;
+}
+
+.canvas {
+  z-index: -1;
+  position: absolute;
+
   width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
+
+}
+
+.content {
+  z-index: 0;
+  position: absolute;
+  box-sizing: border-box;
+  top: 0;
+  left: 0;
+
+  width: 500px;
+  min-width: 350px;
+  max-width: 50%;
+  height: 100%;
+
+  padding: 30px;
+
+  background: rgba(0, 0, 0, 0.8);
+  overflow-y: auto;
+  user-select: none;
+}
+
+.rule {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  opacity: 0.1;
+}
+
+.section-header {
+  margin: 0;
+  font-size: 48px;
+  font-weight: 300;
+}
+
+.content-header {
+  padding-left: 10px;
+  padding-right: 10px;
+  border-left: 10px solid chartreuse;
+}
+
+.images-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "index title"
+    "index artist"
+    "index nav";
+
+  width: fit-content;
+}
+
+.index {
+  grid-area: index;
+
+  margin: 0;
+  margin-right: 15px;
+
+  font-size: 96px;
+  font-weight: 100;
+}
+
+.title {
+  grid-area: title;
+  align-self: flex-end;
+
+  margin: 0;
+  margin-top: 0.5em;
+
+  color: white;
+  text-decoration: none;
+
+  font-size: 24px;
+  font-weight: 300;
+
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.title:hover {
+  opacity: 1;
+}
+
+.artist {
+  grid-area: artist;
+
+  margin: 0;
+  font-weight: 200;
+
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav {
+  grid-area: nav;
+
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  grid-auto-flow: column;
+  column-gap: 10px;
+
+  width: fit-content;
+}
+
+.nav-icon {
+  cursor: pointer;
+  fill: white;
+
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.nav-icon:hover {
+  opacity: 1;
+}
+
+.options-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 120px);
+  row-gap: 5px;
+  column-gap: 5px;
+
+  margin-top: 15px;
+  width: 100%;
+}
+
+.select-item {
+  cursor: pointer;
+
+  min-width: 50px;
+  padding: 10px;
+
+  text-align: center;
+  font-weight: 300;
+
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+
+  transition: all 0.2s ease;
+}
+
+.select-item:hover {
+  color: black;
+  background-color: rgba(255, 255, 255);
+}
+
+.select-item-active {
+  color: black;
+  background-color: rgba(255, 255, 255);
 }
