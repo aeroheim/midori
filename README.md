@@ -27,7 +27,7 @@ npm install --save midori-bg
 This is an example of how to get started with midori in a typical ES6 app. For an example in `React`, see the [docs source](./docs/index.jsx).
 
 ```js
-import { BackgroundRenderer, loadImage, isWebGLSupported } from 'midori';
+import { BackgroundRenderer, loadImage, isWebGLSupported } from 'midori-bg';
 
 // requires WebGL support - check if this is necessary depending on your browser requirements
 if (isWebGLSupported) {
@@ -47,7 +47,7 @@ if (isWebGLSupported) {
 When setting backgrounds, you can use an optional transition to animate the switching between backgrounds.
 
 ```js
-import { BackgroundRenderer, Easings, SlideDirection } from 'midori';
+import { BackgroundRenderer, Easings, SlideDirection } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 
@@ -137,7 +137,7 @@ Each background comes with its own camera. The camera can be moved, swayed, and 
 > **⚠️NOTE:** Be careful when storing camera references! When switching to a new background, a new camera will be created. Settings configured on the previous camera are not transferred.
 
 ```js
-import { BackgroundRenderer, Easings } from 'midori';
+import { BackgroundRenderer, Easings } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 const { camera } = renderer.background;
@@ -206,7 +206,7 @@ Each background comes with its own effects. The `BackgroundRenderer` also expose
 > If you don't need different effects on multiple backgrounds or expect to switch backgrounds often, consider using the `BackgroundRenderer`'s effects instead.
 
 ```js
-import { BackgroundRenderer, EffectType } from 'midori';
+import { BackgroundRenderer, EffectType } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 
@@ -295,7 +295,7 @@ Each background comes with its own particles. The particles can be grouped, move
 > **⚠️NOTE:** Be careful when storing particle references! When switching to a new background, a new particles object will be created. Settings configured on the previous particles are not transferred.
 
 ```js
-import { BackgroundRenderer, Easings } from 'midori';
+import { BackgroundRenderer, Easings } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 
@@ -409,7 +409,7 @@ interface BackgroundTransitionConfig extends TransitionConfig {
 
 A set of easing functions are also available via the `Easings` import. A custom easing function can also be provided.
 ```js
-import { BackgroundRenderer, Easings } from 'midori';
+import { BackgroundRenderer, Easings } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 const { camera } = renderer.background;
@@ -433,7 +433,7 @@ For the full API, see the [typings file](./dist/midori.d.ts).
 ### Cleanup
 Midori allocates resources that are not automatically disposed. Make sure to always clean-up properly when finished:
 ```jsx
-import { BackgroundRenderer } from 'midori';
+import { BackgroundRenderer } from 'midori-bg';
 
 const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 renderer.dispose();
