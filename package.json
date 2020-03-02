@@ -27,10 +27,11 @@
   "main": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "files": [
-    "dist"
+    "/dist/midori.js",
+    "/dist/midori.d.ts"
   ],
   "scripts": {
-    "prepublishOnly": "npm run lint && npm run build",
+    "prepublishOnly": "npm run test && npm run build",
     "dev": "npm run clean && npm run types && rollup -c -w --environment BUILD:development",
     "build": "npm run clean && npm run types && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",

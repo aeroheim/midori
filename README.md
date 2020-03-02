@@ -1,4 +1,6 @@
 # midori
+[![npm version](http://img.shields.io/npm/v/REPO.svg?style=flat)](https://npmjs.org/package/midori-bg "View this project on npm")
+
 <div>
   <img width="32%" src="./docs/assets/midori.1.gif"/>
   <img width="32%" src="./docs/assets/midori.2.gif"/>
@@ -18,6 +20,10 @@ Provides support for the following:
 
 ## Usage / API
 ### Getting Started
+```cli
+npm install --save midori-bg
+```
+
 This is an example of how to get started with midori in a typical ES6 app. For an example in `React`, see the [docs source](./docs/index.jsx).
 
 ```js
