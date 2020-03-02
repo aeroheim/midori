@@ -1,5 +1,5 @@
 {
-  "name": "midori",
+  "name": "midori-bg",
   "version": "0.5.0",
   "description": "Animated image backgrounds",
   "license": "MIT",
@@ -26,12 +26,16 @@
   },
   "main": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "prepublishOnly": "npm run lint && npm run build",
     "dev": "npm run clean && npm run types && rollup -c -w --environment BUILD:development",
     "build": "npm run clean && npm run types && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
     "types": "dts-bundle-generator --project tsconfig.types.json ./src/midori.ts -o ./dist/midori.d.ts --no-check",
-    "lint": "eslint . --ext .js --ext .ts"
+    "lint": "tsc --project tsconfig.types.json --noEmit && eslint . --ext .js --ext .ts"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
