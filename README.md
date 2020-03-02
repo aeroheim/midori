@@ -1,9 +1,11 @@
 # midori
-![example 1](./docs/assets/midori.1.gif)
-![example 2](./docs/assets/midori.2.gif)
-![example 3](./docs/assets/midori.3.gif)
+<div>
+  <img width="32%" src="./docs/assets/midori.1.gif"/>
+  <img width="32%" src="./docs/assets/midori.2.gif"/>
+  <img width="32%" src="./docs/assets/midori.3.gif"/>
+</div>
 
-## [Interactive demo available here](https://aeroheim.github.io/midori/).
+**[Interactive demo available here (with credits to artists).](https://aeroheim.github.io/midori/)**
 
 ## About
 Library for animating image backgrounds in websites. Written with three.js and uses WebGL.
