@@ -1,5 +1,5 @@
 # midori
-[![npm version](http://img.shields.io/npm/v/REPO.svg?style=flat)](https://npmjs.org/package/midori-bg "View this project on npm")
+[![npm version](https://img.shields.io/npm/v/midori-bg.svg)](https://npmjs.org/package/midori-bg "View this project on npm")
 
 <div>
   <img width="32%" src="./docs/assets/midori.1.gif"/>
