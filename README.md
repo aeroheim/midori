@@ -13,10 +13,9 @@
 Library for animating image backgrounds in websites. Written with three.js and uses WebGL.
 
 Provides support for the following:
-* Camera with configurable movement, sway, and rotation
+* Configurable dynamic camera
 * Animated transitions between backgrounds
-* Post-processing effects
-* Generating particles
+* Post-processing effects & particles
 
 ## Usage / API
 ### Getting Started
@@ -24,7 +23,7 @@ Provides support for the following:
 npm install --save midori-bg
 ```
 
-This is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [docs source](./docs/index.jsx).
+This is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [interactive demo source](./docs/index.jsx).
 
 You'll want to first initialize a renderer before loading and setting images as backgorunds.
 
@@ -37,7 +36,8 @@ if (isWebGLSupported) {
   // pass in a canvas DOM element
   const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 
-  // the loadImage function returns a promise which you can use to load your images
+  // the loadImage function returns a promise which you can use to load your images.
+  // the path can be a url or local path to a file. Make sure to check CORS if using a url.
   loadImage('url/to/image')
     // set background
     .then((image) => renderer.setBackground(image))
@@ -65,32 +65,7 @@ loadImage('url/to/image')
         duration: 1.5,
         easing: Easings.Quintic.InOut,
         direction: SlideDirection.Right,
-      },
-      // the previous and next background are available in optional transition callbacks
-      // you can use transition callbacks to do more advanced transitions (e.g sequencing camera movements)
-      onStart: (prevBackground, nextBackground) => {
-        prevBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7 }, {
-          duration: 2.5,
-          easing: Easings.Quartic.In,
-        });
-        prevBackground.camera.rotate(-5 + Math.random() * 10, {
-          duration: 2.5,
-          easing: Easings.Quartic.In,
-        });
-        nextBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.7 + Math.random() * 0.3 }, {
-          duration: 2,
-          easing: Easings.Quartic.Out,
-        });
-        nextBackground.camera.sway({ x: 0.1, y: 0.05, z: 0.02, zr: 1 }, {
-          duration: 1.5,
-          easing: Easings.Quadratic.InOut,
-          loop: true,
-        });
-        nextBackground.camera.rotate(-5 + Math.random() * 10, {
-          duration: 2,
-          easing: Easings.Quartic.Out,
-        });
-      },
+      }
     });
   })
   // handle errors
@@ -436,6 +411,55 @@ camera.move({ x: Math.random(), y: Math.random(), z: 0.5 + Math.random() * 0.5 }
   duration: 2.5,
   easing: k => k * 2,
 });
+```
+
+Optional callbacks can be utilized for more advanced transitions (e.g sequencing camera movements).
+```js
+import { BackgroundRenderer, TransitionType, Easings, SlideDirection } from 'midori-bg';
+
+const renderer = new BackgroundRenderer(document.getElementById('canvas'));
+
+loadImage('url/to/image')
+  .then((image) => {
+    // set a new background with a slide transition.
+    renderer.setBackground(image, {
+      type: TransitionType.Slide,
+      config: {
+        slides: 2,
+        intensity: 5,
+        duration: 1.5,
+        easing: Easings.Quintic.InOut,
+        direction: SlideDirection.Right,
+      },
+      // the previous and next background are available in the optional transition callbacks
+      // you can use transition callbacks to do more advanced transitions (e.g sequencing camera movements)
+      onStart: (prevBackground, nextBackground) => {
+        prevBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.3 + Math.random() * 0.7 }, {
+          duration: 2.5,
+          easing: Easings.Quartic.In,
+        });
+        prevBackground.camera.rotate(-5 + Math.random() * 10, {
+          duration: 2.5,
+          easing: Easings.Quartic.In,
+        });
+        nextBackground.camera.move({ x: Math.random(), y: Math.random(), z: 0.7 + Math.random() * 0.3 }, {
+          duration: 2,
+          easing: Easings.Quartic.Out,
+        });
+        nextBackground.camera.sway({ x: 0.1, y: 0.05, z: 0.02, zr: 1 }, {
+          duration: 1.5,
+          easing: Easings.Quadratic.InOut,
+          loop: true,
+        });
+        nextBackground.camera.rotate(-5 + Math.random() * 10, {
+          duration: 2,
+          easing: Easings.Quartic.Out,
+        });
+      },
+    });
+  })
+  // handle errors
+  .catch(err => console.error(err));
 ```
 
 ### Cleanup
