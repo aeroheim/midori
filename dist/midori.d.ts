@@ -363,6 +363,7 @@ export interface ParticleGroupConfig {
 	minOpacity?: number;
 	maxOpacity?: number;
 	color?: number;
+	smoothing?: number;
 }
 export declare class Particles {
 	private _width;
@@ -433,9 +434,10 @@ export declare class Particles {
 	sway(name: string, offset: ParticleSwayOffset | boolean, transition?: LoopableTransitionConfig): void;
 	/**
 	 * Generates a new random averaged value based off a given value and its range.
-	 * @param {number} value - the value to use.
+	 * @param {number} prevValue - the previous value.
 	 * @param {number} minValue - the minimum value for the given value.
 	 * @param {number} maxValue - the maximum value for the given value.
+	 * @param {number} smoothing - optional amount of smoothing to use as a value between 0 and 1. Defaults to 0.5.
 	 * @returns number
 	 */
 	private _generateNewRandomAveragedValue;

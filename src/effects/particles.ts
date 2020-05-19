@@ -39,7 +39,7 @@ export interface ParticleGroupConfig {
   // optional color of the particles. Defaults to 0xffffff.
   color?: number;
   // the amount of smoothing for animated values (i.e size, gradient, opacity), specified as a value between 0 and 1. Defaults to 0.5.
-  smoothing?: number
+  smoothing?: number;
 }
 
 type ParticleGroupMap = {[name: string]: ParticleGroup};
@@ -363,7 +363,7 @@ class Particles {
    * @param {number} smoothing - optional amount of smoothing to use as a value between 0 and 1. Defaults to 0.5.
    * @returns number
    */
-  private _generateNewRandomAveragedValue(prevValue: number, minValue: number, maxValue: number, smoothing: number = 0.5): number {
+  private _generateNewRandomAveragedValue(prevValue: number, minValue: number, maxValue: number, smoothing = 0.5): number {
     // cap smoothing at 0.95
     smoothing = Math.min(smoothing, 0.95);
     const offset = (maxValue - minValue) / 2;
