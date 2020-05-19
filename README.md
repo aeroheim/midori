@@ -295,6 +295,7 @@ particles.generate([
     minGradient: 0.75,
     maxGradient: 1.0,
     color: 0xffffff,
+    smoothing: 0.6,
   },
   {
     name: 'large',
@@ -354,6 +355,8 @@ interface ParticleGroupConfig {
   maxOpacity?: number;
   // optional color of the particles. Defaults to 0xffffff.
   color?: number;
+  // the amount of smoothing for animated values (i.e size, gradient, opacity), specified as a value between 0 and 1. Defaults to 0.5.
+  smoothing?: number;
 }
 ```
 
