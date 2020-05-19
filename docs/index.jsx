@@ -87,15 +87,17 @@ function setParticles(background) {
       maxOpacity: 0.8,
       minGradient: 0.75,
       maxGradient: 1.0,
+      smoothing: 0.8,
     },
     {
       name: 'large',
       amount: 30,
       minSize: 100,
       maxSize: 125,
-      maxOpacity: 0.05,
+      maxOpacity: 0.04,
       minGradient: 1.0,
       maxGradient: 1.0,
+      smoothing: 0.65,
     },
   ]);
   particles.move('small', { distance: 0.5, angle: 25 }, { duration: 5, loop: true });
