@@ -38,6 +38,8 @@ export interface ParticleGroupConfig {
   maxOpacity?: number;
   // optional color of the particles. Defaults to 0xffffff.
   color?: number;
+  // the amount of smoothing for animated values (i.e size, gradient, opacity), specified as a value between 0 and 1. Defaults to 0.5.
+  smoothing?: number
 }
 
 type ParticleGroupMap = {[name: string]: ParticleGroup};
@@ -139,6 +141,7 @@ class Particles {
         minOpacity = 0,
         maxOpacity = 1,
         color = 0xffffff,
+        smoothing = 0.5,
       } = config;
 
       // Generate points with attributes
@@ -161,6 +164,7 @@ class Particles {
         minOpacity,
         maxOpacity,
         color,
+        smoothing,
         swayOffset: new Vector2(0, 0),
         positionTransition: new TWEEN.Tween(),
         swayTransition: new TWEEN.Tween(),
@@ -353,15 +357,19 @@ class Particles {
 
   /**
    * Generates a new random averaged value based off a given value and its range.
-   * @param {number} value - the value to use.
+   * @param {number} prevValue - the previous value.
    * @param {number} minValue - the minimum value for the given value.
    * @param {number} maxValue - the maximum value for the given value.
+   * @param {number} smoothing - optional amount of smoothing to use as a value between 0 and 1. Defaults to 0.5.
    * @returns number
    */
-  private _generateNewRandomAveragedValue(value: number, minValue: number, maxValue: number): number {
+  private _generateNewRandomAveragedValue(prevValue: number, minValue: number, maxValue: number, smoothing: number = 0.5): number {
+    // cap smoothing at 0.95
+    smoothing = Math.min(smoothing, 0.95);
     const offset = (maxValue - minValue) / 2;
-    const newValue = Math.max(Math.min(value + (-offset + Math.random() * offset * 2), maxValue), minValue);
-    return Math.max(Math.min((value + newValue) / 2, maxValue), minValue);
+    const nextValue = Math.max(Math.min(prevValue + (-offset + Math.random() * offset * 2), maxValue), minValue);
+    const smoothedValue = (prevValue * smoothing) + (nextValue * (1 - smoothing));
+    return Math.max(Math.min(smoothedValue, maxValue), minValue);
   }
 
   /**
@@ -388,6 +396,7 @@ class Particles {
         minOpacity,
         maxOpacity,
         color,
+        smoothing,
         swayOffset,
       } = group;
       for (let i = index; i < index + amount; ++i) {
@@ -397,9 +406,9 @@ class Particles {
 
         positions.setXYZ(i, position.x, position.y, this._positions[i * 3 + 2]);
         colors.setXYZ(i, rgb.r, rgb.g, rgb.b);
-        sizes.setX(i, this._generateNewRandomAveragedValue(sizes.getX(i), minSize, maxSize));
-        gradients.setX(i, this._generateNewRandomAveragedValue(gradients.getX(i), minGradient, maxGradient));
-        opacities.setX(i, this._generateNewRandomAveragedValue(opacities.getX(i), minOpacity, maxOpacity));
+        sizes.setX(i, this._generateNewRandomAveragedValue(sizes.getX(i), minSize, maxSize, smoothing));
+        gradients.setX(i, this._generateNewRandomAveragedValue(gradients.getX(i), minGradient, maxGradient, smoothing));
+        opacities.setX(i, this._generateNewRandomAveragedValue(opacities.getX(i), minOpacity, maxOpacity, smoothing));
       }
     }
 
