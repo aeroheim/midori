@@ -64,7 +64,7 @@ function loadImage(path: string): Promise<Texture> {
       resolve(texture);
     },
     () => ({}),
-    errorEvent => reject(errorEvent.error));
+    errorEvent => reject(errorEvent.error ?? new Error('Failed to load requested image. Verify CORS policy or check if the image is valid.')));
   });
 }
 
