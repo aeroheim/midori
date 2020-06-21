@@ -23,15 +23,15 @@ Provides support for the following:
 npm install --save midori-bg
 ```
 
-This is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [interactive demo source](./docs/index.jsx).
+This is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [source for the interactive demo](./docs/index.jsx).
 
-You'll want to first initialize a renderer before loading and setting images as backgorunds.
+You'll want to first initialize a renderer before loading and setting images as backgrounds.
 
 ```js
 import { BackgroundRenderer, loadImage, isWebGLSupported } from 'midori-bg';
 
 // check WebGL support - usually unnecessary unless your browser requirements are dated
-if (isWebGLSupported) {
+if (isWebGLSupported()) {
 
   // pass in a canvas DOM element
   const renderer = new BackgroundRenderer(document.getElementById('canvas'));
