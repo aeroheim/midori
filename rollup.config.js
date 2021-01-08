@@ -8,6 +8,7 @@ import filesize from 'rollup-plugin-filesize';
 import { eslint } from 'rollup-plugin-eslint';
 import { terser } from 'rollup-plugin-terser';
 
+const watch = process.env.ROLLUP_WATCH;
 const production = process.env.BUILD === 'production';
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 const plugins = ({ docs } = {}) => [
@@ -52,9 +53,8 @@ export default [
       // rollup quirk - react reads from process.env which rollup does not set
       replace({ 'process.env.NODE_ENV': JSON.stringify(process.env.BUILD)}),
       ...plugins({ docs: true }),
-      ...production
-        ? [ terser() ]
-        : [ serve({ contentBase: 'docs', port: 8080 }), livereload() ],
+      ...production ? [ terser() ] : [],
+      ...watch ? [ serve({ contentBase: 'docs', port: 8080 }), livereload() ] : [],
     ],
   },
 ];
