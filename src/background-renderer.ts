@@ -8,29 +8,29 @@ import { EffectPass } from './pipeline/effect-pass';
 import { TransitionPass, TransitionType, BlendTransitionConfig, WipeTransitionConfig, SlideTransitionConfig, BlurTransitionConfig, GlitchTransitionConfig } from './pipeline/transition-pass';
 import { BackgroundTransitionConfig } from './transition';
 
-export type Transition = BlendTransition | WipeTransition | SlideTransition | BlurTransition | GlitchTransition;
+type Transition = BlendTransition | WipeTransition | SlideTransition | BlurTransition | GlitchTransition;
 
-export interface BlendTransition extends BackgroundTransitionConfig {
+interface BlendTransition extends BackgroundTransitionConfig {
   type: TransitionType.Blend;
   config: BlendTransitionConfig;
 }
 
-export interface WipeTransition extends BackgroundTransitionConfig {
+interface WipeTransition extends BackgroundTransitionConfig {
   type: TransitionType.Wipe;
   config: WipeTransitionConfig;
 }
 
-export interface SlideTransition extends BackgroundTransitionConfig {
+interface SlideTransition extends BackgroundTransitionConfig {
   type: TransitionType.Slide;
   config: SlideTransitionConfig;
 }
 
-export interface BlurTransition extends BackgroundTransitionConfig {
+interface BlurTransition extends BackgroundTransitionConfig {
   type: TransitionType.Blur;
   config: BlurTransitionConfig;
 }
 
-export interface GlitchTransition extends BackgroundTransitionConfig {
+interface GlitchTransition extends BackgroundTransitionConfig {
   type: TransitionType.Glitch;
   config: GlitchTransitionConfig;
 }
@@ -90,8 +90,9 @@ class BackgroundRenderer {
 
     // pipeline
     this._composer = new EffectComposer(this._renderer);
-    this._backgroundPass = new BackgroundPass(new Background(null, width, height));
-    this._transitionPass = new TransitionPass(this._backgroundPass.background, width, height);
+    this._background = new Background(null, width, height);
+    this._backgroundPass = new BackgroundPass(this._background);
+    this._transitionPass = new TransitionPass(this._background, width, height);
     this._effectPass = new EffectPass(width, height);
     this._composer.addPass(this._backgroundPass);
     this._composer.addPass(this._transitionPass);
@@ -131,7 +132,7 @@ class BackgroundRenderer {
    * @param {Texture} texture - the image to use for the background.
    * @param {Transition} transition - optional configuration for a transition.
    */
-  setBackground(texture: Texture, transition?: Transition) {
+  setBackground(texture: Texture, transition?: Transition): void {
     const { clientWidth: width, clientHeight: height } = this._renderer.domElement;
     this._background = new Background(texture, width, height);
 
@@ -173,6 +174,7 @@ class BackgroundRenderer {
     this._composer.render();
 
     if (!this._disposed) {
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       requestAnimationFrame(this._render);
     }
   }
@@ -180,7 +182,7 @@ class BackgroundRenderer {
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this._disposed = true;
     this._renderer.dispose();
     this._backgroundPass.dispose();
@@ -192,6 +194,12 @@ class BackgroundRenderer {
 export {
   isWebGLSupported,
   loadImage,
+  Transition,
+  BlendTransition,
+  WipeTransition,
+  SlideTransition,
+  BlurTransition,
+  GlitchTransition,
   BackgroundRenderer,
 };
 

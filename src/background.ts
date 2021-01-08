@@ -3,7 +3,7 @@ import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-ca
 import { BackgroundEffects } from './background-effects';
 import { Particles } from './effects/particles';
 
-export interface PlaneMesh extends Mesh {
+interface PlaneMesh extends Mesh {
   geometry: PlaneGeometry;
   material: MeshBasicMaterial;
 }
@@ -18,17 +18,17 @@ class Background {
 
   /**
    * Constructs a background.
-   * @param {Texture} texture
+   * @param {Texture | null} texture
    * @param {number} width
    * @param {number} height
    */
-  constructor(texture: Texture, width: number, height: number) {
+  constructor(texture: Texture | null, width: number, height: number) {
     // primary buffer - store depth texture for use in motion blur
     this._buffer = new WebGLRenderTarget(width, height);
     this._buffer.depthTexture = new DepthTexture(width, height);
 
     // plane using texture - dimensions are in world units
-    const textureAspectRatio = texture && texture.image
+    const textureAspectRatio = texture && texture.image !== undefined
       ? texture.image.width / texture.image.height
       : 1;
     const planeWidth = 1;
@@ -62,7 +62,7 @@ class Background {
    * @param {number} width
    * @param {number} height
    */
-  setSize(width: number, height: number) {
+  setSize(width: number, height: number): void {
     this.camera.setSize(width, height);
     this._buffer.setSize(width, height);
     this._buffer.depthTexture.image.width = width;
@@ -72,9 +72,9 @@ class Background {
   /**
    * Renders the background.
    * @param {WebGLRenderer} renderer - the renderer to use.
-   * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
+   * @param {WebGLRenderTarget | null} writeBuffer - the buffer to render to, or null to render directly to screen.
    */
-  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget = null) {
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget | null = null): void {
     this.camera.update();
     this.particles.update();
 
@@ -94,7 +94,7 @@ class Background {
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this._buffer.dispose();
     this._buffer.texture.dispose();
     this._buffer.depthTexture.dispose();
@@ -108,6 +108,7 @@ class Background {
 }
 
 export {
+  PlaneMesh,
   Background,
 };
 

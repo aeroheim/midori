@@ -1,6 +1,6 @@
 import { ShaderMaterial, UniformsUtils, Shader } from 'three';
 
-export type Uniforms = {[uniform: string]: any};
+type Uniforms = {[uniform: string]: any};
 
 /**
  * Returns the values of the uniforms for a given ShaderMaterial.
@@ -19,9 +19,9 @@ function getUniforms(shader: ShaderMaterial): Uniforms {
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  * @param {Uniforms} uniforms - a map that defines the values of the uniforms to be used
  */
-function updateUniforms(shader: ShaderMaterial, uniforms: Uniforms = {}) {
+function updateUniforms(shader: ShaderMaterial, uniforms: Uniforms = {}): void {
   for (const uniform in uniforms) {
-    if (!shader.uniforms[uniform]) {
+    if (shader.uniforms[uniform] === undefined) {
       throw new Error(`Uniform "${uniform}" does not exist on shader "${shader.name}"`);
     }
     shader.uniforms[uniform].value = uniforms[uniform];
@@ -32,7 +32,7 @@ function updateUniforms(shader: ShaderMaterial, uniforms: Uniforms = {}) {
  * Resets the uniforms for a given ShaderMaterial.
  * @param {ShaderMaterial} shader - a ShaderMaterial object.
  */
-function clearUniforms(shader: ShaderMaterial) {
+function clearUniforms(shader: ShaderMaterial): void {
   shader.uniforms = UniformsUtils.clone(shader.uniforms);
 }
 
@@ -59,6 +59,7 @@ const ShaderUtils = {
 };
 
 export {
+  Uniforms,
   ShaderUtils,
 };
 

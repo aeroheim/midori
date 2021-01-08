@@ -2,16 +2,16 @@ import { PerspectiveCamera, DepthTexture } from 'three';
 import { EffectPass, EffectConfig, EffectConfigs, BlurEffectConfig, BloomEffectConfig, RgbShiftEffectConfig, VignetteEffectConfig, VignetteBlurEffectConfig, GlitchEffectConfig } from './pipeline/effect-pass';
 import { EffectType, IEffect, MotionBlurEffect } from './effects/effect';
 
-export type BackgroundEffectConfig = EffectConfig | MotionBlurEffectConfig;
+type BackgroundEffectConfig = EffectConfig | MotionBlurEffectConfig;
 
-export interface MotionBlurEffectConfig {
+interface MotionBlurEffectConfig {
   // the intensity of the blur.
   intensity?: number;
   // the number of samples for the blur - more samples result in better quality at the cost of performance.
   samples?: number;
 }
 
-export interface BackgroundEffectConfigs extends EffectConfigs {
+interface BackgroundEffectConfigs extends EffectConfigs {
   [EffectType.MotionBlur]?: MotionBlurEffectConfig;
 }
 
@@ -59,7 +59,7 @@ class BackgroundEffects extends EffectPass {
   protected _getEffect(type: EffectType): IEffect {
     if (type === EffectType.MotionBlur && !(type in this._effects)) {
       this._effects[EffectType.MotionBlur] = new MotionBlurEffect(this._camera, this._depthTexture);
-      return this._effects[EffectType.MotionBlur];
+      return this._effects[EffectType.MotionBlur]!;
     }
 
     return super._getEffect(type);
@@ -70,14 +70,14 @@ class BackgroundEffects extends EffectPass {
    * @param {EffectType} type - the effect to set.
    * @param {Object} config - configuration specific to the effect specified.
    */
-  set(type: EffectType.Blur, config: BlurEffectConfig)
-  set(type: EffectType.Bloom, config: BloomEffectConfig)
-  set(type: EffectType.RgbShift, config: RgbShiftEffectConfig)
-  set(type: EffectType.Vignette, config: VignetteEffectConfig)
-  set(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig)
-  set(type: EffectType.MotionBlur, config: MotionBlurEffectConfig)
-  set(type: EffectType.Glitch, config: GlitchEffectConfig)
-  set(type: EffectType, config: BackgroundEffectConfig = {}) {
+  set(type: EffectType.Blur, config: BlurEffectConfig): void
+  set(type: EffectType.Bloom, config: BloomEffectConfig): void
+  set(type: EffectType.RgbShift, config: RgbShiftEffectConfig): void
+  set(type: EffectType.Vignette, config: VignetteEffectConfig): void
+  set(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig): void
+  set(type: EffectType.MotionBlur, config: MotionBlurEffectConfig): void
+  set(type: EffectType.Glitch, config: GlitchEffectConfig): void
+  set(type: EffectType, config: BackgroundEffectConfig = {}): void {
     if (type === EffectType.MotionBlur) {
       // enable this pass when there is at least one effect.
       this.enabled = true;
@@ -92,6 +92,9 @@ class BackgroundEffects extends EffectPass {
 }
 
 export {
+  BackgroundEffectConfig,
+  MotionBlurEffectConfig,
+  BackgroundEffectConfigs,
   BackgroundEffects,
 }
 

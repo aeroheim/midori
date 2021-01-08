@@ -18,7 +18,7 @@ class BackgroundPass extends Pass {
    * Sets the current background.
    * @param {Background} background
    */
-  setBackground(background: Background) {
+  setBackground(background: Background): void {
     this._background = background;
   }
 
@@ -35,7 +35,7 @@ class BackgroundPass extends Pass {
    * @param {number} width
    * @param {number} height
    */
-  setSize(width: number, height: number) {
+  setSize(width: number, height: number): void {
     this._background.setSize(width, height);
   }
 
@@ -44,14 +44,14 @@ class BackgroundPass extends Pass {
    * @param {WebGLRenderer} renderer - the renderer to use.
    * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
    */
-  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget) {
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget): void {
     this._background.render(renderer, this.renderToScreen ? null : writeBuffer);
   }
 
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this._background.dispose();
   }
 }
