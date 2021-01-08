@@ -37,8 +37,8 @@
     "build-dev": "npm run clean && npm run types && rollup -c --environment BUILD:development",
     "build-prod": "npm run clean && npm run types && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
-    "types": "dts-bundle-generator --project tsconfig.types.json ./src/midori.ts -o ./dist/midori.d.ts",
-    "lint": "tsc --project tsconfig.types.json --noEmit && eslint . --ext .js --ext .ts"
+    "types": "dts-bundle-generator --project tsconfig.json ./src/midori.ts -o ./dist/midori.d.ts",
+    "lint": "tsc --project tsconfig.json --noEmit && eslint src/*/**.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
