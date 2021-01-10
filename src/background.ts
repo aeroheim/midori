@@ -100,7 +100,6 @@ class Background {
     this._buffer.depthTexture.dispose();
     this._plane.geometry.dispose();
     this._plane.material.dispose();
-    this._scene.dispose();
     this.camera.dispose();
     this.effects.dispose();
     this.particles.dispose();
