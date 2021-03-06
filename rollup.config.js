@@ -22,8 +22,8 @@ const plugins = ({ docs } = {}) => [
       '@babel/preset-typescript',
       ...docs ? [ '@babel/preset-react' ] : [],
     ],
-    babelHelpers: 'bundled',
-    plugins: ['@babel/plugin-proposal-class-properties'],
+    babelHelpers: 'runtime',
+    plugins: ['@babel/plugin-proposal-class-properties', '@babel/plugin-transform-runtime'],
   })
 ];
 

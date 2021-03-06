@@ -35,13 +35,13 @@
     "dev": "npm run clean && npm run types && rollup -c -w --environment BUILD:development",
     "build": "npm run clean && npm run types && rollup -c --environment BUILD:production",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
-    "types": "dts-bundle-generator --project tsconfig.types.json ./src/midori.ts -o ./dist/midori.d.ts",
+    "types": "dts-bundle-generator --project tsconfig.types.json ./src/midori.ts -o ./dist/midori.d.ts --external-imports three",
     "lint": "tsc --project tsconfig.types.json --noEmit && eslint . --ext .js --ext .ts"
   },
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
-    "@babel/plugin-transform-runtime": "^7.9.6",
+    "@babel/plugin-transform-runtime": "^7.13.9",
     "@babel/preset-env": "^7.9.6",
     "@babel/preset-react": "^7.9.4",
     "@babel/preset-typescript": "^7.9.0",
@@ -51,7 +51,7 @@
     "@rollup/plugin-replace": "^2.3.2",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
-    "dts-bundle-generator": "^4.3.0",
+    "dts-bundle-generator": "^5.7.0",
     "eslint": "^7.0.0",
     "eslint-plugin-import": "^2.20.2",
     "react": "^16.13.1",
@@ -66,7 +66,9 @@
     "typescript": "^3.9.2"
   },
   "dependencies": {
+    "@babel/runtime": "^7.13.9",
     "@tweenjs/tween.js": "^18.5.0",
+    "@types/three": "^0.126.0",
     "three": "^0.126.1"
   }
 }
