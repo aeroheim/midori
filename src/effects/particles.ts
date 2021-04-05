@@ -126,14 +126,10 @@ class Particles {
    * @param {ParticleGroupConfig | ParticleGroupConfig[]} config - a single or array of particle group configurations.
    */
   generate(configs: ParticleGroupConfig | ParticleGroupConfig[]): void {
-    configs = Array.isArray(configs) ? configs : [configs];
-
     // cleanup previous configs and objects
-    this._positions = [];
-    this._groups = {};
-    this._particles.geometry.dispose();
-    (this._particles.material as ShaderMaterial).dispose();
+    this.removeAll();
 
+    configs = Array.isArray(configs) ? configs : [configs];
     let index = 0;
     for (const config of configs) {
       const {
@@ -190,6 +186,23 @@ class Particles {
 
     this._particles.geometry = geometry;
     this._particles.material = material;
+  }
+
+  /**
+   * Removes all particle groups.
+   */
+  removeAll(): void {
+    for (const group in this._groups) {
+      // stop any ongoing transitions
+      this._groups[group].positionTransition.stop();
+      this._groups[group].swayTransition.stop();
+    }
+
+    // reset particles to empty
+    this._positions = [];
+    this._groups = {};
+    this._particles.geometry.dispose();
+    (this._particles.material as ShaderMaterial).dispose();
   }
 
   /**
@@ -377,7 +390,7 @@ class Particles {
    * Updates the positions of the particles. Should be called on every render frame.
    */
   update(): void {
-    const { attributes } = (this._particles.geometry as BufferGeometry);
+    const { attributes } = this._particles.geometry;
     const {
       position: positions,
       size: sizes,
