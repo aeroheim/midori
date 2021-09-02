@@ -68,6 +68,11 @@ function loadImage(path: string): Promise<Texture> {
   });
 }
 
+interface BackgroundRendererOptions {
+  // whether to automatically begin rendering - defaults to true.
+  autoRender?: boolean;
+}
+
 class BackgroundRenderer {
   private _renderer: WebGLRenderer;
   private _composer: EffectComposer;
@@ -75,17 +80,19 @@ class BackgroundRenderer {
   private _backgroundPass: BackgroundPass;
   private _transitionPass: TransitionPass;
   private _effectPass: EffectPass;
+  private _paused = false;
   private _disposed = false;
 
   /**
    * Constructs a renderer.
    * @param {HTMLCanvasElement} canvas - the canvas element to use.
+   * @param {BackgroundRendererOptions} options - options for the renderer.
    */
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options: BackgroundRendererOptions = {}) {
     const { clientWidth: width, clientHeight: height } = canvas;
 
     // renderer
-    this._renderer = new WebGLRenderer({ canvas });
+    this._renderer = new WebGLRenderer({ canvas, powerPreference: 'high-performance' });
     this._renderer.setSize(width, height, false);
 
     // pipeline
@@ -99,7 +106,11 @@ class BackgroundRenderer {
     this._composer.addPass(this._effectPass);
 
     this._render = this._render.bind(this);
-    this._render();
+
+    const { autoRender = true } = options;
+    if (autoRender) {
+      this.render();
+    }
   }
 
   /**
@@ -166,14 +177,29 @@ class BackgroundRenderer {
   }
 
   /**
+   * Begins rendering the background.
+   */
+  render(): void {
+    this._paused = false;
+    this._render();
+  }
+
+  /*
+   * Pauses the rendering of the background.
+   */
+  pause(): void {
+    this._paused = true;
+  }
+
+  /**
    * Renders the background, transitions, and effects. Should be called on every frame.
    */
   private _render(timestamp?: DOMHighResTimeStamp) {
     TWEEN.update(timestamp);
     this._resizeCanvas();
-    this._composer.render();
 
-    if (!this._disposed) {
+    if (!this._disposed && !this._paused) {
+      this._composer.render();
       // eslint-disable-next-line @typescript-eslint/unbound-method
       requestAnimationFrame(this._render);
     }
