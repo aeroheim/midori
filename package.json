@@ -25,6 +25,7 @@
     "url": "https://aeroheim.moe/"
   },
   "main": "./dist/midori.js",
+  "module": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "files": [
     "/dist/midori.js",
@@ -32,10 +33,10 @@
   ],
   "scripts": {
     "prepublishOnly": "npm run test && npm run build-prod",
-    "dev": "npm run clean && npm run types && rollup -c -w --environment BUILD:development",
-    "prod": "npm run clean && npm run types && rollup -c -w --environment BUILD:production",
-    "build-dev": "npm run clean && npm run types && rollup -c --environment BUILD:development",
-    "build-prod": "npm run clean && npm run types && rollup -c --environment BUILD:production",
+    "dev": "npm run clean && concurrently \"webpack -w --config webpack.dev.js --config-name lib\" \"webpack-dev-server --config webpack.dev.js --config-name docs\"",
+    "prod": "npm run clean && concurrently \"webpack -w --config webpack.prod.js --config-name lib\" \"webpack-dev-server --config webpack.prod.js --config-name docs\"",
+    "build-dev": "npm run clean && webpack --config webpack.dev.js --config-name lib && webpack --config webpack.dev.js --config-name docs",
+    "build-prod": "npm run clean && webpack --config webpack.prod.js --config-name lib && webpack --config webpack.prod.js",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
     "types": "dts-bundle-generator --project tsconfig.json ./src/midori.ts -o ./dist/midori.d.ts --external-imports three",
     "lint": "tsc --project tsconfig.json --noEmit && eslint src/*/**.ts"
@@ -47,30 +48,33 @@
     "@babel/preset-env": "^7.13.9",
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
-    "@rollup/plugin-babel": "^5.3.0",
-    "@rollup/plugin-commonjs": "^17.1.0",
-    "@rollup/plugin-eslint": "^8.0.1",
-    "@rollup/plugin-node-resolve": "^11.2.0",
-    "@rollup/plugin-replace": "^2.4.1",
+    "@types/three": "^0.126.0",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
+    "babel-loader": "^8.2.2",
+    "concurrently": "^6.2.1",
     "dts-bundle-generator": "^5.7.0",
     "eslint": "^7.21.0",
     "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-react": "^7.25.1",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "eslint-webpack-plugin": "^3.0.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "rimraf": "^3.0.2",
-    "rollup": "^2.40.0",
-    "rollup-plugin-filesize": "^9.1.1",
-    "rollup-plugin-livereload": "^2.0.0",
-    "rollup-plugin-serve": "^1.1.0",
-    "rollup-plugin-terser": "^7.0.2",
-    "typescript": "^4.2.3"
+    "three": "^0.126.1",
+    "typescript": "^4.2.3",
+    "webpack": "^5.51.2",
+    "webpack-bundle-analyzer": "^4.4.2",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.1.0",
+    "webpack-merge": "^5.8.0"
   },
   "dependencies": {
     "@babel/runtime": "^7.13.9",
-    "@tweenjs/tween.js": "^18.6.4",
-    "@types/three": "^0.126.0",
+    "@tweenjs/tween.js": "^18.6.4"
+  },
+  "peerDependencies": {
     "three": "^0.126.1"
   }
 }

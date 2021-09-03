@@ -3,11 +3,13 @@
     "declaration": true,
     "module": "es6",
     "target": "es6",
+    "jsx": "react",
     "moduleResolution": "node",
     "strictNullChecks": true,
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "docs/**/*",
   ],
   "exclude": ["node_modules"]
 }

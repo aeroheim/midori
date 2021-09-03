@@ -102,8 +102,8 @@ class EffectPass extends Pass {
     this._writeBuffer.setSize(width, height);
 
     for (const effect of Object.values(this._effects)) {
-      if (effect!.setSize) {
-        effect!.setSize(width, height);
+      if (effect.setSize) {
+        effect.setSize(width, height);
       }
     }
   }
@@ -117,32 +117,32 @@ class EffectPass extends Pass {
     for (const [type, effect] of Object.entries(this._effects)) {
       switch (type) {
         case EffectType.Blur: {
-          const { radius } = effect!.getUniforms();
+          const { radius } = effect.getUniforms();
           configs[type] = { radius, passes: (effect as GaussianBlurEffect).passes };
           break;
         }
         case EffectType.Bloom: {
-          const { opacity, radius } = effect!.getUniforms();
+          const { opacity, radius } = effect.getUniforms();
           configs[type] = { opacity, radius, passes: (effect as BloomEffect).passes };
           break;
         }
         case EffectType.RgbShift: {
-          const { amount, angle } = effect!.getUniforms();
+          const { amount, angle } = effect.getUniforms();
           configs[type] = { amount, angle };
           break;
         }
         case EffectType.Vignette: {
-          const { offset, darkness } = effect!.getUniforms();
+          const { offset, darkness } = effect.getUniforms();
           configs[type] = { offset, darkness };
           break;
         }
         case EffectType.VignetteBlur: {
-          const { size, radius } = effect!.getUniforms();
+          const { size, radius } = effect.getUniforms();
           configs[type] = { size, radius, passes: (effect as VignetteBlurEffect).passes };
           break;
         }
         case EffectType.Glitch: {
-          const { amount, seed } = effect!.getUniforms();
+          const { amount, seed } = effect.getUniforms();
           configs[type] = { amount, seed };
           break;
         }
@@ -303,7 +303,7 @@ class EffectPass extends Pass {
   render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget | null, readBuffer: WebGLRenderTarget): void {
     this._copyShader.render(renderer, this._readBuffer, readBuffer);
     for (const effect of Object.values(this._effects)) {
-      effect!.render(renderer, this._writeBuffer, this._readBuffer);
+      effect.render(renderer, this._writeBuffer, this._readBuffer);
       this._swapBuffers();
     }
     this._copyShader.render(renderer, this.renderToScreen ? null : writeBuffer, this._readBuffer);
@@ -318,7 +318,7 @@ class EffectPass extends Pass {
     this._readBuffer.texture.dispose();
     this._writeBuffer.dispose();
     this._writeBuffer.texture.dispose();
-    Object.values(this._effects).forEach(effect => effect!.dispose());
+    Object.values(this._effects).forEach(effect => effect.dispose());
   }
 }
 
