@@ -1,5 +1,5 @@
 import { WebGLRenderTarget, Vector2, Shader, ShaderMaterial, WebGLRenderer, PerspectiveCamera, DepthTexture } from 'three';
-import { Pass } from 'three/examples/jsm/postprocessing/Pass';
+import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
 import { GaussianBlurShader, GaussianBlurDirection } from './shaders/effect/gaussian-blur-shader';
 import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader';
@@ -29,7 +29,7 @@ interface IEffect {
 }
 
 class Effect implements IEffect {
-  protected _quad: Pass.FullScreenQuad = new Pass.FullScreenQuad();
+  protected _quad: FullScreenQuad = new FullScreenQuad();
 
   /**
    * Contructs an effect.
