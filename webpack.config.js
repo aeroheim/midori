@@ -41,7 +41,7 @@ const libConfig = {
 
 const docsConfig = {
   name: 'docs',
-  entry: './docs/index.jsx',
+  entry: './docs/index.tsx',
   output: {
     filename: 'dist/index.js',
     path: path.resolve(__dirname, 'docs'),

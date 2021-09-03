@@ -1,7 +1,7 @@
 import { WebGLRenderer, Texture, TextureLoader, ClampToEdgeWrapping, LinearFilter } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { WEBGL } from 'three/examples/jsm/WebGL';
-import TWEEN from '@tweenjs/tween.js';
+import { update } from '@tweenjs/tween.js';
 import { Background } from './background';
 import { BackgroundPass } from './pipeline/background-pass';
 import { EffectPass } from './pipeline/effect-pass';
@@ -195,7 +195,7 @@ class BackgroundRenderer {
    * Renders the background, transitions, and effects. Should be called on every frame.
    */
   private _render(timestamp?: DOMHighResTimeStamp) {
-    TWEEN.update(timestamp);
+    update(timestamp);
     this._resizeCanvas();
 
     if (!this._disposed && !this._paused) {

@@ -33,12 +33,12 @@
   ],
   "scripts": {
     "prepublishOnly": "npm run test && npm run build-prod",
-    "dev": "npm run clean && concurrently \"webpack -w --config webpack.dev.js --config-name lib\" \"webpack-dev-server --config webpack.dev.js --config-name docs\"",
-    "prod": "npm run clean && concurrently \"webpack -w --config webpack.prod.js --config-name lib\" \"webpack-dev-server --config webpack.prod.js --config-name docs\"",
-    "build-dev": "npm run clean && webpack --config webpack.dev.js --config-name lib && webpack --config webpack.dev.js --config-name docs",
-    "build-prod": "npm run clean && webpack --config webpack.prod.js --config-name lib && webpack --config webpack.prod.js",
+    "dev": "npm run clean && npm run types && concurrently \"webpack -w --config webpack.dev.js --config-name lib\" \"webpack-dev-server --config webpack.dev.js --config-name docs\"",
+    "prod": "npm run clean && npm run types && concurrently \"webpack -w --config webpack.prod.js --config-name lib\" \"webpack-dev-server --config webpack.prod.js --config-name docs\"",
+    "build-dev": "npm run clean && npm run types && webpack --config webpack.dev.js --config-name lib && webpack --config webpack.dev.js --config-name docs",
+    "build-prod": "npm run clean && npm run types && webpack --config webpack.prod.js --config-name lib && webpack --config webpack.prod.js",
     "clean": "rimraf ./dist && rimraf ./docs/dist",
-    "types": "dts-bundle-generator --project tsconfig.json ./src/midori.ts -o ./dist/midori.d.ts --external-imports three",
+    "types": "dts-bundle-generator --project tsconfig.json ./src/midori.ts -o ./dist/midori.d.ts --external-imports three --external-types",
     "lint": "tsc --project tsconfig.json --noEmit && eslint src/*/**.ts"
   },
   "devDependencies": {
@@ -48,6 +48,8 @@
     "@babel/preset-env": "^7.13.9",
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
+    "@types/react": "^17.0.19",
+    "@types/react-dom": "^17.0.9",
     "@types/three": "^0.131.0",
     "@typescript-eslint/eslint-plugin": "^4.16.1",
     "@typescript-eslint/parser": "^4.16.1",
