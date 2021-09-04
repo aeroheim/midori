@@ -1,3 +1,4 @@
+// CommonJS library export
 
 export { BackgroundRenderer, loadImage, isWebGLSupported } from './background-renderer';
 export { Background } from './background';

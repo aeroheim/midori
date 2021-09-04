@@ -24,7 +24,7 @@
     "email": "bp7936@gmail.com",
     "url": "https://aeroheim.moe/"
   },
-  "main": "./dist/midori.js",
+  "main": "./dist/midori.cjs",
   "module": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "files": [
@@ -55,6 +55,7 @@
     "@typescript-eslint/parser": "^4.16.1",
     "babel-loader": "^8.2.2",
     "concurrently": "^6.2.1",
+    "copy-webpack-plugin": "^9.0.1",
     "dts-bundle-generator": "^5.7.0",
     "eslint": "^7.21.0",
     "eslint-plugin-import": "^2.22.1",

@@ -1,4 +1,5 @@
 const path = require('path');
+const CopyPlugin = require("copy-webpack-plugin");
 const ESLintWebpackPlugin = require('eslint-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
@@ -8,12 +9,13 @@ const libConfig = {
   name: 'lib',
   entry: './src/midori.ts',
   output: {
-    filename: 'midori.js',
+    filename: 'midori.cjs',
     path: path.resolve(__dirname, 'dist'),
     library: {
       name: 'midori',
-      type: 'umd',
+      type: 'commonjs',
     },
+    globalObject: 'this',
   },
   resolve: { extensions },
   externals: [
@@ -34,6 +36,7 @@ const libConfig = {
     ]
   },
   plugins: [
+    new CopyPlugin({ patterns: [{ from: path.resolve(__dirname, 'src/midori.esm.js'), to: path.resolve(__dirname, 'dist/midori.js') }] }),
     new ESLintWebpackPlugin({ files: 'src/', extensions, emitWarning: true }),
     new BundleAnalyzerPlugin({ openAnalyzer: false, analyzerMode: 'static' }),
   ],
