@@ -58,6 +58,14 @@ class Background {
   }
 
   /**
+   * Returns the texture of the background.
+   * @returns {Texture | null}
+   */
+  get texture(): Texture | null {
+    return this._plane.material.map;
+  }
+
+  /**
    * Sets the size of the background.
    * @param {number} width
    * @param {number} height
