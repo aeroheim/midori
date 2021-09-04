@@ -105,6 +105,8 @@ span {
 }
 
 .link {
+  width: fit-content;
+
   color: white;
 
   white-space: nowrap;
