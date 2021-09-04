@@ -1,4 +1,4 @@
-import { WebGLRenderer, Texture, TextureLoader, ClampToEdgeWrapping, LinearFilter } from 'three';
+import { WebGLRenderer, Texture, TextureLoader, ClampToEdgeWrapping, LinearFilter, Clock } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { WEBGL } from 'three/examples/jsm/WebGL';
 import { update } from '@tweenjs/tween.js';
@@ -80,6 +80,7 @@ class BackgroundRenderer {
   private _backgroundPass: BackgroundPass;
   private _transitionPass: TransitionPass;
   private _effectPass: EffectPass;
+  private _clock: Clock = new Clock(false);
   private _paused = false;
   private _disposed = false;
 
@@ -149,7 +150,7 @@ class BackgroundRenderer {
 
     if (transition) {
       const { type, config: { onStart = () => ({}), ...transitionConfig } } = transition;
-      this._transitionPass.transition(this._background, type as any, {
+      this._transitionPass.transition(this._background, type, {
         ...transitionConfig,
         onStart: (prevBackground, nextBackground) => {
           this._backgroundPass.setBackground(nextBackground);
@@ -181,6 +182,7 @@ class BackgroundRenderer {
    */
   render(): void {
     this._paused = false;
+    this._clock.start();
     this._render();
   }
 
@@ -189,17 +191,18 @@ class BackgroundRenderer {
    */
   pause(): void {
     this._paused = true;
+    this._clock.stop();
   }
 
   /**
    * Renders the background, transitions, and effects. Should be called on every frame.
    */
-  private _render(timestamp?: DOMHighResTimeStamp) {
-    update(timestamp);
+  private _render() {
+    update();
     this._resizeCanvas();
 
     if (!this._disposed && !this._paused) {
-      this._composer.render();
+      this._composer.render(this._clock.getDelta());
       // eslint-disable-next-line @typescript-eslint/unbound-method
       requestAnimationFrame(this._render);
     }
@@ -214,6 +217,7 @@ class BackgroundRenderer {
     this._backgroundPass.dispose();
     this._transitionPass.dispose();
     this._effectPass.dispose();
+    this._clock.stop();
   }
 }
 
