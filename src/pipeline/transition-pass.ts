@@ -20,6 +20,15 @@ enum TransitionType {
   Glitch = 'Glitch',
 }
 
+type TransitionTypeConfig<T extends TransitionType> = {
+  [TransitionType.None]: BackgroundTransitionConfig;
+  [TransitionType.Blend]: BlendTransitionConfig;
+  [TransitionType.Blur]: BlurTransitionConfig;
+  [TransitionType.Wipe]: WipeTransitionConfig;
+  [TransitionType.Slide]: SlideTransitionConfig;
+  [TransitionType.Glitch]: GlitchTransitionConfig;
+}[T];
+
 interface BlendTransitionConfig extends BackgroundTransitionConfig {}
 
 interface WipeTransitionConfig extends BackgroundTransitionConfig {
@@ -54,7 +63,19 @@ interface GlitchTransitionConfig extends BackgroundTransitionConfig {
   seed?: number;
 }
 
-type TransitionTween = { amount: number };
+interface TransitionTweenValues {
+  amount: number;
+}
+
+interface TransitionTweenConfig extends Pick<Required<BackgroundTransitionConfig>, 'easing' | 'delay' | 'duration'> {
+  from: TransitionTweenValues;
+  to: TransitionTweenValues;
+  onInit: () => void;
+  onStart: () => void;
+  onUpdate: (values: TransitionTweenValues) => void;
+  onComplete: () => void;
+  onStop: () => void;
+}
 
 class TransitionPass extends Pass {
   private _width: number;
@@ -63,7 +84,7 @@ class TransitionPass extends Pass {
   private _prevBackground: Background; // the prev background to transition away from
   private _buffer: WebGLRenderTarget; // a buffer to render the prev background during transitions
 
-  private _transition: Tween<TransitionTween> = new Tween({ amount: 0 });
+  private _transition: Tween<TransitionTweenValues> = new Tween({ amount: 0 });
   private _transitionEffect: TransitionEffect = new TransitionEffect(BlendShader, { mixRatio: 1 });
 
   /**
@@ -109,13 +130,7 @@ class TransitionPass extends Pass {
    * @param {TransitionType} transition - the transition to use.
    * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  transition(background: Background, transition: TransitionType.None): void;
-  transition(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig): void;
-  transition(background: Background, transition: TransitionType.Blur, config: BlurTransitionConfig): void;
-  transition(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig): void;
-  transition(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig): void;
-  transition(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig): void;
-  transition(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}): void {
+  transition<T extends TransitionType>(background: Background, transition: T, config: TransitionTypeConfig<T> = {}): void {
     const {
       from,
       to,
@@ -127,7 +142,7 @@ class TransitionPass extends Pass {
       onUpdate,
       onComplete,
       onStop,
-    } = this._getTransitionConfig(background, transition as any, config);
+    } = this._getTweenConfig(background, transition, config);
 
     this._transition.stop();
     onInit();
@@ -153,18 +168,12 @@ class TransitionPass extends Pass {
   }
 
   /**
-   * Returns a valid configuration for the specified transition type.
+   * Returns a tween configuration for the specified transition type.
    * @param {Background} background - the background to transition to.
    * @param {TransitionType} transition - the type of the transition.
    * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  private _getTransitionConfig(background: Background, transition: TransitionType.None)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Blur, config: BlurTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}): any {
+  private _getTweenConfig<T extends TransitionType>(background: Background, transition: T, config: TransitionTypeConfig<T> = {}): TransitionTweenConfig {
     const onTransitionStart = () => {
       // enable this pass when a transition starts.
       this.enabled = true;

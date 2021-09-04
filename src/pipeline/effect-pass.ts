@@ -1,11 +1,24 @@
 import { WebGLRenderTarget, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
-import { EffectType, Effect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect,
-  GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../effects/effect';
+import { EffectType, Effect, GaussianBlurEffect, BloomEffect, VignetteBlurEffect, GlitchEffect, IEffect, RGBShiftEffect, VignetteEffect } from '../effects/effect';
 
-type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig
-| VignetteEffectConfig | VignetteBlurEffectConfig | GlitchEffectConfig;
+type EffectTypeConfig<T extends Exclude<EffectType, EffectType.MotionBlur>> = {
+  [EffectType.Blur]: BlurEffectConfig;
+  [EffectType.Bloom]: BloomEffectConfig;
+  [EffectType.RgbShift]: RgbShiftEffectConfig;
+  [EffectType.Vignette]: VignetteEffectConfig;
+  [EffectType.VignetteBlur]: VignetteBlurEffectConfig;
+  [EffectType.Glitch]: GlitchEffectConfig;
+}[T];
+
+type EffectConfigs = {
+  [T in Exclude<EffectType, EffectType.MotionBlur>]?: EffectTypeConfig<T>;
+}
+
+type EffectMap = Partial<Record<EffectType, IEffect>>;
+
+type EffectConfig = BlurEffectConfig | BloomEffectConfig | RgbShiftEffectConfig | VignetteEffectConfig | VignetteBlurEffectConfig | GlitchEffectConfig;
 
 interface BlurEffectConfig {
   // the size of the blur.
@@ -52,17 +65,6 @@ interface GlitchEffectConfig {
   // a random seed from 0 to 1 used to generate glitches.
   seed?: number;
 }
-
-interface EffectConfigs {
-  [EffectType.Blur]?: BlurEffectConfig;
-  [EffectType.Bloom]?: BloomEffectConfig;
-  [EffectType.RgbShift]?: RgbShiftEffectConfig;
-  [EffectType.Vignette]?: VignetteEffectConfig;
-  [EffectType.VignetteBlur]?: VignetteBlurEffectConfig;
-  [EffectType.Glitch]?: GlitchEffectConfig;
-}
-
-type EffectMap = Partial<Record<EffectType, IEffect>>;
 
 class EffectPass extends Pass {
   private _width: number;
@@ -207,13 +209,7 @@ class EffectPass extends Pass {
    * @param {EffectType} type - the effect to set.
    * @param {Object} config - configuration specific to the effect specified.
    */
-  set(type: EffectType.Blur, config: BlurEffectConfig): void
-  set(type: EffectType.Bloom, config: BloomEffectConfig): void
-  set(type: EffectType.RgbShift, config: RgbShiftEffectConfig): void
-  set(type: EffectType.Vignette, config: VignetteEffectConfig): void
-  set(type: EffectType.VignetteBlur, config: VignetteBlurEffectConfig): void
-  set(type: EffectType.Glitch, config: GlitchEffectConfig): void
-  set(type: EffectType, config: EffectConfig = {}): void {
+  set<T extends Exclude<EffectType, EffectType.MotionBlur>>(type: T, config: EffectTypeConfig<T> = {}): void {
     const effect = this._getEffect(type);
 
     // enable this pass when there is at least one effect.
