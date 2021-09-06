@@ -33,7 +33,7 @@
     "/dist/midori.d.ts"
   ],
   "scripts": {
-    "prepublishOnly": "npm run test && npm run build-prod",
+    "prepublishOnly": "npm run build-prod",
     "dev": "npm run clean && npm run types && concurrently \"webpack -w --config webpack.dev.js --config-name lib\" \"webpack-dev-server --config webpack.dev.js --config-name docs\"",
     "prod": "npm run clean && npm run types && concurrently \"webpack -w --config webpack.prod.js --config-name lib\" \"webpack-dev-server --config webpack.prod.js --config-name docs\"",
     "build-dev": "npm run clean && npm run types && webpack --config webpack.dev.js --config-name lib && webpack --config webpack.dev.js --config-name docs",
