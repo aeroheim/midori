@@ -43,6 +43,14 @@ loadImage('url/to/image')
   .catch(err => console.error(err));
 ```
 
+The rendering can also be controlled directly if needed:
+```js
+// the renderer can be paused if needed.
+renderer.pause();
+// the renderer can be resumed after pausing.
+renderer.render();
+```
+
 ### Transitions
 When setting backgrounds, you can use an optional transition to animate the switching between backgrounds.
 
