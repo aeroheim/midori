@@ -1,25 +1,25 @@
 import { BufferGeometry, Float32BufferAttribute, Points, Color, Vector2, ShaderMaterial, MathUtils, BufferAttribute } from 'three';
-import TWEEN from '@tweenjs/tween.js';
+import { Tween, Easing } from '@tweenjs/tween.js';
 import { ParticleShader } from './shaders/particle-shader';
 import { ShaderUtils } from './shaders/shader-utils';
 import { LoopableTransitionConfig } from '../transition';
 
-export interface ParticleMoveOffset {
+interface ParticleMoveOffset {
   // the distance of the offset.
   distance: number;
   // the angle of the offset in degrees.
   angle: number;
 }
 
-export interface ParticleSwayOffset {
+interface ParticleSwayOffset {
   // the x distance to sway.
   x: number;
   // the y distance to sway.
   y: number;
 }
 
-export type ParticleGroupConfigs = {[name: string]: ParticleGroupConfig};
-export interface ParticleGroupConfig {
+type ParticleGroupConfigs = {[name: string]: ParticleGroupConfig};
+interface ParticleGroupConfig {
   // the name of the particle group.
   name: string;
   // the number of particles to generate.
@@ -42,14 +42,19 @@ export interface ParticleGroupConfig {
   smoothing?: number;
 }
 
-type ParticleGroupMap = {[name: string]: ParticleGroup};
+interface ParticleTween {
+  offsetX: number;
+  offsetY: number;
+}
+
+
+type ParticleGroups = {[name: string]: Required<ParticleGroup>};
 interface ParticleGroup extends ParticleGroupConfig {
   index: number;
   swayOffset: Vector2;
-  positionTransition: TWEEN.Tween;
-  swayTransition: TWEEN.Tween;
+  positionTransition: Tween<ParticleTween>;
+  swayTransition: Tween<ParticleTween>;
 }
-
 
 class Particles {
   private _width: number;
@@ -57,7 +62,7 @@ class Particles {
   private _maxDepth: number;
 
   // groups also store the transitions related to the attributes and offsets
-  private _groups: ParticleGroupMap = {};
+  private _groups: ParticleGroups = {};
   private _particles: Points;
   private _positions: number[] = [];
 
@@ -120,15 +125,11 @@ class Particles {
    * Generates particles based on a given set of configurations.
    * @param {ParticleGroupConfig | ParticleGroupConfig[]} config - a single or array of particle group configurations.
    */
-  generate(configs: ParticleGroupConfig | ParticleGroupConfig[]) {
-    configs = Array.isArray(configs) ? configs : [configs];
-
+  generate(configs: ParticleGroupConfig | ParticleGroupConfig[]): void {
     // cleanup previous configs and objects
-    this._positions = [];
-    this._groups = {};
-    this._particles.geometry.dispose();
-    (this._particles.material as ShaderMaterial).dispose();
+    this.removeAll();
 
+    configs = Array.isArray(configs) ? configs : [configs];
     let index = 0;
     for (const config of configs) {
       const {
@@ -166,8 +167,8 @@ class Particles {
         color,
         smoothing,
         swayOffset: new Vector2(0, 0),
-        positionTransition: new TWEEN.Tween(),
-        swayTransition: new TWEEN.Tween(),
+        positionTransition: new Tween({ offsetX: 0, offsetY: 0 }),
+        swayTransition: new Tween({ offsetX: 0, offsetY: 0 }),
       };
 
       index += amount;
@@ -188,13 +189,30 @@ class Particles {
   }
 
   /**
+   * Removes all particle groups.
+   */
+  removeAll(): void {
+    for (const group in this._groups) {
+      // stop any ongoing transitions
+      this._groups[group].positionTransition.stop();
+      this._groups[group].swayTransition.stop();
+    }
+
+    // reset particles to empty
+    this._positions = [];
+    this._groups = {};
+    this._particles.geometry.dispose();
+    (this._particles.material as ShaderMaterial).dispose();
+  }
+
+  /**
    * Calculates a new position based off an existing position and optional offset. Will wrap around boundaries.
    * @param {Vector2} position - the current position.
    * @param {Vector2} offset - the offset from the current position.
    * @returns Vector2
    */
   private _getNewPosition(position: Vector2, offset: Vector2): Vector2 {
-    let { x: offsetX, y: offsetY } = offset || new Vector2(0, 0);
+    let { x: offsetX, y: offsetY } = offset;
     offsetX %= this._width;
     offsetY %= this._height;
 
@@ -243,26 +261,24 @@ class Particles {
    * If a boolean is passed in instead then the move will either continue or stop based on the value.
    * @param {LoopableTransitionConfig} transition - an optional transition configuration.
    */
-  move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig) {
+  move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig): void {
     const group = this._groups[name];
     const { index, amount } = group;
 
     if (typeof offset === 'boolean') {
-      if (!offset && group.positionTransition) {
+      if (!offset) {
         group.positionTransition.stop();
       }
       return;
     }
 
     // Stop ongoing position transition for group.
-    if (group.positionTransition) {
-      group.positionTransition.stop();
-    }
+    group.positionTransition.stop();
 
     const {
       loop = false,
       duration = 0,
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
@@ -275,7 +291,7 @@ class Particles {
     if (duration > 0) {
       // Each vertex position is a set of 3 values, so adjust index and amount accordingly.
       const startPositions = this._positions.slice();
-      group.positionTransition = new TWEEN.Tween({ offsetX: 0, offsetY: 0 })
+      group.positionTransition = new Tween({ offsetX: 0, offsetY: 0 })
         .to({ offsetX, offsetY }, duration * 1000)
         .easing(easing)
         .onStart(onStart)
@@ -304,26 +320,24 @@ class Particles {
    * If a boolean is passed in instead then the sway will either continue or stop based on the value.
    * @param {LoopableTransitionConfig} transition - optional configuration for a transition.
    */
-  sway(name: string, offset: ParticleSwayOffset | boolean, transition: LoopableTransitionConfig = {}) {
+  sway(name: string, offset: ParticleSwayOffset | boolean, transition: LoopableTransitionConfig = {}): void {
     const group = this._groups[name];
     const { swayOffset } = group;
 
     if (typeof offset === 'boolean') {
-      if (!offset && group.swayTransition) {
+      if (!offset) {
         group.swayTransition.stop();
       }
       return;
     }
 
     // Stop ongoing sway transition for group.
-    if (group.swayTransition) {
-      group.swayTransition.stop();
-    }
+    group.swayTransition.stop();
 
     const {
       loop = false,
       duration = 0,
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       onStart = () => ({}),
       onUpdate = () => ({}),
       onComplete = () => ({}),
@@ -331,7 +345,7 @@ class Particles {
     } = transition;
 
     const { x, y } = offset;
-    group.swayTransition = new TWEEN.Tween({
+    group.swayTransition = new Tween({
       offsetX: swayOffset.x,
       offsetY: swayOffset.y,
     })
@@ -375,8 +389,8 @@ class Particles {
   /**
    * Updates the positions of the particles. Should be called on every render frame.
    */
-  update() {
-    const { attributes } = (this._particles.geometry as BufferGeometry);
+  update(): void {
+    const { attributes } = this._particles.geometry;
     const {
       position: positions,
       size: sizes,
@@ -431,13 +445,17 @@ class Particles {
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this._particles.geometry.dispose();
     (this._particles.material as ShaderMaterial).dispose();
   }
 }
 
 export {
+  ParticleMoveOffset,
+  ParticleSwayOffset,
+  ParticleGroupConfigs,
+  ParticleGroupConfig,
   Particles,
 };
 

@@ -1,10 +1,11 @@
-@import url('https://rsms.me/inter/inter.css');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Manrope&display=swap');
 
 html, body {
   height: 100%;
   border: none;
 
   font-family: 'Inter', sans-serif;
+  font-size: 16px;
   color: white;
 }
 
@@ -15,18 +16,17 @@ body {
 }
 
 span {
-  font-weight: 200;
+  font-weight: 300;
 }
 
 .canvas {
   z-index: -1;
   position: absolute;
 
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   margin: 0;
   padding: 0;
-
 }
 
 .content {
@@ -56,14 +56,19 @@ span {
 
 .section-header {
   margin: 0;
+
+  font-size: 32px;
+  font-family: Manrope;
+}
+
+.page-header > h1 {
   font-size: 48px;
-  font-weight: 300;
 }
 
 .content-header {
-  padding-left: 10px;
-  padding-right: 10px;
-  border-left: 10px solid chartreuse;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-left: 4px solid chartreuse;
 }
 
 .github-ref {
@@ -80,24 +85,46 @@ span {
 
 .images-layout {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-columns: minmax(164px, auto) 1fr;
   grid-template-areas:
     "index title"
     "index artist"
     "index nav";
 
   width: fit-content;
-  margin-top: 10px;
 }
 
 .index {
   grid-area: index;
 
   margin: 0;
-  margin-right: 15px;
 
   font-size: 96px;
-  font-weight: 100;
+  font-weight: 300;
+}
+
+.link {
+  width: fit-content;
+
+  color: white;
+
+  white-space: nowrap;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+
+  opacity: 0.5;
+  transition: all 0.15s ease-out;
+}
+
+.link:hover {
+  text-decoration-color: white;
+  opacity: 1;
 }
 
 .title {
@@ -105,35 +132,12 @@ span {
   align-self: flex-end;
 
   margin: 0;
-  margin-top: 0.5em;
-
-  color: white;
-  text-decoration: none;
-
-  font-size: 24px;
-  font-weight: 300;
-
-  white-space: nowrap;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
-
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-}
-
-.title:hover {
-  opacity: 1;
 }
 
 .artist {
   grid-area: artist;
 
   margin: 0;
-  font-weight: 200;
-
-  white-space: nowrap;
-  overflow-x: hidden;
-  text-overflow: ellipsis;
 }
 
 .nav {
@@ -176,7 +180,7 @@ span {
   padding: 10px;
 
   text-align: center;
-  font-weight: 300;
+  font-size: 14px;
 
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: 12px;

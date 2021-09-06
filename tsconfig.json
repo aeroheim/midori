@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "module": "es6",
+    "target": "es6",
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "strictNullChecks": true,
+  },
+  "include": [
+    "src/**/*",
+    "docs/**/*",
+  ],
+  "exclude": ["node_modules"]
+}

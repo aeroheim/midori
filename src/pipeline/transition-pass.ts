@@ -1,4 +1,4 @@
-import TWEEN from '@tweenjs/tween.js';
+import { Tween, Easing } from '@tweenjs/tween.js';
 import { WebGLRenderTarget, Vector2, Shader, WebGLRenderer, MathUtils } from 'three';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass';
 import { BlendShader } from 'three/examples/jsm/shaders/BlendShader';
@@ -11,7 +11,7 @@ import { TransitionEffect } from '../effects/effect';
 import { BackgroundTransitionConfig } from '../transition';
 import { Uniforms } from '../effects/shaders/shader-utils';
 
-export enum TransitionType {
+enum TransitionType {
   None = 'None',
   Blend = 'Blend',
   Blur = 'Blur',
@@ -20,9 +20,18 @@ export enum TransitionType {
   Glitch = 'Glitch',
 }
 
-export interface BlendTransitionConfig extends BackgroundTransitionConfig {}
+type TransitionTypeConfig<T extends TransitionType> = {
+  [TransitionType.None]: BackgroundTransitionConfig;
+  [TransitionType.Blend]: BlendTransitionConfig;
+  [TransitionType.Blur]: BlurTransitionConfig;
+  [TransitionType.Wipe]: WipeTransitionConfig;
+  [TransitionType.Slide]: SlideTransitionConfig;
+  [TransitionType.Glitch]: GlitchTransitionConfig;
+}[T];
 
-export interface WipeTransitionConfig extends BackgroundTransitionConfig {
+interface BlendTransitionConfig extends BackgroundTransitionConfig {}
+
+interface WipeTransitionConfig extends BackgroundTransitionConfig {
   // the size of the fade when wiping.
   gradient?: number;
   // the angle of the wipe in degrees.
@@ -31,7 +40,7 @@ export interface WipeTransitionConfig extends BackgroundTransitionConfig {
   direction?: WipeDirection;
 }
 
-export interface SlideTransitionConfig extends BackgroundTransitionConfig {
+interface SlideTransitionConfig extends BackgroundTransitionConfig {
   // the number of slides to perform.
   slides?: number;
   // the intensity of the blur during slides.
@@ -42,16 +51,30 @@ export interface SlideTransitionConfig extends BackgroundTransitionConfig {
   direction?: SlideDirection;
 }
 
-export interface BlurTransitionConfig extends BackgroundTransitionConfig {
+interface BlurTransitionConfig extends BackgroundTransitionConfig {
   // the intensity of the blur.
   intensity?: number;
   // the number of samples for the blur - more samples result in better quality at the cost of performance.
   samples?: number;
 }
 
-export interface GlitchTransitionConfig extends BackgroundTransitionConfig {
+interface GlitchTransitionConfig extends BackgroundTransitionConfig {
   // a random seed from 0 to 1 used to generate glitches.
   seed?: number;
+}
+
+interface TransitionTweenValues {
+  amount: number;
+}
+
+interface TransitionTweenConfig extends Pick<Required<BackgroundTransitionConfig>, 'easing' | 'delay' | 'duration'> {
+  from: TransitionTweenValues;
+  to: TransitionTweenValues;
+  onInit: () => void;
+  onStart: () => void;
+  onUpdate: (values: TransitionTweenValues) => void;
+  onComplete: () => void;
+  onStop: () => void;
 }
 
 class TransitionPass extends Pass {
@@ -61,8 +84,8 @@ class TransitionPass extends Pass {
   private _prevBackground: Background; // the prev background to transition away from
   private _buffer: WebGLRenderTarget; // a buffer to render the prev background during transitions
 
-  private _transition: TWEEN.Tween = new TWEEN.Tween();
-  private _transitionEffect: TransitionEffect;
+  private _transition: Tween<TransitionTweenValues> = new Tween({ amount: 0 });
+  private _transitionEffect: TransitionEffect = new TransitionEffect(BlendShader, { mixRatio: 1 });
 
   /**
    * Constructs a TransitionPass.
@@ -74,7 +97,7 @@ class TransitionPass extends Pass {
     super();
     this._width = width;
     this._height = height;
-    this._prevBackground = background || new Background(null, width, height);
+    this._prevBackground = background ?? new Background(null, width, height);
     this._buffer = new WebGLRenderTarget(width, height);
 
     // this pass only needs to render when a transition occurs, so it should be disabled by default.
@@ -86,7 +109,7 @@ class TransitionPass extends Pass {
    * @param {number} width
    * @param {number} height
    */
-  setSize(width: number, height: number) {
+  setSize(width: number, height: number): void {
     this._width = width;
     this._height = height;
     this._prevBackground.setSize(width, height);
@@ -107,13 +130,7 @@ class TransitionPass extends Pass {
    * @param {TransitionType} transition - the transition to use.
    * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  transition(background: Background, transition: TransitionType.None);
-  transition(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig);
-  transition(background: Background, transition: TransitionType.Blur, config: BlurTransitionConfig);
-  transition(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig);
-  transition(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig);
-  transition(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig);
-  transition(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}) {
+  transition<T extends TransitionType>(background: Background, transition: T, config: TransitionTypeConfig<T> = {}): void {
     const {
       from,
       to,
@@ -125,11 +142,11 @@ class TransitionPass extends Pass {
       onUpdate,
       onComplete,
       onStop,
-    } = this._getTransitionConfig(background, transition as any, config);
+    } = this._getTweenConfig(background, transition, config);
 
     this._transition.stop();
     onInit();
-    this._transition = new TWEEN.Tween(from)
+    this._transition = new Tween(from)
       .to(to, duration)
       .easing(easing)
       .onStart(onStart)
@@ -146,26 +163,17 @@ class TransitionPass extends Pass {
    * @param {Uniforms} uniforms - a map that defines the values of the uniforms to be used.
    */
   private _setTransitionEffect(shader: Shader, uniforms: Uniforms = {}) {
-    if (this._transitionEffect) {
-      this._transitionEffect.dispose();
-      this._transitionEffect = null;
-    }
+    this._transitionEffect.dispose();
     this._transitionEffect = new TransitionEffect(shader, uniforms);
   }
 
   /**
-   * Returns a valid configuration for the specified transition type.
+   * Returns a tween configuration for the specified transition type.
    * @param {Background} background - the background to transition to.
    * @param {TransitionType} transition - the type of the transition.
    * @param {BackgroundTransitionConfig} config - configuration for the transition.
    */
-  private _getTransitionConfig(background: Background, transition: TransitionType.None)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Blend, config: BlendTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Blur,config: BlurTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Wipe, config: WipeTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Slide, config: SlideTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType.Glitch, config: GlitchTransitionConfig)
-  private _getTransitionConfig(background: Background, transition: TransitionType, config: BackgroundTransitionConfig = {}): any {
+  private _getTweenConfig<T extends TransitionType>(background: Background, transition: T, config: TransitionTypeConfig<T> = {}): TransitionTweenConfig {
     const onTransitionStart = () => {
       // enable this pass when a transition starts.
       this.enabled = true;
@@ -173,17 +181,13 @@ class TransitionPass extends Pass {
     const onTransitionEnd = () => {
       // disable this pass after a transition finishes.
       this.enabled = false;
-
-      if (this._prevBackground) {
-        this._prevBackground.dispose();
-      }
-
+      this._prevBackground.dispose();
       // cache the new background to be used for the next transition.
-      this._prevBackground = background || new Background(null, this._width, this._height);
+      this._prevBackground = background;
     };
 
     const {
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       duration = 0,
       delay = 0,
       onInit = () => ({}),
@@ -218,6 +222,7 @@ class TransitionPass extends Pass {
 
     switch (transition) {
       case TransitionType.None: {
+        const { onStart } = baseTransitionConfig;
         return {
           ...baseTransitionConfig,
           onStart: () => {
@@ -327,7 +332,7 @@ class TransitionPass extends Pass {
    * @param {WebGLRenderTarget} writeBuffer - the buffer to render to, or null to render directly to screen.
    * @param {WebGLRenderTarget} readBuffer - the buffer to read from which contains the current background.
    */
-  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget) {
+  render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget): void {
     if (this.isTransitioning()) {
       this._prevBackground.render(renderer, this._buffer);
       this._transitionEffect.render(renderer, this.renderToScreen ? null : writeBuffer, this._buffer, readBuffer);
@@ -337,7 +342,7 @@ class TransitionPass extends Pass {
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this._transition.stop();
     this._prevBackground.dispose();
     this._buffer.dispose();
@@ -346,6 +351,12 @@ class TransitionPass extends Pass {
 }
 
 export {
+  TransitionType,
+  BlendTransitionConfig,
+  WipeTransitionConfig,
+  SlideTransitionConfig,
+  BlurTransitionConfig,
+  GlitchTransitionConfig,
   TransitionPass,
 };
 

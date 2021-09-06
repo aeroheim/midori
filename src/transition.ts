@@ -1,63 +1,9 @@
-import TWEEN from '@tweenjs/tween.js';
+import { Easing } from '@tweenjs/tween.js';
 import { Background } from './background';
 
-const Easings = {
-  Linear: {
-    None: TWEEN.Easing.Linear.None,
-  },
-  Quadratic: {
-    In: TWEEN.Easing.Quadratic.In,
-    Out: TWEEN.Easing.Quadratic.Out,
-    InOut: TWEEN.Easing.Quadratic.InOut,
-  },
-  Cubic: {
-    In: TWEEN.Easing.Cubic.In,
-    Out: TWEEN.Easing.Cubic.Out,
-    InOut: TWEEN.Easing.Cubic.InOut,
-  },
-  Quartic: {
-    In: TWEEN.Easing.Quartic.In,
-    Out: TWEEN.Easing.Quartic.Out,
-    InOut: TWEEN.Easing.Quartic.InOut,
-  },
-  Quintic: {
-    In: TWEEN.Easing.Quintic.In,
-    Out: TWEEN.Easing.Quintic.Out,
-    InOut: TWEEN.Easing.Quintic.InOut,
-  },
-  Sinusoidal: {
-    In: TWEEN.Easing.Sinusoidal.In,
-    Out: TWEEN.Easing.Sinusoidal.Out,
-    InOut: TWEEN.Easing.Sinusoidal.InOut,
-  },
-  Exponential: {
-    In: TWEEN.Easing.Exponential.In,
-    Out: TWEEN.Easing.Exponential.Out,
-    InOut: TWEEN.Easing.Exponential.InOut,
-  },
-  Circular: {
-    In: TWEEN.Easing.Circular.In,
-    Out: TWEEN.Easing.Circular.Out,
-    InOut: TWEEN.Easing.Circular.InOut,
-  },
-  Elastic: {
-    In: TWEEN.Easing.Elastic.In,
-    Out: TWEEN.Easing.Elastic.Out,
-    InOut: TWEEN.Easing.Elastic.InOut,
-  },
-  Back: {
-    In: TWEEN.Easing.Back.In,
-    Out: TWEEN.Easing.Back.Out,
-    InOut: TWEEN.Easing.Back.InOut,
-  },
-  Bounce: {
-    In: TWEEN.Easing.Bounce.In,
-    Out: TWEEN.Easing.Bounce.Out,
-    InOut: TWEEN.Easing.Bounce.InOut,
-  },
-}
+const Easings = Easing;
 
-export interface TransitionConfig {
+interface TransitionConfig {
   // the duration of the transition in seconds.
   duration?: number;
   // an optional delay before the transition starts in seconds.
@@ -76,19 +22,22 @@ export interface TransitionConfig {
   onStop?: (...args: any[]) => void;
 }
 
-export interface LoopableTransitionConfig extends TransitionConfig {
+interface LoopableTransitionConfig extends TransitionConfig {
   // whether to loop the transition repeatedly or not.
   loop?: boolean;
 }
 
-export interface BackgroundTransitionConfig extends TransitionConfig {
-  onInit?: (prevBackground?: Background, nextBackground?: Background) => void;
-  onStart?: (prevBackground?: Background, nextBackground?: Background) => void;
-  onUpdate?: (prevBackground?: Background, nextBackground?: Background) => void;
-  onComplete?: (prevBackground?: Background, nextBackground?: Background) => void;
-  onStop?: (prevBackground?: Background, nextBackground?: Background) => void;
+interface BackgroundTransitionConfig extends TransitionConfig {
+  onInit?: (prevBackground: Background, nextBackground: Background) => void;
+  onStart?: (prevBackground: Background, nextBackground: Background) => void;
+  onUpdate?: (prevBackground: Background, nextBackground: Background) => void;
+  onComplete?: (prevBackground: Background, nextBackground: Background) => void;
+  onStop?: (prevBackground: Background, nextBackground: Background) => void;
 }
 
 export {
-  Easings
+  TransitionConfig,
+  LoopableTransitionConfig,
+  BackgroundTransitionConfig,
+  Easings,
 };

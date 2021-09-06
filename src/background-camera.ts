@@ -1,6 +1,6 @@
 
 import { PerspectiveCamera, Vector4, MathUtils } from 'three';
-import TWEEN from '@tweenjs/tween.js';
+import { Tween, Easing } from '@tweenjs/tween.js';
 import { PlaneMesh } from './background';
 import { TransitionConfig, LoopableTransitionConfig } from './transition';
 
@@ -150,7 +150,7 @@ function toAbsolutePosition(plane: PlaneMesh, camera: PerspectiveCamera, relativ
   );
 }
 
-export interface CameraPosition {
+interface CameraPosition {
   // the x postion of the camera from 0 to 1, or the left to right-most position respectively.
   x?: number;
   // the y position of the camera from 0 to 1, or the top to bottom-most position respectively.
@@ -159,12 +159,32 @@ export interface CameraPosition {
   z?: number;
 }
 
-export interface CameraPositionWithRotation extends CameraPosition {
+interface CameraPositionWithRotation extends CameraPosition {
   // the z-axis rotation of the camera in degrees.
   zr?: number;
 }
 
-export type CameraOffset = CameraPositionWithRotation;
+type CameraOffset = CameraPositionWithRotation;
+
+interface CameraPositionTween {
+  x: number,
+  y: number,
+  z: number
+}
+
+interface CameraRotationTween {
+  zr: number;
+}
+
+interface CameraSwayTween {
+  offsetX: number;
+  offsetY: number;
+  offsetZ: number;
+  offsetZR: number;
+}
+
+// Max camera zoom range - this ensures the camera doesn't exceed the near plane of its frustum.
+const CameraZoomRange = 0.9;
 
 class BackgroundCamera {
   private _plane: PlaneMesh;
@@ -173,13 +193,13 @@ class BackgroundCamera {
   // the relative position of the camera
   // NOTE: the w component is used as the z-axis rotation component of the vector (also aliased as zr)
   private readonly _position: Vector4 = new Vector4(0, 0, 1, 0);
+  private readonly _positionOffset: Vector4 = new Vector4(0, 0, 0, 0);
   private readonly _positionWithOffset: Vector4 = this._position.clone(); // cached for re-use per render frame
-  private _positionTransition: TWEEN.Tween = new TWEEN.Tween();
-  private _rotationTransition: TWEEN.Tween = new TWEEN.Tween();
+  private _positionTransition: Tween<CameraPositionTween> = new Tween({ x: 0, y: 0, z: 0 });
+  private _rotationTransition: Tween<CameraRotationTween> = new Tween({ zr: 0 });
 
-  // the relative offset against the position
   private readonly _swayOffset = new Vector4(0, 0, 0, 0);
-  private _swayTransition: TWEEN.Tween = new TWEEN.Tween();
+  private _swayTransition: Tween<CameraSwayTween> = new Tween({ offsetX: 0, offsetY: 0, offsetZ: 0, offsetZR: 0 });
 
   /**
    * Constructs a BackgroundCamera using a Background's plane.
@@ -189,7 +209,7 @@ class BackgroundCamera {
    */
   constructor(plane: PlaneMesh, width: number, height: number) {
     this._plane = plane;
-    this.camera = new PerspectiveCamera(35, width / height);
+    this.camera = new PerspectiveCamera(35, width / height, 0.001);
   }
 
   /**
@@ -197,8 +217,17 @@ class BackgroundCamera {
    * @returns CameraPositionWithRotation
    */
   get position(): CameraPositionWithRotation {
-    // NOTE: the relative camera position is the base position and does NOT include offsets (e.g sway).
+    // NOTE: the relative camera position is the base position and does NOT include offsets (e.g sway or offset).
     const { x, y, z, w: zr } = this._position;
+    return { x, y, z, zr };
+  }
+
+  /**
+   * Returns the current position offset of the camera.
+   * @returns CameraPositionWithRotation
+   */
+  get positionOffset(): CameraPositionWithRotation {
+    const { x, y, z, w: zr } = this._positionOffset;
     return { x, y, z, zr };
   }
 
@@ -231,9 +260,18 @@ class BackgroundCamera {
    * @param {number} width
    * @param {number} height
    */
-  setSize(width: number, height: number) {
+  setSize(width: number, height: number): void {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+  }
+
+  /**
+   * Offsets the camera position.
+   * @param {CameraPositionWithRotation} offset - the offset to apply.
+   */
+  offset(offset: CameraPositionWithRotation): void {
+    const { x = 0, y = 0, z = 0, zr = 0 } = offset;
+    this._positionOffset.set(x, y, z, zr);
   }
 
   /**
@@ -244,7 +282,7 @@ class BackgroundCamera {
    * If a boolean is passed in instead then the sway will either continue or stop based on the value.
    * @param {LoopableTransitionConfig} transition - optional configuration for a transition.
    */
-  sway(offset: CameraOffset | boolean, transition: LoopableTransitionConfig = {}) {
+  sway(offset: CameraOffset | boolean, transition: LoopableTransitionConfig = {}): void {
     if (typeof offset === 'boolean') {
       if (!offset) {
         this._swayTransition.stop();
@@ -257,7 +295,7 @@ class BackgroundCamera {
       loop = false,
       duration = 0,
       delay = 0,
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
@@ -273,7 +311,7 @@ class BackgroundCamera {
     const zDampen = this._position.z / getMaxFullScreenDepthForPlane(this._plane, this.camera, this.camera.rotation.z);
 
     onInit();
-    this._swayTransition = new TWEEN.Tween({
+    this._swayTransition = new Tween({
       offsetX: this._swayOffset.x,
       offsetY: this._swayOffset.y,
       offsetZ: this._swayOffset.z,
@@ -308,7 +346,7 @@ class BackgroundCamera {
    * If a boolean is passed in instead then the rotation will either continue or stop based on the value.
    * @param {TransitionConfig} transition - optional configuration for a transition.
    */
-  rotate(angle: number | boolean, transition: TransitionConfig = {}) {
+  rotate(angle: number | boolean, transition: TransitionConfig = {}): void {
     if (typeof angle === 'boolean') {
       if (!angle) {
         this._rotationTransition.stop();
@@ -320,7 +358,7 @@ class BackgroundCamera {
     const {
       duration = 0,
       delay = 0,
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
@@ -331,7 +369,7 @@ class BackgroundCamera {
 
     onInit();
     if (duration > 0 || delay > 0) {
-      this._rotationTransition = new TWEEN.Tween({ zr: this._position.w })
+      this._rotationTransition = new Tween({ zr: this._position.w })
         .to({ zr: angleInRadians }, duration * 1000)
         .easing(easing)
         .onStart(onStart)
@@ -354,7 +392,7 @@ class BackgroundCamera {
    * If a boolean is passed in instead then the move will either continue or stop based on the value.
    * @param {TransitionConfig} transition - optional configuration for a transition.
    */
-  move(position: CameraPosition | boolean, transition: TransitionConfig = {}) {
+  move(position: CameraPosition | boolean, transition: TransitionConfig = {}): void {
     if (typeof position === 'boolean') {
       if (!position) {
         this._positionTransition.stop();
@@ -368,7 +406,7 @@ class BackgroundCamera {
     const {
       duration = 0,
       delay = 0,
-      easing = TWEEN.Easing.Linear.None,
+      easing = Easing.Linear.None,
       onInit = () => ({}),
       onStart = () => ({}),
       onUpdate = () => ({}),
@@ -378,7 +416,7 @@ class BackgroundCamera {
 
     onInit();
     if (duration > 0) {
-      this._positionTransition = new TWEEN.Tween({ x: currentX, y: currentY, z: currentZ })
+      this._positionTransition = new Tween({ x: currentX, y: currentY, z: currentZ })
         .to({ x, y, z }, duration * 1000)
         .easing(easing)
         .onStart(onStart)
@@ -398,14 +436,12 @@ class BackgroundCamera {
   /**
    * Updates the camera position. Should be called on every render frame.
    */
-  update() {
-    // Ensure that the position is always valid despite sway.
-    // Moving the camera in-between ongoing sway cycles does not always guarantee the validity of the position, so coercion is required.
+  update(): void {
     this._positionWithOffset.set(
-      Math.min(1, Math.max(0, this._position.x + this._swayOffset.x)),
-      Math.min(1, Math.max(0, this._position.y + this._swayOffset.y)),
-      Math.min(1, Math.max(0, this._position.z + this._swayOffset.z)),
-      this._position.w + this._swayOffset.w,
+      Math.min(1, Math.max(0, this._position.x + this._positionOffset.x + this._swayOffset.x)),
+      Math.min(1, Math.max(0, this._position.y + this._positionOffset.y + this._swayOffset.y)),
+      Math.min(1, Math.max(0, this._position.z + this._positionOffset.z + this._swayOffset.z) * CameraZoomRange + (1.0 - CameraZoomRange)),
+      this._position.w + MathUtils.degToRad(this._positionOffset.w) + this._swayOffset.w,
     );
   
     const { x: absoluteX, y: absoluteY, z: absoluteDepth } = toAbsolutePosition(
@@ -415,13 +451,13 @@ class BackgroundCamera {
     );
 
     this.camera.position.set(absoluteX, absoluteY, absoluteDepth);
-    this.camera.rotation.z = this._position.w + this._swayOffset.w;
+    this.camera.rotation.z = this._position.w + MathUtils.degToRad(this._positionOffset.w) + this._swayOffset.w;
   }
 
   /**
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
-  dispose() {
+  dispose(): void {
     this.sway(false);
     this.move(false);
     this.rotate(false);
@@ -430,6 +466,9 @@ class BackgroundCamera {
 
 export {
   getMaxFullScreenDepthForPlane,
+  CameraPosition,
+  CameraPositionWithRotation,
+  CameraOffset,
   BackgroundCamera,
 };
 

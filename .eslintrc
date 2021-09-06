@@ -4,14 +4,25 @@
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:import/typescript",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended"
   ],
   "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["./tsconfig.json"]
+  },
   "plugins": ["@typescript-eslint"],
   "env": {
     "es6": true,
     "browser": true,
     "node": true
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   },
   "rules": {
     "max-len": "off",
@@ -28,18 +39,27 @@
     "no-underscore-dangle": "off",
     "no-restricted-syntax": "off",
     "object-curly-newline": ["error", {
-        "ImportDeclaration": "never"
+      "ImportDeclaration": "never"
     }],
     "lines-between-class-members": "off",
     "no-param-reassign": "off",
     "no-use-before-define": "off",
     "no-console": "off",
     "linebreak-style": "off",
+    "no-dupe-class-members": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "off",
-    "no-dupe-class-members": "off",
     "@typescript-eslint/no-dupe-class-members": ["error"],
     "@typescript-eslint/interface-name-prefix": "off",
-    "@typescript-eslint/no-empty-interface": "off"
+    "@typescript-eslint/no-empty-interface": "off",
+    "@typescript-eslint/strict-boolean-expressions": ["error", {
+      "allowNullableObject": true
+    }],
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-return": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
+    "@typescript-eslint/no-non-null-assertion": "off"
   }
 }

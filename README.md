@@ -10,40 +10,45 @@
 **[Interactive demo available here (with credits to artists).](https://aeroheim.github.io/midori/)**
 
 ## About
-Library for animating image backgrounds in websites. Written with three.js and uses WebGL.
+Library for animating image backgrounds in websites using WebGL.
 
-Provides support for the following:
+It support the following:
 * Configurable dynamic camera
 * Animated transitions between backgrounds
 * Post-processing effects & particles
 
 ## Usage / API
 ### Getting Started
+First install `midori-bg` and `three`. Three.js is required as a dependency - any version greater than or equal to `three@0.132.2` should work. (if not, please file an issue)
 ```console
-npm install --save midori-bg
+npm install --save midori-bg three
 ```
 
-This is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [source for the interactive demo](./docs/index.jsx).
+Below is an example of how to get started with midori in an ES6 app. For an example in `React`, see the [source for the interactive demo](./docs/index.jsx).
 
 You'll want to first initialize a renderer before loading and setting images as backgrounds.
 
 ```js
-import { BackgroundRenderer, loadImage, isWebGLSupported } from 'midori-bg';
+import { BackgroundRenderer, loadImage } from 'midori-bg';
 
-// check WebGL support - usually unnecessary unless your browser requirements are dated
-if (isWebGLSupported()) {
+// pass in a canvas DOM element
+const renderer = new BackgroundRenderer(document.getElementById('canvas'));
 
-  // pass in a canvas DOM element
-  const renderer = new BackgroundRenderer(document.getElementById('canvas'));
+// the loadImage function returns a promise which you can use to load your images.
+// the path can be a url or local path to a file. Make sure to check CORS if using a url.
+loadImage('url/to/image')
+  // set background
+  .then((image) => renderer.setBackground(image))
+  // handle errors
+  .catch(err => console.error(err));
+```
 
-  // the loadImage function returns a promise which you can use to load your images.
-  // the path can be a url or local path to a file. Make sure to check CORS if using a url.
-  loadImage('url/to/image')
-    // set background
-    .then((image) => renderer.setBackground(image))
-    // handle errors
-    .catch(err => console.error(err));
-}
+The rendering can also be controlled directly if needed:
+```js
+// the renderer can be paused if needed.
+renderer.pause();
+// the renderer can be resumed after pausing.
+renderer.render();
 ```
 
 ### Transitions
@@ -141,6 +146,13 @@ camera.move({ x: Math.random(), y: Math.random(), z: 0.5 + Math.random() * 0.5 }
   easing: Easings.Cubic.InOut,
 });
 
+// offset the camera from its current position.
+// x - offset to the left by 10% of the background width
+// y - offset to the bottom by 20% of the background height
+// z - offset the zoom by zooming in 20% of the maximum zoom
+// zr - offset the rotation by rotating 15 degrees
+camera.offset({ x: -0.1, y: 0.2, z: -0.2, zr: 15 });
+
 // rotate the camera by 30 degrees with a transition.
 camera.rotate(30, {
   duration: 2.5,
@@ -161,8 +173,10 @@ camera.sway({ x: 0.1, y: 0.05, z: 0.02, zr: 1 }, {
 
 The state of the camera can be queried:
 ```js
-// the current position of the camera, excluding offsets from swaying.
+// the current position of the camera, excluding offsets from the position offset and swaying.
 const position = camera.position;
+// the current offset of the camera.
+const positionOffset = camera.positionOffset;
 
 // cancel any in-progress movement
 if (camera.isMoving()) {
@@ -316,6 +330,9 @@ particles.move('large', { distance: 0.4, angle: 35 }, { duration: 5, loop: true 
 // sway the particles up to a given distance with a transition.
 particles.sway('small', { x: 0.025, y: 0.025 }, { duration: 1.5, easing: Easings.Sinusoidal.InOut, loop: true });
 particles.sway('large', { x: 0.025, y: 0.025 }, { duration: 1.5, easing: Easings.Sinusoidal.InOut, loop: true });
+
+// removes all particles.
+particles.removeAll();
 ```
 
 The state of the particles can also be queried:
