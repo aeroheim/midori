@@ -28,6 +28,7 @@
   "module": "./dist/midori.js",
   "types": "./dist/midori.d.ts",
   "files": [
+    "/dist/midori.cjs",
     "/dist/midori.js",
     "/dist/midori.d.ts"
   ],
