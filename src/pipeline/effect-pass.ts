@@ -130,7 +130,7 @@ class EffectPass extends Pass {
         }
         case EffectType.RgbShift: {
           const { amount, angle } = effect.getUniforms();
-          configs[type] = { amount, angle };
+          configs[type] = { amount, angle: MathUtils.radToDeg(angle) };
           break;
         }
         case EffectType.Vignette: {
