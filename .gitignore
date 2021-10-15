@@ -3,3 +3,5 @@ build/
 images/
 launch.json
 settings.json
+*LICENSE.txt
+*.map
