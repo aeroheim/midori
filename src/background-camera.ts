@@ -415,7 +415,7 @@ class BackgroundCamera {
     } = transition;
 
     onInit();
-    if (duration > 0) {
+    if (duration > 0 || delay > 0) {
       this._positionTransition = new Tween({ x: currentX, y: currentY, z: currentZ })
         .to({ x, y, z }, duration * 1000)
         .easing(easing)
