@@ -350,8 +350,8 @@ class Particles {
       offsetY: swayOffset.y,
     })
       .to({
-        offsetX: -x + Math.random() * x,
-        offsetY: -y + Math.random() * y,
+        offsetX: -x + Math.random() * x * 2,
+        offsetY: -y + Math.random() * y * 2,
       }, duration * 1000)
       .easing(easing)
       .onStart(onStart)
