@@ -1,5 +1,6 @@
 import { WebGLRenderTarget, Scene, Mesh, PlaneGeometry, MeshBasicMaterial, DepthTexture, Texture, WebGLRenderer } from 'three';
-import { BackgroundCamera, getMaxFullScreenDepthForPlane } from './background-camera';
+import { BackgroundCamera } from './background-camera';
+import { getMaxFullScreenDepthForPlane } from './background-camera-utils';
 import { BackgroundEffects } from './background-effects';
 import { Particles } from './effects/particles';
 
