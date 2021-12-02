@@ -599,6 +599,7 @@ export declare class BackgroundRenderer {
 	private _transitionPass;
 	private _effectPass;
 	private _clock;
+	private _renderAnimationFrame?;
 	private _paused;
 	private _disposed;
 	/**
@@ -637,7 +638,15 @@ export declare class BackgroundRenderer {
 	 * Begins rendering the background.
 	 */
 	render(): void;
+	/**
+	 * Pauses rendering of the background.
+	 */
 	pause(): void;
+	/**
+	 * Returns whether the renderer is paused.
+	 * @returns {boolean}
+	 */
+	get isPaused(): boolean;
 	/**
 	 * Renders the background, transitions, and effects. Should be called on every frame.
 	 */
