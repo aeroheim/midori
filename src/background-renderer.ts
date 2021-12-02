@@ -81,7 +81,8 @@ class BackgroundRenderer {
   private _transitionPass: TransitionPass;
   private _effectPass: EffectPass;
   private _clock: Clock = new Clock(false);
-  private _paused = false;
+  private _renderAnimationFrame?: number;
+  private _paused = true;
   private _disposed = false;
 
   /**
@@ -181,6 +182,12 @@ class BackgroundRenderer {
    * Begins rendering the background.
    */
   render(): void {
+    // cancel any previous ongoing renders
+    if (this._renderAnimationFrame !== undefined) {
+      cancelAnimationFrame(this._renderAnimationFrame);
+      this._renderAnimationFrame = undefined;
+    }
+
     this._paused = false;
     this._clock.start();
     this._render();
@@ -192,6 +199,18 @@ class BackgroundRenderer {
   pause(): void {
     this._paused = true;
     this._clock.stop();
+    if (this._renderAnimationFrame !== undefined) {
+      cancelAnimationFrame(this._renderAnimationFrame);
+      this._renderAnimationFrame = undefined;
+    }
+  }
+
+  /**
+   * Returns whether the renderer is paused.
+   * @returns {boolean}
+   */
+  get isPaused(): boolean {
+    return this._paused;
   }
 
   /**
@@ -201,10 +220,10 @@ class BackgroundRenderer {
     update();
     this._resizeCanvas();
 
-    if (!this._disposed && !this._paused) {
+    if (!this._disposed) {
       this._composer.render(this._clock.getDelta());
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      requestAnimationFrame(this._render);
+      this._renderAnimationFrame = requestAnimationFrame(this._render);
     }
   }
 
