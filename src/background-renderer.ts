@@ -193,8 +193,8 @@ class BackgroundRenderer {
     this._render();
   }
 
-  /*
-   * Pauses the rendering of the background.
+  /**
+   * Pauses rendering of the background.
    */
   pause(): void {
     this._paused = true;
