@@ -437,7 +437,7 @@ export declare class Particles {
 	 * If a boolean is passed in instead then the move will either continue or stop based on the value.
 	 * @param {LoopableTransitionConfig} transition - an optional transition configuration.
 	 */
-	move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig): void;
+	move(name: string, offset: ParticleMoveOffset | boolean, transition?: LoopableTransitionConfig): void;
 	/**
 	 * Sways a group of particles around their current positions. Cancels any in-progress sways.
 	 * @param {string} name - the name of the group to sway.
