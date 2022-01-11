@@ -194,8 +194,8 @@ class Particles {
   removeAll(): void {
     for (const group in this._groups) {
       // stop any ongoing transitions
-      this._groups[group].positionTransition.stop();
-      this._groups[group].swayTransition.stop();
+      this.sway(group, false);
+      this.move(group, false);
     }
 
     // reset particles to empty
@@ -261,7 +261,7 @@ class Particles {
    * If a boolean is passed in instead then the move will either continue or stop based on the value.
    * @param {LoopableTransitionConfig} transition - an optional transition configuration.
    */
-  move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig): void {
+  move(name: string, offset: ParticleMoveOffset | boolean, transition: LoopableTransitionConfig = {}): void {
     const group = this._groups[name];
     const { index, amount } = group;
 
@@ -446,6 +446,7 @@ class Particles {
    * Disposes this object. Call when this object is no longer needed, otherwise leaks may occur.
    */
   dispose(): void {
+    this.removeAll();
     this._particles.geometry.dispose();
     (this._particles.material as ShaderMaterial).dispose();
   }
